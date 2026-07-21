@@ -74,10 +74,10 @@ export async function POST(request: NextRequest) {
           return NextResponse.json(repo, { status: 201 });
         } catch (e) {
           if (e instanceof Error) {
-            if (e.message.includes("private") || e.message.includes("not found")) {
-              return NextResponse.json({ error: e.message }, { status: 400 });
+            if (e.message.includes("private")) {
+              return NextResponse.json({ error: "Repository is private" }, { status: 400 });
             }
-            if (e.message.includes("Invalid GitHub URL")) {
+            if (e.message.includes("not found") || e.message.includes("Invalid GitHub URL")) {
               return NextResponse.json({ error: e.message }, { status: 400 });
             }
           }
@@ -128,6 +128,9 @@ export async function POST(request: NextRequest) {
           }
           if (e instanceof SecurityError) {
             return NextResponse.json({ error: e.message }, { status: 422 });
+          }
+          if (e instanceof Error && e.message.includes("ADM-ZIP")) {
+            return NextResponse.json({ error: "Invalid ZIP archive" }, { status: 400 });
           }
           throw e;
         }

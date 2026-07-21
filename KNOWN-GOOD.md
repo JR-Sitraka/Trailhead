@@ -35,6 +35,31 @@ corrected, not silently deleted.
   Override `entry.entryName` / `entry.attr` directly after `addFile()`
   to produce real test bytes (see `tests/preprocessing.test.ts` and
   `tests/repositories.route.test.ts` for the working pattern).
+- [2026-07-21] GitHub API: authenticated (GITHUB_TOKEN) rate limit
+  confirmed at 5,000 req/hour via live x-ratelimit-limit header;
+  unauthenticated fallback remains 60/hour when the token is unset.
+- [2026-07-21] GitHub API returns identical 404 for nonexistent repos
+  AND private repos the token has no access to — intentional on
+  GitHub's side, confirmed via their own docs, not fixable from our
+  side. Only repos the token DOES have access to can be positively
+  identified as private (via a real 200 + `private: true`).
+- [2026-07-21] GITHUB_TOKEN in use is a fine-grained PAT scoped to
+  Contents:Read-only + Metadata:Read-only — no repository-write scope.
+  Cannot be used to programmatically create test repos.
+- [2026-07-21] Private-repo route test depends on the real personal
+  repo JR-Sitraka/Test remaining private and accessible to the token —
+  a real external dependency, not a synthetic fixture. Fragile if that
+  repo is ever renamed, deleted, or made public. Consider replacing
+  with a dedicated throwaway fixture repo when convenient.
+- [2026-07-21] AdmZip throws a plain Error (not a distinct error class)
+  for malformed archives, with message text like "ADM-ZIP: Invalid or
+  unsupported zip format. No END header found" — route.ts currently
+  catches this via string-matching "ADM-ZIP" in the message. This is
+  fragile: only tested against one specific corruption case (random
+  bytes / missing END header). Other malformed-ZIP scenarios may throw
+  differently-worded messages that wouldn't match and would still
+  produce a 500. Consider hardening to catch any non-SecurityError
+  error during parsing as a 400, rather than string-matching.
 
 ## Project hard rules
 

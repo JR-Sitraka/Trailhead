@@ -343,22 +343,24 @@ export async function fetchGithubRepoInfo(url: string): Promise<{ owner: string;
   const repo = repoRaw.replace(/\.git$/, "");
 
   const apiBase = "https://api.github.com";
-  const repoRes = await fetch(`${apiBase}/repos/${owner}/${repo}`, {
-    headers: { Accept: "application/vnd.github+json", "User-Agent": "trailhead/1.0" }
-  });
-  if (repoRes.status === 404) throw new Error("Repository not found or is private");
+  const headers: Record<string, string> = {
+    Accept: "application/vnd.github+json",
+    "User-Agent": "trailhead/1.0"
+  };
+  if (process.env.GITHUB_TOKEN) {
+    headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
+  }
+
+  const repoRes = await fetch(`${apiBase}/repos/${owner}/${repo}`, { headers });
+  if (repoRes.status === 404) throw new Error("Repository not found");
   if (!repoRes.ok) throw new Error(`GitHub API error: ${repoRes.status} ${repoRes.statusText}`);
   const repoData = (await repoRes.json()) as { default_branch: string; private: boolean };
   if (repoData.private) throw new Error("Repository is private");
 
-  const branchesRes = await fetch(`${apiBase}/repos/${owner}/${repo}/branches`, {
-    headers: { Accept: "application/vnd.github+json", "User-Agent": "trailhead/1.0" }
-  });
+  const branchesRes = await fetch(`${apiBase}/repos/${owner}/${repo}/branches`, { headers });
   const branches: string[] = branchesRes.ok ? (await branchesRes.json() as Array<{ name: string }>).map((b) => b.name) : [repoData.default_branch];
 
-  const headRes = await fetch(`${apiBase}/repos/${owner}/${repo}/commits/${repoData.default_branch}`, {
-    headers: { Accept: "application/vnd.github+json", "User-Agent": "trailhead/1.0" }
-  });
+  const headRes = await fetch(`${apiBase}/repos/${owner}/${repo}/commits/${repoData.default_branch}`, { headers });
   const commitSha = headRes.ok ? (await headRes.json() as { sha: string }).sha : null;
 
   return { owner, repo, defaultBranch: repoData.default_branch, branches, commitSha };

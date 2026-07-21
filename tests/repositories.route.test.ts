@@ -102,3 +102,102 @@ describe("POST /api/repositories — ZIP upload integration", () => {
     expect(jobs[0].status).toBe("queued");
   }, 30000);
 });
+
+describe("POST /api/repositories — ZIP size limit", () => {
+  it("rejects a ZIP buffer over 150MB with 413 and creates no Repository row", async () => {
+    const oversizedBuffer = Buffer.alloc(151 * 1024 * 1024);
+    const response = await makeZipRequest(oversizedBuffer, "huge.zip");
+    expect(response.status).toBe(413);
+    const body = await response.json();
+    expect(body.error).toContain("150MB");
+
+    const rows = await db.select().from(repositories);
+    const matching = rows.filter((r) => r.name === "huge");
+    expect(matching.length).toBe(0);
+  }, 60000);
+});
+
+describe("POST /api/repositories — invalid ZIP archive", () => {
+  it("rejects a buffer that is not a valid ZIP with 400 and creates no Repository row", async () => {
+    const invalidBuffer = Buffer.from("this is not a zip file at all");
+    const response = await makeZipRequest(invalidBuffer, "corrupt.zip");
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error).toContain("Invalid ZIP archive");
+
+    const rows = await db.select().from(repositories);
+    const matching = rows.filter((r) => r.name === "corrupt");
+    expect(matching.length).toBe(0);
+  }, 30000);
+});
+
+describe("POST /api/repositories — GitHub import integration", () => {
+  async function makeGithubRequest(url: string): Promise<Response> {
+    const formData = new FormData();
+    formData.append("source", "github");
+    formData.append("url", url);
+
+    const request = new NextRequest("http://localhost:3000/api/repositories", {
+      method: "POST",
+      body: formData,
+    });
+
+    return POST(request);
+  }
+
+  it("accepts a valid public GitHub URL, returns 201, and persists Repository + AnalysisJob rows", async () => {
+    const url = "https://github.com/octocat/Hello-World";
+    const response = await makeGithubRequest(url);
+    expect(response.status).toBe(201);
+    const body = await response.json();
+    expect(body.status).toBe("queued");
+    expect(body.source).toBe("github");
+    expect(body.sourceUrl).toBe(url);
+
+    const rows = await db.select().from(repositories).where(eq(repositories.name, "octocat/Hello-World"));
+    expect(rows.length).toBeGreaterThanOrEqual(1);
+    expect(rows[0].status).toBe("queued");
+    expect(rows[0].source).toBe("github");
+    expect(rows[0].sourceUrl).toBe(url);
+
+    const jobs = await db.select().from(analysisJobs).where(eq(analysisJobs.repositoryId, rows[0].id));
+    expect(jobs.length).toBeGreaterThanOrEqual(1);
+    expect(jobs[0].status).toBe("queued");
+  }, 60000);
+
+  it("rejects an invalid/malformed GitHub URL with 400 and creates no row", async () => {
+    const url = "not-a-github-url";
+    const response = await makeGithubRequest(url);
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error).toContain("Invalid GitHub URL");
+
+    const rows = await db.select().from(repositories);
+    const matching = rows.filter((r) => r.sourceUrl === url);
+    expect(matching.length).toBe(0);
+  }, 30000);
+
+  it("rejects a nonexistent GitHub repo with 400 and creates no row", async () => {
+    const url = "https://github.com/trailhead-nonexistent-xyz/repo-404-test";
+    const response = await makeGithubRequest(url);
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error).toBe("Repository not found");
+
+    const rows = await db.select().from(repositories);
+    const matching = rows.filter((r) => r.sourceUrl === url);
+    expect(matching.length).toBe(0);
+  }, 30000);
+
+  it("rejects a private GitHub repo with 400 and a distinct message, and creates no row", async () => {
+    const url = "https://github.com/JR-Sitraka/Test";
+    const response = await makeGithubRequest(url);
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error).toBe("Repository is private");
+
+    const rows = await db.select().from(repositories);
+    const matching = rows.filter((r) => r.sourceUrl === url);
+    expect(matching.length).toBe(0);
+  }, 30000);
+});
