@@ -4,6 +4,30 @@
 
 **Date:** 2026-07-20
 
+**Update (2026-07-21, second):** Clarifying "manual relay... no direct
+file-writing role" for Claude Code, since literal practice diverged
+from the literal wording without actually violating the decision's
+intent. Confirmed with the person: Claude Code has been used
+exclusively to mechanically write exact, orchestrator-provided
+markdown content (PROJECT-STATE.md, KNOWN-GOOD.md, architecture.md,
+ADR files, testing.md) into their exact stated repo paths — no
+interpretation, no original content, no code, no implementation
+decisions. Kilo Code alone has done every round of actual
+implementation work (schema, routes, preprocessing logic, tests) via
+the task packets specified for it.
+
+**Clarified rule going forward:** Claude Code may be used as a
+mechanical file-writer for exact, pre-specified content handed to it
+verbatim — this does not constitute "wiring it into the repo" in the
+sense this ADR's original decision was protecting against. Claude Code
+must NOT be given code-writing tasks, ambiguous instructions, or asked
+to make any implementation decision, however small — that remains
+exclusively Kilo Code's role. If this line ever gets blurry in
+practice (e.g. asking Claude Code to "fix a typo" that requires
+judgment about intent), stop and treat it as a real second-agentic-tool
+decision requiring its own conversation, not an extension of this
+carve-out.
+
 **Context:** MVP-B Slice 1's planning is complete (PRD through
 testing, all 9 layers). Before implementation starts, this project
 needs a real, decided tool setup — not a default silently inherited

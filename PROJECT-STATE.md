@@ -5,35 +5,42 @@
 
 ## Product
 **Trailhead** — Repository Intelligence Platform. MVP-A and MVP-B are
-both fully planned end-to-end. Implementation in progress: MVP-A
-foundation (Repository Import + Safe Preprocessing).
+both fully planned end-to-end. Implementation in progress.
 
 ## Phase
-**Implementation — PREPROC-01–04 functionally complete**, closing out
-a documentation gap discovered during that work. One real code fix
-still pending (commitSha failure handling) before this feature is
-fully closed.
+**PREPROC-01–04 (Repository Import + Safe Preprocessing) is genuinely,
+functionally complete.** Every acceptance criterion that's currently
+testable has real, Agent-verified evidence — no more Code-reviewed-
+only or self-contradicting tier claims outstanding on this feature.
+`architecture.md`'s Data Model + API Contracts are backfilled from the
+real implementation (ADR-006). Two known, deliberately-deferred gaps
+remain logged (not blocking): AnalysisJob lookup ordering (fix when
+Reanalyze is built), corrupt-ZIP catch's string-matching fragility.
 
 ## Where everything actually lives
-- **Product → Testing, Retrospective:** unchanged.
-- **ADR-005 (tool setup):** unchanged from prior update.
-- **ADR-006 (new):** documents the architecture.md Data Model/API
-  Contract backfill and two real findings from cross-checking spec
-  against implemented code — see that file directly.
-- **architecture.md:** Data Model + API Contract sections pending
-  final backfill — waiting on a fresh full-file paste to safely
-  replace only those sections without guessing at unseen content
-  (Stack, NFRs, rejected alternatives).
-- **Local dev environment, git, PostgreSQL setup:** unchanged from
-  prior rounds — see `KNOWN-GOOD.md` for the full, accumulated list.
+- **architecture.md:** fully backfilled this round — Data Model + API
+  Contracts now reflect real, tested code. Stack section still points
+  to ADR-002/003/004 rather than restating (no cross-check done there
+  yet, nothing invented).
+- **ADR-006:** documents the backfill + two real findings from the
+  cross-check (commitSha integrity, fixed; AnalysisJob ordering,
+  deferred).
+- **KNOWN-GOOD.md:** full accumulated list of environment facts,
+  adm-zip API quirks, GitHub API behavior, and known code fragilities
+  from this session — read before any future backend task.
+- **testing.md:** Ask/Chat/Export tables current (pasted this
+  session). Repository Import/Safe Preprocessing's row-level detail
+  was never pasted to me — still showing "(unchanged, see prior
+  rounds)" — real completion status is accurately reflected here in
+  PROJECT-STATE.md instead, until that section gets pasted for a
+  proper update.
 
-## Key decisions across all of MVP-B
+## Key decisions
 *(Unchanged — see prior rounds.)*
 
 ## Open questions
-- **architecture.md full-file paste needed** to complete the backfill
-  — I only have the Slice 2b delta from an earlier round, not the
-  real Stack/NFR/rejected-alternatives content.
+- `testing.md`'s Repository Import/Safe Preprocessing table needs a
+  real paste to update accurately (see above).
 - All prior open items unchanged: shared Gemini quota risk, Symbols/
   Search person-verification, Symbols' zero-symbols empty state +
   server-side filtering, screen-reader behavior across Ask/Chat/
@@ -41,28 +48,29 @@ fully closed.
   fallback-correctness test, questions-only context-blending,
   cross-screen retrofit sweep pattern, repo cleanup (stray zip
   fixtures / tsconfig.tsbuildinfo), branch-selector logic (deferred,
-  needs UI), corrupt-ZIP catch's string-matching fragility (logged,
-  not blocking).
+  needs UI).
 
 ## Current blocker
-None — waiting on one file paste (architecture.md) and one Kilo Code
-round (commitSha fix) to fully close PREPROC-01–04.
+None.
 
 ## Last completed action
-ADR-006 written: documents architecture.md's Data Model/API Contract
-backfill and two real findings (commitSha nullability contradicting
-spec, resolved to fail-the-import; AnalysisJob ordering gap, deferred
-to Reanalyze work) — 2026-07-21.
+commitSha integrity fix implemented and verified (real network-failure
+simulation via scoped fetch interception, real 502, real DB check);
+architecture.md fully backfilled from real implementation — 2026-07-21.
 
 ## Next valid moves
-1. Paste current `architecture.md` in full so I can deliver the
-   complete backfilled file.
-2. Run the commitSha-fix Kilo Code task above.
-3. Once both land: PREPROC-01–04 is genuinely, fully done. Move to
-   `testing.md`'s next stated priorities — pgvector query-pattern
-   check, ASK-03/EXPORT-04/CHAT-05 failure-path tests.
+1. **PREPROC-01–04 is done — move to `testing.md`'s next stated
+   priorities:** the pgvector query-pattern check, and the
+   ASK-03/EXPORT-04/CHAT-05 failure-path tests. These require Slice 1
+   Ask/Chat implementation to exist first (EmbeddingChunk, retrieval)
+   — worth confirming with you whether to start there next, or
+   somewhere else.
+2. Paste `testing.md`'s Repository Import/Safe Preprocessing table for
+   a proper update reflecting this session's real completion status.
+3. Opportunistically: repo cleanup, AnalysisJob ordering fix (only
+   when Reanalyze work begins).
 
 ## Files changed last round
-- `docs/10-decisions/adr-006-architecture-doc-backfill.md` (new)
-- `KNOWN-GOOD.md` (AnalysisJob ordering gap added)
+- `docs/07-architecture/architecture.md` (Data Model + API Contracts
+  backfilled)
 - `PROJECT-STATE.md` (this file)
