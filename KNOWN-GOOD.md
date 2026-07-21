@@ -60,6 +60,13 @@ corrected, not silently deleted.
   differently-worded messages that wouldn't match and would still
   produce a 500. Consider hardening to catch any non-SecurityError
   error during parsing as a 400, rather than string-matching.
+- [2026-07-21] GET /api/repositories and GET /api/repositories/:id
+  both attach a repository's AnalysisJob via an unordered lookup (no
+  ORDER BY createdAt). Currently harmless — no code path creates more
+  than one AnalysisJob per repository yet — but will silently attach
+  an arbitrary job, not the latest, once Reanalyze exists. Must be
+  fixed as part of implementing Reanalyze, not assumed already correct
+  at that point. Tracked in ADR-006.
 
 ## Project hard rules
 

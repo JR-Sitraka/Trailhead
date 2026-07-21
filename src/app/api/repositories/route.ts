@@ -77,6 +77,9 @@ export async function POST(request: NextRequest) {
             if (e.message.includes("private")) {
               return NextResponse.json({ error: "Repository is private" }, { status: 400 });
             }
+            if (e.message.includes("HEAD commit fetch failed")) {
+              return NextResponse.json({ error: "Failed to fetch repository commit from GitHub" }, { status: 502 });
+            }
             if (e.message.includes("not found") || e.message.includes("Invalid GitHub URL")) {
               return NextResponse.json({ error: e.message }, { status: 400 });
             }

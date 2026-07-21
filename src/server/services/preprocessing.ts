@@ -361,7 +361,11 @@ export async function fetchGithubRepoInfo(url: string): Promise<{ owner: string;
   const branches: string[] = branchesRes.ok ? (await branchesRes.json() as Array<{ name: string }>).map((b) => b.name) : [repoData.default_branch];
 
   const headRes = await fetch(`${apiBase}/repos/${owner}/${repo}/commits/${repoData.default_branch}`, { headers });
-  const commitSha = headRes.ok ? (await headRes.json() as { sha: string }).sha : null;
+  if (!headRes.ok) {
+    throw new Error(`GitHub HEAD commit fetch failed for ${owner}/${repo}: ${headRes.status} ${headRes.statusText}`);
+  }
+  const headData = (await headRes.json()) as { sha: string };
+  const commitSha = headData.sha;
 
   return { owner, repo, defaultBranch: repoData.default_branch, branches, commitSha };
 }

@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import AdmZip from "adm-zip";
 import { NextRequest } from "next/server";
 import { POST } from "../src/app/api/repositories/route";
@@ -200,4 +200,35 @@ describe("POST /api/repositories — GitHub import integration", () => {
     const matching = rows.filter((r) => r.sourceUrl === url);
     expect(matching.length).toBe(0);
   }, 30000);
+
+  it("returns 502 when GitHub HEAD-commit fetch fails, and creates no Repository row", async () => {
+    const url = "https://github.com/octocat/Spoon-Knife";
+
+    const originalFetch = globalThis.fetch;
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (...args: any[]) => {
+      const [input] = args;
+      const urlStr = typeof input === "string" ? input : input.url;
+
+      if (urlStr.includes("/commits/")) {
+        return new Response(JSON.stringify({ message: "Server Error" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+      return originalFetch(input, ...(args.slice(1) as [any]));
+    });
+
+    try {
+      const response = await makeGithubRequest(url);
+      expect(response.status).toBe(502);
+      const body = await response.json();
+      expect(body.error).toContain("Failed to fetch repository commit");
+
+      const rows = await db.select().from(repositories);
+      const matching = rows.filter((r) => r.sourceUrl === url);
+      expect(matching.length).toBe(0);
+    } finally {
+      vi.restoreAllMocks();
+    }
+  }, 60000);
 });
