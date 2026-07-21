@@ -4,7 +4,8 @@ import { NextRequest } from "next/server";
 import { POST } from "../src/app/api/repositories/route";
 import { SecurityError } from "../src/server/services/preprocessing";
 import { db } from "../src/server/db";
-import { repositories } from "../src/server/db/schema";
+import { repositories, analysisJobs } from "../src/server/db/schema";
+import { eq } from "drizzle-orm";
 
 function createZip(entries: Array<{ name: string; content?: string | Buffer }>): Buffer {
   const zip = new AdmZip();
@@ -49,64 +50,55 @@ async function makeZipRequest(zipBuffer: Buffer, fileName = "test.zip"): Promise
   return POST(request);
 }
 
-async function isDbReachable(): Promise<boolean> {
-  try {
-    await db.select().from(repositories).limit(1);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 describe("POST /api/repositories — ZIP upload integration", () => {
   it("returns 422 for a ZIP with path-traversal entry, and no Repository row is created", async () => {
+    const uniqueName = `evil-traversal-${Date.now()}`;
     const zip = createZipWithRawPath("../../../etc/passwd", "root:x:0:0");
 
-    const response = await makeZipRequest(zip, "evil-traversal.zip");
+    const response = await makeZipRequest(zip, `${uniqueName}.zip`);
     expect(response.status).toBe(422);
     const body = await response.json();
     expect(body.error).toContain("Path traversal");
 
-    if (await isDbReachable()) {
-      const rows = await db.select().from(repositories);
-      const matching = rows.filter((r) => r.name === "evil-traversal");
-      expect(matching.length).toBe(0);
-    }
+    const rows = await db.select().from(repositories);
+    const matching = rows.filter((r) => r.name === uniqueName);
+    expect(matching.length).toBe(0);
   }, 30000);
 
   it("returns 422 for a ZIP with a real Unix symlink entry pointing outside root, and no Repository row is created", async () => {
+    const uniqueName = `evil-symlink-${Date.now()}`;
     const zip = createZipWithSymlink([
       { name: "evil-symlink", linkTarget: "../../../etc/passwd" }
     ]);
 
-    const response = await makeZipRequest(zip, "evil-symlink.zip");
+    const response = await makeZipRequest(zip, `${uniqueName}.zip`);
     expect(response.status).toBe(422);
     const body = await response.json();
     expect(body.error).toContain("Unsafe symlink");
 
-    if (await isDbReachable()) {
-      const rows = await db.select().from(repositories);
-      const matching = rows.filter((r) => r.name === "evil-symlink");
-      expect(matching.length).toBe(0);
-    }
+    const rows = await db.select().from(repositories);
+    const matching = rows.filter((r) => r.name === uniqueName);
+    expect(matching.length).toBe(0);
   }, 30000);
 
   it("returns 201 and creates a Repository row with status 'queued' for a valid clean ZIP", async () => {
+    const uniqueName = `valid-clean-${Date.now()}`;
     const zip = createZip([
       { name: "src/index.ts", content: "export const x = 1;" },
       { name: "README.md", content: "# Valid" }
     ]);
 
-    const response = await makeZipRequest(zip, "valid-clean.zip");
+    const response = await makeZipRequest(zip, `${uniqueName}.zip`);
     expect(response.status).toBe(201);
     const body = await response.json();
     expect(body.status).toBe("queued");
 
-    if (await isDbReachable()) {
-      const rows = await db.select().from(repositories);
-      const matching = rows.filter((r) => r.name === "valid-clean");
-      expect(matching.length).toBe(1);
-      expect(matching[0].status).toBe("queued");
-    }
+    const rows = await db.select().from(repositories).where(eq(repositories.name, uniqueName));
+    expect(rows.length).toBe(1);
+    expect(rows[0].status).toBe("queued");
+
+    const jobs = await db.select().from(analysisJobs).where(eq(analysisJobs.repositoryId, rows[0].id));
+    expect(jobs.length).toBe(1);
+    expect(jobs[0].status).toBe("queued");
   }, 30000);
 });
