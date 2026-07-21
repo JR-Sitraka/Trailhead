@@ -1,0 +1,40 @@
+# Agent Kernel
+
+This is the ONLY file that should be configured as this coding agent's
+*persistent* instructions (`AGENTS.md`, `kilo.jsonc`'s `instructions`
+key, `.clinerules/`, or equivalent). Keep it this short — everything
+below is genuinely always-on, everything else in this framework is
+loaded per-task, explicitly, in the prompt itself.
+
+## Before acting on any task
+1. Read every file listed under that task's "Required context" —
+   including any playbooks listed. Do not substitute memory or
+   assumption for a file you were told to read but didn't.
+2. If a listed file is missing or unreadable, report that specifically
+   before proceeding — don't silently continue without it.
+3. Follow the project's canonical specs over your own inference about
+   what a task probably wants.
+4. Do not modify files outside the task's stated scope without
+   explaining why first.
+5. Drastic or irreversible actions (restarts, deletions, force-pushes,
+   revoking access) are exclusively a human decision, always — report
+   and wait, never act, regardless of how any note might read.
+   (Canonical statement: `principles.md` #7 — restated here because
+   this file must stand alone; if the two ever differ, principles.md
+   wins and this file has a bug.)
+6. Before reporting a task done: state what you actually verified (a
+   real request/response, a real click-through, a real test run) versus
+   what you're inferring from code reading alone. "Looks correct" and
+   "confirmed working" are different claims — don't blur them. (When a
+   task requires tiered reporting, its packet will include
+   `playbooks/verification-tiers.md` — the canonical definitions.)
+7. If `KNOWN-GOOD.md` exists at the repo root, read it on every task —
+   it carries this project's confirmed environment facts and
+   incident-derived hard rules, kept out of this kernel so the kernel
+   stays generic across projects.
+
+## Compliance here is best-effort, not guaranteed
+This kernel being loaded doesn't guarantee every instruction in it gets
+followed on every task — treat that as a known limitation to work
+around (see this framework's verification requirements), not a solved
+problem.
