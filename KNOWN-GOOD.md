@@ -120,6 +120,27 @@ corrected, not silently deleted.
   its own separate, unauthenticated rate limit distinct from the
   5,000/hour on api.github.com — worth knowing if repeated-import
   testing ever hits an unexplained failure.
+- [2026-07-22] REAL, CONFIRMED BUG (found + fixed this session):
+  src/server/db/index.ts's connectionString selection had no context
+  check — `TEST_DATABASE_URL || DATABASE_URL` unconditionally
+  preferred the test DB, meaning the REAL dev server (npm run dev),
+  not just the test suite, was connecting to trailhead_test the
+  entire time both were set in .env. Fixed via
+  `const isTestEnv = !!process.env.VITEST` (Vitest's own documented
+  env var, confirmed via their docs) — only vitest gets
+  TEST_DATABASE_URL priority; the real dev server now correctly uses
+  DATABASE_URL. Verified both directions with real running processes,
+  not just logic review: a real dev server run inserted a row
+  confirmed present in trailhead_dev and absent from trailhead_test;
+  a real test suite run (32/32) confirmed test routing unaffected.
+  20 contaminated rows (manual dev-server imports that had silently
+  landed in trailhead_test during the bug window, identified by
+  timestamp falling outside any known automated test-run window) were
+  deleted with cascade verified clean. Lesson: an unconditional `||`
+  fallback between environment-specific config values is a real risk
+  pattern — this is the second time this session a "should differ by
+  context" assumption turned out to have no actual context check
+  behind it (see also: instrumentationHook).
 
 ## Project hard rules
 
