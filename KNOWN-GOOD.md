@@ -141,6 +141,16 @@ corrected, not silently deleted.
   pattern — this is the second time this session a "should differ by
   context" assumption turned out to have no actual context check
   behind it (see also: instrumentationHook).
+- [2026-07-22] web-tree-sitter's official docs are browser-first and
+  suggest /public + locateFile setup — misleading for this project's
+  actual usage (100% server-side, route handlers/poller, never
+  browser). In Node.js, Language.load() reads WASM directly from the
+  filesystem via fs/promises — no /public copy, no locateFile, no
+  Next.js config needed. Confirmed via reading web-tree-sitter.js's
+  own source (Language.load), not docs. Third instance this session of
+  "docs/intuition don't match this project's actual runtime context"
+  (see also: instrumentationHook, DB routing) — worth treating as a
+  standing pattern, not three unrelated coincidences.
 
 ## Project hard rules
 

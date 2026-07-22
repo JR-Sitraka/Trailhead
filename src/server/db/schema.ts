@@ -5,6 +5,7 @@ export const repositoryStatusEnum = pgEnum("repository_status", ["queued", "anal
 export const analysisJobStatusEnum = pgEnum("analysis_job_status", ["queued", "running", "completed", "failed"]);
 export const sourceTypeEnum = pgEnum("source_type", ["github", "zip"]);
 export const fileCategoryEnum = pgEnum("file_category", ["entrypoint", "config"]);
+export const symbolKindEnum = pgEnum("symbol_kind", ["function", "class", "interface", "import", "export"]);
 
 export const repositories = pgTable("repositories", {
   id: uuid("id").defaultRandom().primaryKey(),
