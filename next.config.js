@@ -2,7 +2,7 @@
 const nextConfig = {
   experimental: {
     instrumentationHook: true,
-    serverComponentsExternalPackages: ["pg"]
+    serverComponentsExternalPackages: ["pg", "postgres"]
   }
 };
 module.exports = nextConfig;

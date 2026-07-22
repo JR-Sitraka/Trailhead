@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 import { POST } from "../src/app/api/repositories/route";
 import { SecurityError } from "../src/server/services/preprocessing";
 import { db } from "../src/server/db";
-import { repositories, analysisJobs } from "../src/server/db/schema";
+import { repositories, analysisJobs, files } from "../src/server/db/schema";
 import { eq } from "drizzle-orm";
 
 function createZip(entries: Array<{ name: string; content?: string | Buffer }>): Buffer {
@@ -227,6 +227,134 @@ describe("POST /api/repositories — GitHub import integration", () => {
       const rows = await db.select().from(repositories);
       const matching = rows.filter((r) => r.sourceUrl === url);
       expect(matching.length).toBe(0);
+    } finally {
+      vi.restoreAllMocks();
+    }
+  }, 60000);
+
+  it("accepts a real public GitHub repo, downloads zipball, and persists files with real content and correct paths", async () => {
+    const url = "https://github.com/sindresorhus/got";
+    const response = await makeGithubRequest(url);
+    expect(response.status).toBe(201);
+    const body = await response.json();
+    expect(body.status).toBe("queued");
+    expect(body.source).toBe("github");
+    expect(body.sourceUrl).toBe(url);
+
+    const repo = await db.select().from(repositories).where(eq(repositories.id, body.id)).then((r) => r[0]);
+    expect(repo).toBeDefined();
+    expect(repo!.status).toBe("queued");
+
+    const jobs = await db.select().from(analysisJobs).where(eq(analysisJobs.repositoryId, repo!.id));
+    expect(jobs.length).toBeGreaterThanOrEqual(1);
+    expect(jobs[0].status).toBe("queued");
+
+    const fileRows = await db.select().from(files).where(eq(files.repositoryId, repo!.id));
+    expect(fileRows.length).toBeGreaterThan(0);
+
+    const packageJson = fileRows.find((f) => f.path === "package.json");
+    expect(packageJson).toBeDefined();
+    expect(packageJson!.content).toBeTruthy();
+    expect(packageJson!.category).toBe("config");
+    expect(packageJson!.skipped).toBe(false);
+
+    const readme = fileRows.find((f) => f.path === "readme.md");
+    expect(readme).toBeDefined();
+    expect(readme!.content).toBeTruthy();
+
+    const prefixed = fileRows.filter((f) => f.path.includes("sindresorhus-got-"));
+    expect(prefixed.length).toBe(0);
+  }, 60000);
+
+  it("rejects a GitHub zipball that exceeds 150MB during download", async () => {
+    const url = "https://github.com/sindresorhus/got";
+
+    const preExisting = await db.select().from(repositories).where(eq(repositories.sourceUrl, url));
+    const preExistingCount = preExisting.length;
+
+    const originalFetch = globalThis.fetch;
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (...args: any[]) => {
+      const [input] = args;
+      const urlStr = typeof input === "string" ? input : input.url;
+
+      if (urlStr.includes("/zipball/")) {
+        const hugeBuffer = Buffer.alloc(151 * 1024 * 1024);
+        const stream = require("stream");
+        const readable = new stream.Readable({
+          read() {
+            this.push(hugeBuffer);
+            this.push(null);
+          }
+        });
+        return new Response(readable, {
+          status: 200,
+          headers: { "content-type": "application/zip" }
+        });
+      }
+      return originalFetch(input, ...(args.slice(1) as [any]));
+    });
+
+    try {
+      const response = await makeGithubRequest(url);
+      expect(response.status).toBe(413);
+      const body = await response.json();
+      expect(body.error).toContain("150MB");
+
+      const rows = await db.select().from(repositories).where(eq(repositories.sourceUrl, url));
+      expect(rows.length).toBe(preExistingCount);
+    } finally {
+      vi.restoreAllMocks();
+    }
+  }, 60000);
+
+  it("calls reader.cancel() when GitHub zipball exceeds 150MB during download", async () => {
+    const url = "https://github.com/sindresorhus/got";
+
+    const cancelSpy = vi.fn().mockResolvedValue(undefined);
+    let readCalls = 0;
+    const mockReader = {
+      read: async () => {
+        readCalls++;
+        if (readCalls === 1) {
+          return { done: false, value: new Uint8Array(151 * 1024 * 1024) };
+        }
+        return { done: true, value: undefined };
+      },
+      cancel: cancelSpy,
+      releaseLock: vi.fn()
+    };
+
+    const originalFetch = globalThis.fetch;
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (...args: any[]) => {
+      const [input] = args;
+      const urlStr = typeof input === "string" ? input : input.url;
+
+      if (urlStr.includes("/zipball/")) {
+        const stream = require("stream");
+        const readable = new stream.Readable({
+          read() {
+            this.push(Buffer.alloc(151 * 1024 * 1024));
+            this.push(null);
+          }
+        });
+
+        const response = new Response(readable, {
+          status: 200,
+          headers: { "content-type": "application/zip" }
+        });
+
+        const originalGetReader = (response.body as any).getReader.bind(response.body);
+        (response.body as any).getReader = () => mockReader;
+
+        return response;
+      }
+      return originalFetch(input, ...(args.slice(1) as [any]));
+    });
+
+    try {
+      const result = await makeGithubRequest(url);
+      expect(result.status).toBe(413);
+      expect(cancelSpy).toHaveBeenCalledTimes(1);
     } finally {
       vi.restoreAllMocks();
     }

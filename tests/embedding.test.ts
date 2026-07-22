@@ -103,3 +103,12 @@ describe("EmbeddingChunk pgvector HNSW index", () => {
     }
   });
 });
+
+describe("database connection selection", () => {
+  it("connects to trailhead_test under vitest via drizzle db", async () => {
+    const drizzleDb = db as any;
+    const client = drizzleDb.$client as postgres;
+    const [row] = await client.unsafe(`SELECT current_database() AS db`).then((r: any) => r);
+    expect(row.db).toBe("trailhead_test");
+  });
+});

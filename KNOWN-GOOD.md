@@ -112,6 +112,14 @@ corrected, not silently deleted.
   index on `embedding_chunks.embedding` on every run — drizzle-kit
   doesn't track manually-created indexes. [status pending fix this
   round]
+- [2026-07-22] GitHub zipball downloads (codeload.github.com) don't
+  carry the GITHUB_TOKEN Authorization header — cross-origin redirect
+  from api.github.com strips it per standard Fetch redirect behavior.
+  Not a functional problem currently (zipball is only ever fetched for
+  already-confirmed-non-private repos), but codeload.github.com has
+  its own separate, unauthenticated rate limit distinct from the
+  5,000/hour on api.github.com — worth knowing if repeated-import
+  testing ever hits an unexplained failure.
 
 ## Project hard rules
 

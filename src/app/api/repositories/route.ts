@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/db";
 import { repositories, analysisJobs, files } from "@/server/db/schema";
 import { eq, desc } from "drizzle-orm";
-import { validateZipSafety, fetchGithubRepoInfo, SecurityError } from "@/server/services/preprocessing";
+import { validateZipSafety, fetchGithubRepoInfo, fetchGithubZipball, stripGitHubTopLevel, SecurityError } from "@/server/services/preprocessing";
 import { randomUUID } from "crypto";
 
 async function parseFormData(request: NextRequest): Promise<{ source: "github" | "zip"; url?: string; branch?: string; file?: File } | null> {
@@ -57,6 +57,28 @@ export async function POST(request: NextRequest) {
           const repoInfo = await fetchGithubRepoInfo(formData.url!);
           const selectedBranch = formData.branch && repoInfo.branches.includes(formData.branch) ? formData.branch : repoInfo.defaultBranch;
 
+          let zipBuffer: Buffer;
+          try {
+            zipBuffer = await fetchGithubZipball(repoInfo.owner, repoInfo.repo, repoInfo.commitSha || repoInfo.defaultBranch);
+          } catch (e) {
+            if (e instanceof Error && e.message.includes("150MB")) {
+              return NextResponse.json({ error: "GitHub archive exceeds 150MB limit" }, { status: 413 });
+            }
+            return NextResponse.json({ error: `Failed to download GitHub archive: ${(e as Error).message}` }, { status: 502 });
+          }
+
+          const strippedBuffer = stripGitHubTopLevel(zipBuffer);
+
+          let preprocessing;
+          try {
+            preprocessing = await validateZipSafety(strippedBuffer, randomUUID());
+          } catch (e) {
+            if (e instanceof SecurityError) {
+              return NextResponse.json({ error: e.message }, { status: 422 });
+            }
+            throw e;
+          }
+
           const [repo] = await db.insert(repositories).values({
             name: `${repoInfo.owner}/${repoInfo.repo}`,
             status: "queued",
@@ -68,10 +90,23 @@ export async function POST(request: NextRequest) {
           await db.insert(analysisJobs).values({
             repositoryId: repo.id,
             status: "queued",
-            truncated: false
+            truncated: preprocessing.truncated
           });
 
-          return NextResponse.json(repo, { status: 201 });
+          const fileInserts = preprocessing.files.map((f) => ({
+            repositoryId: repo.id,
+            path: f.path,
+            size: f.size,
+            language: f.language,
+            content: f.content,
+            category: f.category,
+            skipped: f.skipped,
+            skipReason: f.skipReason
+          }));
+          await db.insert(files).values(fileInserts);
+
+          const updated = await db.select().from(repositories).where(eq(repositories.id, repo.id)).then((r) => r[0]);
+          return NextResponse.json(updated, { status: 201 });
         } catch (e) {
           if (e instanceof Error) {
             if (e.message.includes("private")) {

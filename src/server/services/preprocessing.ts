@@ -78,6 +78,70 @@ function detectCategory(filePath: string, fileData: Buffer): "entrypoint" | "con
   return null;
 }
 
+export async function fetchGithubZipball(owner: string, repo: string, ref: string): Promise<Buffer> {
+  const apiBase = "https://api.github.com";
+  const headers: Record<string, string> = {
+    Accept: "application/vnd.github+json",
+    "User-Agent": "trailhead/1.0"
+  };
+  if (process.env.GITHUB_TOKEN) {
+    headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
+  }
+
+  const zipUrl = `${apiBase}/repos/${owner}/${repo}/zipball/${ref}`;
+  const response = await fetch(zipUrl, { headers, redirect: "follow" });
+
+  if (!response.ok) {
+    throw new Error(`GitHub zipball download failed: ${response.status} ${response.statusText}`);
+  }
+
+  const MAX_ZIP_SIZE = 150 * 1024 * 1024;
+  const chunks: Buffer[] = [];
+  let totalBytes = 0;
+
+  const reader = response.body?.getReader();
+  if (!reader) {
+    throw new Error("GitHub zipball response has no body");
+  }
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    totalBytes += value.length;
+    if (totalBytes > MAX_ZIP_SIZE) {
+      await reader.cancel();
+      throw new Error(`GitHub zipball exceeds 150MB limit (${totalBytes} bytes)`);
+    }
+    chunks.push(Buffer.from(value));
+  }
+
+  return Buffer.concat(chunks);
+}
+
+export function stripGitHubTopLevel(zipBuffer: Buffer): Buffer {
+  const zip = new AdmZip(zipBuffer);
+  const entries = zip.getEntries();
+
+  const firstEntry = entries[0];
+  if (!firstEntry || !firstEntry.isDirectory) {
+    return zipBuffer;
+  }
+
+  const topDir = firstEntry.entryName.replace(/\/$/, "");
+  if (!topDir) return zipBuffer;
+
+  const prefix = topDir + "/";
+
+  for (const entry of entries) {
+    if (entry.entryName.startsWith(prefix)) {
+      entry.entryName = entry.entryName.slice(prefix.length);
+    }
+  }
+
+  return zip.toBuffer();
+}
+
 const BINARY_SIGNATURES: number[][] = [
   [0x50, 0x4b, 0x03, 0x04],
   [0x50, 0x4b, 0x05, 0x06],
