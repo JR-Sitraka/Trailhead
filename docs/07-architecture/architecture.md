@@ -9,10 +9,24 @@ content that was previously just a section header.
 
 ## Stack
 
-*(Unchanged — see ADR-002 (MVP-A stack), ADR-003 (ORM choice), ADR-004
-(MVP-B Slice 1 stack) for the actual decisions and reasoning. Slice
-2a/2b introduce no new infrastructure — Slice 2a explicitly found
-"zero new tables," Slice 2b reuses ADR-004's stack entirely.)*
+| Layer | Choice | Why |
+|---|---|---|
+| Frontend | Next.js (App Router) + TypeScript | Single framework covers dashboard, repo workspace UI, and server logic — no separate frontend/backend split needed at MVP-A's scope. Unchanged for Slice 1 — Ask is another route in the same app, not a new service. |
+| Backend | Next.js server actions / route handlers (same app) | Orchestration runs in-process in the same Next.js app, not a separate runtime, per ADR-002's original reasoning and confirmed still valid by Slice 1's compatibility research (ADR-004). |
+| Parsing | `web-tree-sitter` (WASM), not `node-tree-sitter` (native bindings) | See ADR-002 — documented native-binding fragility across Node versions/environments. Unchanged since MVP-A. |
+| Database | PostgreSQL | Repos, jobs, files (including content), symbols, and (Slice 1) embeddings via `pgvector`. Also serves MVP-A's search (tsvector/GIN full-text index) — no separate search engine or vector database. |
+| Data access layer | Drizzle ORM | See ADR-003. Slice 1: Drizzle's native `vector` column type + `cosineDistance` operator used for embedding storage/query. **Correction, logged during real implementation (KNOWN-GOOD.md, 2026-07-22):** Drizzle's native `vector` type covers querying, but has no HNSW/vector-index builder — index creation requires raw SQL alongside the Drizzle-managed schema push, not a pure-Drizzle path as originally framed here. |
+| Search backing (keyword) | PostgreSQL full-text search (tsvector) + exact `ILIKE`/index lookups | Unchanged, still Search's backing. |
+| Search backing (semantic) | `pgvector` extension on the same Postgres instance | Keeps the "one datastore" theme — no separate vector database for a single-operator, zero-spend project. HNSW index, cosine distance. See ADR-004 for the query-pattern gotcha this must avoid — empirically confirmed via real EXPLAIN evidence during implementation (KNOWN-GOOD.md, 2026-07-22). |
+| Embeddings | `@huggingface/transformers` (transformers.js), in-process in the Next.js server | Runs natively in Node (confirmed, ADR-004) — no Python service, no separate process. Model: `Xenova/all-MiniLM-L6-v2` (384-dim), self-hosted, zero marginal cost. |
+| Generation | Gemini 2.5 Flash, free tier, behind one internal abstraction | Most generous current free tier (1,500 req/day, no card) — see ADR-004. Wrapped in one swappable interface since free-tier quotas/model availability can change abruptly. |
+| File content storage | `text` column on the `files` table (not object storage) | Unchanged from MVP-A. Real persistence confirmed during implementation (2026-07-22) — this was a real gap found and fixed, not assumed working from this decision alone; see architecture.md's MVP-A base Data Model section. |
+| Job/worker model | In-process background job (DB-backed `analysis_jobs` table, polled by the UI) — no Redis, no dedicated queue | Unchanged. Implemented as a simple in-process poller (`FOR UPDATE SKIP LOCKED`, 10s interval) via Next.js's instrumentation.ts hook — confirmed working via real server-boot verification (KNOWN-GOOD.md, 2026-07-22). |
+| Auth | None | Unchanged. |
+| State management | Server Components + SWR/React Query for job-status polling | Unchanged. |
+| Deployment | Local-only | Unchanged. |
+| CI/CD | Not set up | Unchanged. |
+| Monitoring | Local console/log output only | Unchanged. |
 
 ## Data Model
 
@@ -70,17 +84,117 @@ than one `AnalysisJob` per repository, but will pick an arbitrary job
 once Reanalyze exists and creates a second row. Must be fixed as part
 of implementing Reanalyze, not assumed correct at that point.
 
+### Symbol (MVP-A base — spec recovered 2026-07-22, implementation not yet started — see Step C in PROJECT-STATE.md)
+
+```
+Symbol
+  - id: uuid (pk)
+  - fileId: uuid (fk -> File)
+  - kind: enum('function', 'class', 'interface', 'import', 'export')
+  - name: text
+  - startLine: integer
+  - endLine: integer
+  relationships:
+    - belongs to File (and transitively Repository)
+```
+
+**Widened `kind` enum, stated with its reasoning:** the original
+MVP-A pass scoped `kind` to `function`/`class`/`interface` only. The
+Symbols feature spec (`symbols.md`) requires imports/exports to be
+extracted and independently filterable — the enum was widened to
+`import`/`export` so the same table backs those filter chips directly,
+rather than inventing a second, parallel table for the same underlying
+concept.
+
+**Direct consumers of this table's shape, worth keeping in sync if it
+ever changes:** `EmbeddingChunk`'s chunking strategy (below) follows
+`Symbol` boundaries where a file has them; Slice 2a's
+REPOSITORY_CONTEXT.md retrieval heuristic scopes itself to entry-point
+files' "most central symbols... where determinable from Symbol/import
+data."
+
 ### Slice 1 — EmbeddingChunk
 
-*(Unchanged from prior full pass — not re-stated here since no
-cross-check against implemented code has happened yet for this table;
-treat as pending the same real-code verification the base tables just
-received, once Ask/Chat implementation begins.)*
+```
+EmbeddingChunk (new, MVP-B Slice 1)
+  - id: uuid (pk)
+  - fileId: uuid (fk -> File)
+  - repositoryId: uuid (fk -> Repository)
+  -- Denormalized for query convenience (semantic search filters by
+  -- repository first) — avoids a join through File on every
+  -- retrieval query, which is Ask's hot path.
+  - startLine: integer
+  - endLine: integer
+  - embedding: vector(384)
+  -- Dimension matches Xenova/all-MiniLM-L6-v2's output.
+  - createdAt: timestamp
+  relationships:
+    - belongs to File (and transitively Repository)
+```
+
+**Real design decision, stated with its tradeoff:** chunk TEXT is NOT
+persisted here, only the vector and the line range. At generation
+time, the chunk's actual text is re-sliced from
+`files.content[startLine:endLine]` rather than read from a duplicated
+copy — single source of truth over a marginal read-time cost.
+
+**Chunking strategy:** chunk boundaries follow existing `Symbol`
+boundaries where a file has them (a function or class's extracted line
+range becomes one chunk). Files or regions with no extracted symbols
+fall back to a fixed-size line-window chunk.
+
+**pgvector index and query pattern — real, documented footgun:**
+`EmbeddingChunk.embedding` gets an HNSW index with cosine distance.
+Queries must use `cosineDistance` directly (ascending — smallest
+distance first), **not** `1 - cosineDistance` descending — the
+inverted form silently bypasses the index entirely (see ADR-004 for
+the original reasoning; empirically confirmed via real EXPLAIN
+evidence during implementation, KNOWN-GOOD.md 2026-07-22).
+
+**Reanalysis semantics:** on a fully successful `AnalysisJob` (both
+`parsingCompletedAt` and `embeddingCompletedAt` set), all existing
+`File`/`Symbol`/`EmbeddingChunk` rows for that `Repository` are
+deleted and replaced by the new job's output, and `Repository`'s
+denormalized fields update to match. A job that fails partway does not
+trigger this delete-and-replace.
 
 ### Slice 2a — zero new tables
 
-*(Unchanged — Export reuses Repository/File/Symbol/EmbeddingChunk
-entirely, no new schema.)*
+**Real, notable finding: Slice 2a requires zero new tables.** Every
+export format is computed on-demand from data that already exists.
+
+**REPOSITORY_CONTEXT.md's retrieval strategy:** scoped to
+`EmbeddingChunk`s belonging to files marked `category = 'entrypoint'`
+plus their most central symbols — a heuristic, tunable rather than
+locked, same precedent as Ask's no-evidence threshold.
+
+**JSON export schema:**
+```
+{
+  repository: { name, path, source, currentCommitSha, lastAnalyzedAt },
+  stack: { primaryLanguage, framework, packageManager, buildTool,
+           testFrameworkSummary },
+  entryPoints: [ { path } ],        -- File.category = 'entrypoint'
+  configFiles: [ { path } ],        -- File.category = 'config'
+  symbols: {
+    count: number,
+    byKind: { function, class, interface, import, export }
+  },
+  notAnalyzed: [ { path, reason } ] -- File.skipped or embeddingSkipped
+}
+```
+
+**Real, honest gap:** does NOT include a `modules` field — MVP-A's
+Overview mock's "Modules & packages" section was always a hardcoded UI
+list, never a real data-model concept. Not retrofitted here.
+
+**Note:** this schema references `File.embeddingSkipped`, which does
+not exist in the real, implemented `File` table (confirmed via
+ADR-006's backfill: `id, repositoryId, path, size, language, skipped,
+skipReason, content, category`). Unresolved — either the real `File`
+table needs this column added, or this JSON schema needs re-deriving
+from what actually exists. Flagged for whoever implements Slice 2a,
+not fixed here.
 
 ### Slice 2b — zero new tables, no server-side conversation state
 
