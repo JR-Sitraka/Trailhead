@@ -8,39 +8,33 @@
 both fully planned end-to-end. Implementation in progress.
 
 ## Phase
-**PREPROC-01–04 (Repository Import + Safe Preprocessing) is genuinely,
-functionally complete.** Every acceptance criterion that's currently
-testable has real, Agent-verified evidence — no more Code-reviewed-
-only or self-contradicting tier claims outstanding on this feature.
-`architecture.md`'s Data Model + API Contracts are backfilled from the
-real implementation (ADR-006). Two known, deliberately-deferred gaps
-remain logged (not blocking): AnalysisJob lookup ordering (fix when
-Reanalyze is built), corrupt-ZIP catch's string-matching fragility.
+**pgvector query-pattern check — genuinely closed, real EXPLAIN
+evidence.** PREPROC-01–04 remains done (prior round). Dev/test HNSW
+parity task pending (small, mechanical, sent to Kilo Code this round).
 
 ## Where everything actually lives
-- **architecture.md:** fully backfilled this round — Data Model + API
-  Contracts now reflect real, tested code. Stack section still points
-  to ADR-002/003/004 rather than restating (no cross-check done there
-  yet, nothing invented).
-- **ADR-006:** documents the backfill + two real findings from the
-  cross-check (commitSha integrity, fixed; AnalysisJob ordering,
-  deferred).
-- **KNOWN-GOOD.md:** full accumulated list of environment facts,
-  adm-zip API quirks, GitHub API behavior, and known code fragilities
-  from this session — read before any future backend task.
-- **testing.md:** Ask/Chat/Export tables current (pasted this
-  session). Repository Import/Safe Preprocessing's row-level detail
-  was never pasted to me — still showing "(unchanged, see prior
-  rounds)" — real completion status is accurately reflected here in
-  PROJECT-STATE.md instead, until that section gets pasted for a
-  proper update.
+- **PREPROC-01–04, architecture.md, testing.md, ADR-005/006:**
+  unchanged from prior rounds — all real, all closed as previously
+  recorded.
+- **pgvector:** compiled natively for PostgreSQL 17 on Windows this
+  session (real toolchain friction hit and resolved — wrong terminal
+  type initially, see `KNOWN-GOOD.md`). Extension enabled on both
+  `trailhead_dev`/`trailhead_test`. `EmbeddingChunk` table + HNSW
+  cosine index pushed to `trailhead_test`, with real EXPLAIN evidence
+  confirming the correct query pattern uses the index and the known
+  bad pattern (`1 - cosineDistance` DESC) does not, even when forced.
+  `trailhead_dev` parity (same table + index) is a pending, sent task
+  — not yet confirmed done.
+- **KNOWN-GOOD.md:** now also carries the pgvector Windows build
+  procedure (exact terminal type required, build/install commands) and
+  the empirically-confirmed HNSW query-direction gotcha.
 
 ## Key decisions
-*(Unchanged — see prior rounds.)*
+*(Unchanged.)*
 
 ## Open questions
-- `testing.md`'s Repository Import/Safe Preprocessing table needs a
-  real paste to update accurately (see above).
+- Confirm `trailhead_dev`'s EmbeddingChunk + HNSW parity task
+  completed (sent this round, not yet reported back).
 - All prior open items unchanged: shared Gemini quota risk, Symbols/
   Search person-verification, Symbols' zero-symbols empty state +
   server-side filtering, screen-reader behavior across Ask/Chat/
@@ -48,29 +42,25 @@ Reanalyze is built), corrupt-ZIP catch's string-matching fragility.
   fallback-correctness test, questions-only context-blending,
   cross-screen retrofit sweep pattern, repo cleanup (stray zip
   fixtures / tsconfig.tsbuildinfo), branch-selector logic (deferred,
-  needs UI).
+  needs UI), corrupt-ZIP catch's string-matching fragility,
+  AnalysisJob lookup ordering (deferred to Reanalyze work).
 
 ## Current blocker
 None.
 
 ## Last completed action
-commitSha integrity fix implemented and verified (real network-failure
-simulation via scoped fetch interception, real 502, real DB check);
-architecture.md fully backfilled from real implementation — 2026-07-21.
+pgvector compiled and verified on PostgreSQL 17; EmbeddingChunk +
+HNSW index pushed to `trailhead_test` with real, EXPLAIN-confirmed
+evidence of the correct vs. incorrect query pattern — 2026-07-22.
 
 ## Next valid moves
-1. **PREPROC-01–04 is done — move to `testing.md`'s next stated
-   priorities:** the pgvector query-pattern check, and the
-   ASK-03/EXPORT-04/CHAT-05 failure-path tests. These require Slice 1
-   Ask/Chat implementation to exist first (EmbeddingChunk, retrieval)
-   — worth confirming with you whether to start there next, or
-   somewhere else.
-2. Paste `testing.md`'s Repository Import/Safe Preprocessing table for
-   a proper update reflecting this session's real completion status.
-3. Opportunistically: repo cleanup, AnalysisJob ordering fix (only
-   when Reanalyze work begins).
+1. Confirm `trailhead_dev` parity task result.
+2. Real groundwork for Ask/Chat implementation can now begin — the
+   retrieval mechanism's core risk (index usage) is de-risked ahead of
+   building the endpoint around it, as intended.
+3. Opportunistically: repo cleanup, AnalysisJob ordering fix (when
+   Reanalyze work begins).
 
 ## Files changed last round
-- `docs/07-architecture/architecture.md` (Data Model + API Contracts
-  backfilled)
 - `PROJECT-STATE.md` (this file)
+- `KNOWN-GOOD.md` (pgvector build procedure + confirmed query gotcha)

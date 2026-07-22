@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, text, timestamp, boolean, integer, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, text, timestamp, boolean, integer, pgEnum, vector } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 export const repositoryStatusEnum = pgEnum("repository_status", ["queued", "analyzing", "ready", "failed"]);
@@ -33,6 +33,16 @@ export const analysisJobs = pgTable("analysis_jobs", {
   truncated: boolean("truncated").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull()
+});
+
+export const embeddingChunks = pgTable("embedding_chunks", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  fileId: uuid("file_id").notNull().references(() => files.id, { onDelete: "cascade" }),
+  repositoryId: uuid("repository_id").notNull().references(() => repositories.id, { onDelete: "cascade" }),
+  startLine: integer("start_line").notNull(),
+  endLine: integer("end_line").notNull(),
+  embedding: vector("embedding", { dimensions: 384 }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull()
 });
 
 export const repositoriesRelations = relations(repositories, ({ many }) => ({

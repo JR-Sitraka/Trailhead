@@ -67,6 +67,31 @@ corrected, not silently deleted.
   an arbitrary job, not the latest, once Reanalyze exists. Must be
   fixed as part of implementing Reanalyze, not assumed already correct
   at that point. Tracked in ADR-006.
+- [2026-07-22] pgvector 0.8.5 compiled natively for PostgreSQL 17 on
+  Windows. MUST use the "x64 Native Tools Command Prompt for VS 2022"
+  — the generic "Developer Command Prompt" produces a real build
+  failure (`tupmacs.h` case-value C2196 errors), not just a warning.
+  Build steps: set PGROOT to the PG17 install dir, clone pgvector at a
+  tagged release (v0.8.5 used here), `nmake /F Makefile.win`, `nmake /F
+  Makefile.win install` (may need an elevated/Administrator instance
+  of that same Native Tools prompt if install fails with Access is
+  denied). Extension still needs `CREATE EXTENSION vector;` run inside
+  each target database (trailhead_dev, trailhead_test) — compiling and
+  installing the library files is necessary but not sufficient.
+- [2026-07-22] pgvector HNSW cosine-distance gotcha empirically
+  confirmed, not just documented: `ORDER BY embedding <=> vec ASC`
+  produces a real Index Scan; `ORDER BY 1 - (embedding <=> vec) DESC`
+  falls back to a Seq Scan even with `enable_seqscan = OFF` forced
+  (planner cost `10000000000` — a hard refusal, not a preference).
+  Verification technique for small test datasets: force
+  `enable_seqscan = OFF` before EXPLAIN, since Postgres's planner
+  otherwise reasonably prefers a seq scan on tiny tables regardless of
+  index correctness — without that control, a correct-pattern test
+  could pass for the wrong reason.
+- [2026-07-22] drizzle-orm v0.36.0's pg-core has no vector-index
+  builder (no `vectorIndex`/HNSW helper) — index creation requires raw
+  SQL alongside the Drizzle-managed schema push, not a pure-Drizzle
+  path.
 
 ## Project hard rules
 
