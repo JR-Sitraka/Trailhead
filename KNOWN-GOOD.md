@@ -92,6 +92,26 @@ corrected, not silently deleted.
   builder (no `vectorIndex`/HNSW helper) — index creation requires raw
   SQL alongside the Drizzle-managed schema push, not a pure-Drizzle
   path.
+- [2026-07-22] CONFIRMED FIXED (was pending): Next.js 14's
+  instrumentation.ts hook requires
+  `experimental.instrumentationHook: true` in next.config.js. Missing
+  originally — poller never started at real boot despite a passing
+  unit test (which bypassed the real boot path via direct pollOnce()
+  calls). Fixed and verified via real dev server output: startup log
+  appeared before any request, and a real AnalysisJob row transitioned
+  queued→running with updated_at matching the poller's own tick log
+  timestamp. Lesson: "runs automatically at startup" claims need a
+  real running server as evidence, not just a direct function-call
+  test — this project has now hit this exact gap once.
+- [2026-07-22] `tests/poller.test.ts` mutates all other queued
+  `AnalysisJob` rows in `trailhead_test` to `'failed'` as a side effect
+  of achieving test isolation — a real test-hygiene smell, not yet
+  fixed. Could cause a confusing, misattributed failure in an
+  unrelated test in a future round.
+- [2026-07-22] `drizzle-kit push` drops the manually-created HNSW
+  index on `embedding_chunks.embedding` on every run — drizzle-kit
+  doesn't track manually-created indexes. [status pending fix this
+  round]
 
 ## Project hard rules
 

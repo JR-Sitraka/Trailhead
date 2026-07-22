@@ -39,6 +39,45 @@ const BINARY_EXTENSIONS = new Set([
   ".wasm", ".DS_Store", ".map"
 ]);
 
+const CONFIG_FILENAMES = new Set([
+  "package.json", "tsconfig.json", ".env", ".env.example",
+  "requirements.txt", "pyproject.toml", "Cargo.toml",
+  "go.mod", "Gemfile", "composer.json",
+  "next.config.js", "next.config.ts",
+  "vite.config.js", "vite.config.ts",
+  "webpack.config.js",
+  "docker-compose.yml", "Dockerfile",
+  ".eslintrc", ".eslintrc.js", ".eslintrc.cjs", ".eslintrc.ts",
+  "drizzle.config.ts"
+]);
+
+const ENTRYPOINT_FILENAMES = new Set([
+  "index.ts", "index.js", "index.mjs", "index.cjs",
+  "main.ts", "main.js", "main.mjs", "main.cjs",
+  "app.ts", "app.js", "app.mjs", "app.cjs",
+  "server.ts", "server.js", "server.mjs", "server.cjs"
+]);
+
+// Best-effort heuristic — not exhaustive. Config detection is filename-based;
+// entrypoint detection checks package.json main/scripts plus common root filenames.
+function detectCategory(filePath: string, fileData: Buffer): "entrypoint" | "config" | null {
+  const base = path.basename(filePath);
+  if (CONFIG_FILENAMES.has(base)) return "config";
+
+  if (base === "package.json") {
+    try {
+      const pkg = JSON.parse(fileData.toString("utf8"));
+      if (pkg.main || pkg.scripts?.start || pkg.scripts?.dev) return "entrypoint";
+    } catch {
+      // ignore parse errors
+    }
+  }
+
+  if (ENTRYPOINT_FILENAMES.has(base)) return "entrypoint";
+
+  return null;
+}
+
 const BINARY_SIGNATURES: number[][] = [
   [0x50, 0x4b, 0x03, 0x04],
   [0x50, 0x4b, 0x05, 0x06],
@@ -63,7 +102,7 @@ const BINARY_SIGNATURES: number[][] = [
 ];
 
 export interface PreprocessingResult {
-  files: Array<{ path: string; size: number; language: string | null; skipped: boolean; skipReason: string | null }>;
+  files: Array<{ path: string; size: number; language: string | null; skipped: boolean; skipReason: string | null; content: string | null; category: "entrypoint" | "config" | null }>;
   totalFiles: number;
   truncated: boolean;
   totalUnpackedSize: number;
@@ -249,7 +288,9 @@ export async function validateZipSafety(zipBuffer: Buffer, sourceId: string): Pr
             size: entryData.length,
             language,
             skipped: true,
-            skipReason: `exceeds_max_parse_size (${Math.round(entryData.length / 1024)}KB > 1MB)`
+            skipReason: `exceeds_max_parse_size (${Math.round(entryData.length / 1024)}KB > 1MB)`,
+            content: null,
+            category: null
           });
           fileCount++;
           unpackedSize += entryData.length;
@@ -309,12 +350,25 @@ export async function validateZipSafety(zipBuffer: Buffer, sourceId: string): Pr
 
       const language = !shouldSkip ? detectLanguage(entryName) : null;
 
+      let content: string | null = null;
+      let category: "entrypoint" | "config" | null = null;
+      if (!shouldSkip) {
+        try {
+          content = fs.readFileSync(filePath, "utf8");
+          category = detectCategory(entryName, Buffer.from(content));
+        } catch {
+          // leave content/category null on read error
+        }
+      }
+
       result.files.push({
         path: entryName,
         size: fileSize,
         language,
         skipped: shouldSkip,
-        skipReason
+        skipReason,
+        content,
+        category
       });
 
       fileCount++;

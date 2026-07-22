@@ -154,13 +154,13 @@ describe("POST /api/repositories — GitHub import integration", () => {
     expect(body.source).toBe("github");
     expect(body.sourceUrl).toBe(url);
 
-    const rows = await db.select().from(repositories).where(eq(repositories.name, "octocat/Hello-World"));
-    expect(rows.length).toBeGreaterThanOrEqual(1);
-    expect(rows[0].status).toBe("queued");
-    expect(rows[0].source).toBe("github");
-    expect(rows[0].sourceUrl).toBe(url);
+    const repo = await db.select().from(repositories).where(eq(repositories.id, body.id)).then((r) => r[0]);
+    expect(repo).toBeDefined();
+    expect(repo!.status).toBe("queued");
+    expect(repo!.source).toBe("github");
+    expect(repo!.sourceUrl).toBe(url);
 
-    const jobs = await db.select().from(analysisJobs).where(eq(analysisJobs.repositoryId, rows[0].id));
+    const jobs = await db.select().from(analysisJobs).where(eq(analysisJobs.repositoryId, repo!.id));
     expect(jobs.length).toBeGreaterThanOrEqual(1);
     expect(jobs[0].status).toBe("queued");
   }, 60000);

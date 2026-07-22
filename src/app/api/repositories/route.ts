@@ -110,7 +110,9 @@ export async function POST(request: NextRequest) {
           await db.insert(analysisJobs).values({
             repositoryId: repo.id,
             status: "queued",
-            truncated: preprocessing.truncated
+            truncated: preprocessing.truncated,
+            parsingCompletedAt: null,
+            embeddingCompletedAt: null
           });
 
           const fileInserts = preprocessing.files.map((f) => ({
@@ -118,6 +120,8 @@ export async function POST(request: NextRequest) {
             path: f.path,
             size: f.size,
             language: f.language,
+            content: f.content,
+            category: f.category,
             skipped: f.skipped,
             skipReason: f.skipReason
           }));

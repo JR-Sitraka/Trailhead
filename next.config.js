@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: { serverComponentsExternalPackages: ["pg"] }
+  experimental: {
+    instrumentationHook: true,
+    serverComponentsExternalPackages: ["pg"]
+  }
 };
 module.exports = nextConfig;

@@ -4,6 +4,7 @@ import { relations } from "drizzle-orm";
 export const repositoryStatusEnum = pgEnum("repository_status", ["queued", "analyzing", "ready", "failed"]);
 export const analysisJobStatusEnum = pgEnum("analysis_job_status", ["queued", "running", "completed", "failed"]);
 export const sourceTypeEnum = pgEnum("source_type", ["github", "zip"]);
+export const fileCategoryEnum = pgEnum("file_category", ["entrypoint", "config"]);
 
 export const repositories = pgTable("repositories", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -22,6 +23,8 @@ export const files = pgTable("files", {
   path: text("path").notNull(),
   size: integer("size").notNull(),
   language: varchar("language", { length: 64 }),
+  content: text("content"),
+  category: fileCategoryEnum("category"),
   skipped: boolean("skipped").notNull().default(false),
   skipReason: text("skip_reason")
 });
@@ -31,6 +34,8 @@ export const analysisJobs = pgTable("analysis_jobs", {
   repositoryId: uuid("repository_id").notNull().references(() => repositories.id, { onDelete: "cascade" }),
   status: analysisJobStatusEnum("status").notNull().default("queued"),
   truncated: boolean("truncated").notNull().default(false),
+  parsingCompletedAt: timestamp("parsing_completed_at", { withTimezone: true }),
+  embeddingCompletedAt: timestamp("embedding_completed_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull()
 });
