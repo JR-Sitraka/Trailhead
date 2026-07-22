@@ -21,26 +21,35 @@ describe("AnalysisJob poller", () => {
       embeddingCompletedAt: null
     }).returning();
 
-    await db.execute(sql`
-      UPDATE analysis_jobs
-      SET status = 'failed'
-      WHERE status = 'queued' AND id != ${job.id}
-    `);
+    const [otherRepo] = await db.insert(repositories).values({
+      name: `poller-other-${Date.now()}`,
+      source: "zip",
+      sourceUrl: null,
+      commitSha: null
+    }).returning();
 
-    const queuedBefore = parseInt((await db.execute(sql`SELECT count(*) FROM analysis_jobs WHERE status = 'queued'`))[0]?.count as string || "0");
-    expect(queuedBefore).toBeGreaterThanOrEqual(1);
+    const [otherJob] = await db.insert(analysisJobs).values({
+      repositoryId: otherRepo.id,
+      status: "queued",
+      truncated: false,
+      parsingCompletedAt: null,
+      embeddingCompletedAt: null
+    }).returning();
 
-    await pollOnce();
-
-    const queuedAfter = parseInt((await db.execute(sql`SELECT count(*) FROM analysis_jobs WHERE status = 'queued'`))[0]?.count as string || "0");
-    expect(queuedAfter).toBeLessThan(queuedBefore);
+    await pollOnce(repo.id);
 
     const running = await db.select().from(analysisJobs).where(eq(analysisJobs.id, job.id));
     expect(running[0].status).toBe("running");
 
-    await pollOnce();
+    const otherStillQueued = await db.select().from(analysisJobs).where(eq(analysisJobs.id, otherJob.id));
+    expect(otherStillQueued[0].status).toBe("queued");
+
+    await pollOnce(repo.id);
 
     const stillRunning = await db.select().from(analysisJobs).where(eq(analysisJobs.id, job.id));
     expect(stillRunning[0].status).toBe("running");
+
+    const otherStillQueuedAfter = await db.select().from(analysisJobs).where(eq(analysisJobs.id, otherJob.id));
+    expect(otherStillQueuedAfter[0].status).toBe("queued");
   });
 });

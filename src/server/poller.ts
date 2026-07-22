@@ -13,7 +13,7 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export async function pollOnce(): Promise<void> {
+export async function pollOnce(scopeRepositoryId?: string): Promise<void> {
   try {
     const [job] = await db.execute(
       sql`
@@ -22,6 +22,7 @@ export async function pollOnce(): Promise<void> {
         WHERE id = (
           SELECT id FROM ${analysisJobs}
           WHERE status = 'queued'
+            ${scopeRepositoryId ? sql`AND repository_id = ${scopeRepositoryId}` : sql``}
           ORDER BY created_at ASC
           LIMIT 1
           FOR UPDATE SKIP LOCKED
