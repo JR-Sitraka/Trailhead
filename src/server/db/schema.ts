@@ -51,15 +51,30 @@ export const embeddingChunks = pgTable("embedding_chunks", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull()
 });
 
+export const symbols = pgTable("symbols", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  fileId: uuid("file_id").notNull().references(() => files.id, { onDelete: "cascade" }),
+  kind: symbolKindEnum("kind").notNull(),
+  name: text("name").notNull(),
+  startLine: integer("start_line").notNull(),
+  endLine: integer("end_line").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull()
+});
+
 export const repositoriesRelations = relations(repositories, ({ many }) => ({
   files: many(files),
   analysisJobs: many(analysisJobs)
 }));
 
-export const filesRelations = relations(files, ({ one }) => ({
-  repository: one(repositories, { fields: [files.repositoryId], references: [repositories.id] })
+export const filesRelations = relations(files, ({ one, many }) => ({
+  repository: one(repositories, { fields: [files.repositoryId], references: [repositories.id] }),
+  symbols: many(symbols)
 }));
 
 export const analysisJobsRelations = relations(analysisJobs, ({ one }) => ({
   repository: one(repositories, { fields: [analysisJobs.repositoryId], references: [repositories.id] })
+}));
+
+export const symbolsRelations = relations(symbols, ({ one }) => ({
+  file: one(files, { fields: [symbols.fileId], references: [files.id] })
 }));

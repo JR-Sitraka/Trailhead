@@ -151,6 +151,42 @@ corrected, not silently deleted.
   "docs/intuition don't match this project's actual runtime context"
   (see also: instrumentationHook, DB routing) — worth treating as a
   standing pattern, not three unrelated coincidences.
+- [2026-07-22] tree-sitter-typescript grammar node types confirmed via
+  real parsing, not assumed: function_declaration, class_declaration,
+  abstract_class_declaration, interface_declaration for top-level
+  definitions; lexical_declaration + arrow_function/function_expression
+  for top-level fn assignments; method_definition and
+  abstract_method_signature for class bodies. export_statement carries
+  `declaration` for named/default-declaration exports but NOT for
+  `export default <expr>` (function_expression, class, identifier,
+  literals — no declaration field). `export { foo }` uses `export_clause`
+  (no declaration field). `import_statement` carries `import_clause`
+  only when bindings exist; side-effect-only imports (`import 'x'`) and
+  empty-brace imports (`import {} from 'x'`) have no import_clause.
+  `childForFieldName("name")` works on declarations/methods; namespace_import
+  requires manual child iteration. `anonymous_default_export_class`
+  produces a bare `class` node (not `class_declaration`) after the
+  `default` keyword in export_statement. `internal_module` (not `module`)
+  is the top-level node for `namespace Foo {}`.
+- [2026-07-22] Grammar file selection and JS/JSX handling decision:
+  `.ts`, `.mts`, `.cts` → tree-sitter-typescript (TS grammar);
+  `.tsx` → tree-sitter-tsx (same package, separate wasm);
+  `.js`, `.mjs`, `.cjs` → tree-sitter-javascript (already present in
+  node_modules; confirmed correct because TS grammar would mis-parse
+  plain JS with type-only syntax as errors);
+  `.jsx` → tree-sitter-tsx (tree-sitter-javascript 0.x lacks JSX
+  grammar support; tsx grammar is the only available JSX-capable
+  option). Tradeoff rejected: using TS grammar as a JS-superset
+  approximation for plain .js files — too many false syntax errors in
+  practice. Keeping the extra dependency (tree-sitter-javascript) is
+  the correct call.
+- [2026-07-22] web-tree-sitter `Parser.parse()` does NOT throw on
+  syntactically invalid input — it returns a tree with
+  `tree.rootNode.hasError === true` and ERROR nodes in the tree.
+  Parse failures in the poller are handled by checking `hasError`,
+  logging a warning, and returning zero symbols for that file. This
+  satisfies the "catch-and-continue" requirement without relying on
+  try/catch around parse().
 
 ## Project hard rules
 

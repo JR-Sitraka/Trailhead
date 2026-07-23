@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/server/db/migrate.ts",
-    "db:push": "drizzle-kit push && tsx scripts/ensure-indexes.ts",
+    "db:push": "tsx scripts/push-all.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
