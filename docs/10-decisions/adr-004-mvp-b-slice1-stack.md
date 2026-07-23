@@ -4,6 +4,55 @@
 
 **Date:** 2026-07-20
 
+**Update (2026-07-22):** Generation model switched from Gemini 2.5
+Flash to **Gemini 3.5 Flash**. Reasoning: 2.5 Flash is scheduled for
+retirement October 16, 2026 — described by current sources as "a
+migration target, not a foundation." Confirmed directly (search,
+2026-07-22, cross-referencing multiple sources including a direct
+citation of Google's own pricing page) that 3.5 Flash carries the
+same free-tier shape (15 RPM / 1,500 RPD, no card required) — this
+is not a cost or quota tradeoff, purely a longevity improvement.
+3.5 Flash also reports better coding/agentic benchmark performance
+than 2.5 Flash, a secondary but real benefit given Ask's evidence-
+citation task shares some character with agentic/structured-output
+work. No other part of ADR-004's reasoning (in-process transformers.js
+embeddings, pgvector, single internal generation abstraction so a
+future model swap stays a config change) is affected — this
+confirms that abstraction's value directly, since this is exactly
+the kind of swap it was built to make cheap.
+
+**Update (2026-07-22, third):** REVERTING the 2026-07-22 switch to
+Gemini 3.5 Flash, back to **Gemini 2.5 Flash**. What happened: the
+switch was reasoned entirely from search-aggregated claims that 3.5
+Flash carried the same free-tier shape as 2.5 Flash (15 RPM/1,500
+RPD). Real API calls proved this wrong — the actual quota-exceeded
+error payload showed `"quotaValue":"20"` (20 requests/day), and this
+was independently corroborated by a dated Google AI Developer Forum
+thread (June 19, 2026) reporting the identical symptom from other
+developers, with the same account's Gemini 2.5 Flash calls continuing
+to work normally throughout. This is the second time this session a
+confident, multi-source search claim didn't hold up against a real
+API call — the lesson from `instrumentationHook`/DB-routing/
+web-tree-sitter's Node-vs-browser behavior generalizes to third-party
+API claims too, not just this project's own code.
+
+Real alternatives were researched before reverting (not just falling
+back by default): Groq (Llama 3.3 70B, ~1,000 RPD/30 RPM, fastest
+inference, OpenAI-compatible) and OpenRouter (multi-provider routing,
+hedges against any single provider's free-tier volatility) were both
+real, viable candidates. Groq specifically was set aside for now, not
+rejected outright — its quality/instruction-following on Ask's strict
+evidence-grounded citation task is unverified, versus reverting to a
+model already confirmed correct end-to-end (the JSON-parsing fix was
+proven against a real, successful Gemini call before quota hit).
+Revisit if Gemini's free tier becomes unreliable again before this
+project's actual completion.
+
+**Consequence:** `gemini-3.5-flash` reverts to `gemini-2.5-flash` as
+the model ID string throughout `chat.ts` and its tests. No other
+code/architecture change — the swap is exactly as cheap as ADR-004's
+original "one internal abstraction" design intended it to be.
+
 **Context:** MVP-B Slice 1 introduces this project's first
 LLM-dependent work — semantic retrieval and grounded-answer generation
 for the Ask screen. The PRD locks a zero-spend cost constraint (Slice

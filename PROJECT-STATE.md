@@ -8,68 +8,72 @@
 both fully planned end-to-end. Implementation in progress.
 
 ## Phase
-**Step B (GitHub content fetching) — fully closed, including a real
-DB-routing bug found and fixed along the way.** Steps A and B are both
-genuinely done with real evidence. Next: Step C (Symbol extraction).
+**MVP-A's full analysis pipeline is genuinely complete, end to end,
+for the first time this project.** Import (ZIP + GitHub) → Safe
+Preprocessing → Symbol extraction → Embedding generation →
+`Repository.status = 'ready'`, all real, all Agent-verified, all
+checkpointed. `next build` is fully green. This is a real milestone,
+not just another closed task.
 
 ## Where everything actually lives
-- **PREPROC-01–04, pgvector/EmbeddingChunk, Step A (schema + poller),
-  architecture.md, testing.md, ADR-005/006:** unchanged from prior
-  rounds — all real, all closed.
-- **Step B (this round, closed):** `fetchGithubZipball()` +
-  `stripGitHubTopLevel()` implemented and verified against a real
-  repo (`sindresorhus/got`) — real content persisted, paths correctly
-  stripped, category detection working. Size-limit download properly
-  cancels the underlying reader (`reader.cancel()`) on exceeding
-  150MB, not just stopping accumulation. Three "investigate, don't
-  assume" items from the task packet all confirmed against live
-  GitHub behavior: redirect handling (automatic, no manual work
-  needed), top-level folder wrapping format (`{owner}-{repo}-{short-
-  sha}/`), and Content-Length unreliability (not guaranteed on
-  zipball responses — streaming size-check required, can't
-  pre-check).
-- **DB-routing bug (found + fixed this round):** real, session-wide
-  bug where the dev server was silently writing to `trailhead_test`
-  instead of `trailhead_dev` — see `KNOWN-GOOD.md` for full detail.
-  Fixed, verified both directions with real running processes, and 20
-  contaminated rows cleaned from `trailhead_test` with cascade
-  verified.
+- **Steps A, B, C, D1, D2 — all closed, all committed.** Real content
+  persistence, real GitHub zipball import, real tree-sitter symbol
+  extraction, real transformers.js embeddings, real HNSW-indexed
+  retrieval-ready storage, real status-transition logic
+  (`AnalysisJob.status = 'completed'` + `Repository.status = 'ready'`
+  only once both `parsingCompletedAt` and `embeddingCompletedAt` are
+  set).
+- **KNOWN-GOOD.md** now carries the full accumulated environment/
+  implementation knowledge from this entire implementation arc —
+  required reading before any further backend work, per its own
+  standing instruction.
+- **architecture.md** is fully backfilled (Stack, Symbol,
+  EmbeddingChunk, Slice 2a) — no more collapsed placeholders anywhere
+  in the Data Model or Stack sections.
 
 ## Key decisions
-*(Unchanged, plus:)* Step B uses GitHub's zipball endpoint (not git
-clone), reusing Safe Preprocessing's existing validateZipSafety()
-pipeline unmodified against the downloaded/stripped bytes.
+*(Unchanged, plus:)* Chunk-boundary algorithm: symbol-range chunks for
+function/class/interface, 30-line fixed-window fallback for gaps and
+non-TS/JS files. Reanalysis's delete-and-replace semantics explicitly
+NOT implemented (Reanalyze doesn't exist yet) — flagged in code, not
+silently skipped.
 
 ## Open questions
+- **Reanalyze is not implemented.** Once it is, it must implement the
+  delete-and-replace semantics `architecture.md` specifies AND fix the
+  AnalysisJob-lookup-ordering gap flagged earlier this session — both
+  real, both deferred to that feature specifically, both now clearly
+  documented rather than forgotten.
 - All prior open items unchanged: shared Gemini quota risk, Symbols/
   Search person-verification, Symbols' zero-symbols empty state +
   server-side filtering, screen-reader behavior across Ask/Chat/
-  Export, Ask/Chat reanalysis race condition, `/export/context`
-  fallback-correctness test, questions-only context-blending,
-  cross-screen retrofit sweep pattern, repo cleanup (stray zip
-  fixtures / tsconfig.tsbuildinfo), branch-selector logic (deferred,
-  needs UI), corrupt-ZIP catch's string-matching fragility,
-  AnalysisJob lookup ordering (deferred to Reanalyze work), unused
-  `sleep()` helper in poller.ts, codeload.github.com's separate
-  unauthenticated rate limit (GITHUB_TOKEN doesn't carry across the
-  redirect — logged, not currently a functional problem).
+  Export, `/export/context` fallback-correctness test, questions-only
+  context-blending, cross-screen retrofit sweep pattern, repo cleanup
+  (stray zip fixtures / tsconfig.tsbuildinfo), branch-selector logic
+  (deferred, needs UI), corrupt-ZIP catch's string-matching fragility,
+  codeload.github.com's separate rate limit.
 
 ## Current blocker
 None.
 
 ## Last completed action
-DB-routing bug fully closed: fix verified both directions with real
-running processes, 20 contaminated trailhead_test rows deleted with
-cascade verified, full suite (32/32) confirmed clean — 2026-07-22.
+D2 fully verified and committed: real `next build` (native ML deps
+fixed), real dev server, 51/51 tests passing, all 8 remaining
+`tsc --noEmit` errors individually confirmed genuinely pre-existing
+(one, `symbols.test.ts`'s missing `afterAll` import, was a real
+one-line fix, not waved through) — 2026-07-22.
 
 ## Next valid moves
-1. **Step C — Symbol extraction (tree-sitter/web-tree-sitter, per
-   ADR-002).** Both source types (ZIP and GitHub) now have real
-   persisted `File.content` to parse against. This is the last
-   foundational piece before embeddings (Step D) can finally run
-   against real, symbol-aware chunking instead of a placeholder.
-2. Opportunistically: everything in Open questions above.
+1. **Ask (Slice 1) can now genuinely start** — every dependency it
+   needs (real File.content, real Symbol data, real EmbeddingChunk
+   rows with verified HNSW retrieval) now exists for real, tested
+   repositories. This is the natural next major feature.
+2. **The Symbols API endpoint** (`GET /api/repositories/:id/symbols`)
+   was deferred a while back as "small, after Symbol extraction" —
+   still pending, genuinely small now that real Symbol data exists to
+   query.
+3. Opportunistically: everything in Open questions above.
 
 ## Files changed last round
 - `PROJECT-STATE.md` (this file)
-- `KNOWN-GOOD.md` (consolidated DB-routing bug entry)
+- `KNOWN-GOOD.md` (D1/D2 arc consolidated)

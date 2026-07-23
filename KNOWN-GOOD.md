@@ -214,6 +214,42 @@ corrected, not silently deleted.
   build is now fully green (confirmed: static generation completes,
   zero errors). Lesson: a Tailwind v4 PostCSS config alongside a
   stale v3 top-level install will reproduce this exact failure mode.
+- [2026-07-22] @huggingface/transformers + native deps
+  (onnxruntime-node, sharp) in next.config.js's webpack.externals: a
+  bare string external ("@huggingface/transformers") produces invalid
+  unquoted CJS during webpack 5's module-concatenation/scope-hoisting
+  pass ("Unexpected character '@'"). Fix: use a function-form external
+  returning `commonjs ${request}`, plus
+  `optimization.concatenateModules = false` on the server build to
+  bypass the scope-hoisting path that triggers it. Different failure
+  class than the earlier pure-WASM/JS externals fix (web-tree-sitter,
+  postgres) — native addons behave differently under webpack.
+- [2026-07-22] Chunk-boundary algorithm (embeddingChunker.ts): symbol
+  ranges (function/class/interface only — import/export excluded as
+  too thin to embed usefully) become chunks directly; any gap
+  (before/between/after symbols, or the entire file if zero
+  qualifying symbols) fills with a 30-line fixed window — tunable,
+  documented as such, not precisely justified. Applies to ALL
+  non-skipped files with content, not just TS/JS — non-TS/JS files go
+  entirely through fixed-window chunking.
+- [2026-07-22] Batched vs. sequential transformers.js inference
+  (real benchmark, 30 chunks): batch ~386ms vs. sequential ~488ms,
+  numerically identical to 1e-6. embeddings.ts uses BATCH_SIZE=32.
+- [2026-07-22] npx tsc --noEmit run before any next build/dev in a
+  session produces spurious TS6053 "file not found" errors for
+  .next/types/**/*.ts — these are Next.js's auto-generated route-type
+  stub files (tsconfig.json includes them by pattern), not real source
+  errors. Confirmed benign: next build's own internal type-check
+  passes clean immediately after. Always run build/dev at least once
+  before trusting a standalone tsc --noEmit run, especially after
+  adding a new API route.
+- [2026-07-22] Gemini 3.5 Flash's free tier is either far more
+  restricted than documented (real quota: 20 req/day, not 1,500) or
+  actively bugged as of this date — corroborated by a live Google AI
+  Developer Forum thread (2026-06-19) reporting the identical symptom.
+  Reverted generation model to gemini-2.5-flash. Lesson: verify
+  third-party free-tier API claims against a real call, same standard
+  already applied to this project's own environment assumptions.
 
 ## Project hard rules
 
