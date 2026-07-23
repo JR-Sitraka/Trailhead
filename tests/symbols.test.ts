@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { db } from "../src/server/db";
 import { repositories, analysisJobs, files, symbols as symbolsTable } from "../src/server/db/schema";
 import { eq, sql, inArray } from "drizzle-orm";
@@ -85,9 +85,9 @@ export namespace Internal { export const x = 1; }
     await pollOnce(repo.id);
 
     const [updatedJob] = await db.select().from(analysisJobs).where(eq(analysisJobs.id, job.id));
-    expect(updatedJob.status).toBe("running");
+    expect(updatedJob.status).toBe("completed");
     expect(updatedJob.parsingCompletedAt).not.toBeNull();
-    expect(updatedJob.embeddingCompletedAt).toBeNull();
+    expect(updatedJob.embeddingCompletedAt).not.toBeNull();
 
     const rows: SymbolRow[] = await db.select().from(symbolsTable).where(eq(symbolsTable.fileId, file.id));
     const byKindName = new Map<string, SymbolRow>();
@@ -198,8 +198,9 @@ export namespace Internal { export const x = 1; }
     await pollOnce(repo.id);
 
     const [updatedJob] = await db.select().from(analysisJobs).where(eq(analysisJobs.id, job.id));
-    expect(updatedJob.status).toBe("running");
+    expect(updatedJob.status).toBe("completed");
     expect(updatedJob.parsingCompletedAt).not.toBeNull();
+    expect(updatedJob.embeddingCompletedAt).not.toBeNull();
 
     const [goodFile] = await db.select().from(files).where(eq(files.path, "src/good.ts"));
     const [badFile] = await db.select().from(files).where(eq(files.path, "src/bad.ts"));
@@ -253,9 +254,9 @@ export namespace Internal { export const x = 1; }
     await pollOnce(repo.id);
 
     const [updatedJob] = await db.select().from(analysisJobs).where(eq(analysisJobs.id, job.id));
-    expect(updatedJob.status).toBe("running");
+    expect(updatedJob.status).toBe("completed");
     expect(updatedJob.parsingCompletedAt).not.toBeNull();
-    expect(updatedJob.embeddingCompletedAt).toBeNull();
+    expect(updatedJob.embeddingCompletedAt).not.toBeNull();
 
     const repoFiles = await db.select().from(files).where(eq(files.repositoryId, repo.id));
     const fileIds = repoFiles.map(f => f.id);

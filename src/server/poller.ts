@@ -1,13 +1,15 @@
 import { db } from "./db";
-import { analysisJobs, files, symbols } from "./db/schema";
+import { analysisJobs, embeddingChunks, files, repositories, symbols } from "./db/schema";
 import { eq, sql } from "drizzle-orm";
-import { extractSymbols } from "./services/symbols";
+import { extractSymbols, type ExtractedSymbol } from "./services/symbols";
+import { computeChunkRanges, sliceChunkText } from "./services/embeddingChunker";
+import { generateEmbeddings } from "./services/embeddings";
 
 // Scope limit (stated, not silently dropped): function kind only covers
 // top-level function declarations, top-level const/let arrow-function and
 // function-expression assignments, and class methods. Deeply nested or
 // inline anonymous functions are intentionally not extracted.
-async function runAnalysisPhases(jobId: string): Promise<void> {
+export async function runAnalysisPhases(jobId: string): Promise<void> {
   const [job] = await db.select().from(analysisJobs).where(eq(analysisJobs.id, jobId));
   if (!job) {
     console.error(`[poller] runAnalysisPhases: job ${jobId} not found`);
@@ -48,6 +50,52 @@ async function runAnalysisPhases(jobId: string): Promise<void> {
   }
 
   await db.update(analysisJobs).set({ parsingCompletedAt: new Date() }).where(eq(analysisJobs.id, jobId));
+
+  await runEmbeddingPhase(jobId, repositoryId);
+}
+
+async function runEmbeddingPhase(jobId: string, repositoryId: string): Promise<void> {
+  const allFiles = await db.select().from(files).where(
+    sql`${files.repositoryId} = ${repositoryId} AND ${files.skipped} = false AND ${files.content} IS NOT NULL`
+  ).orderBy(files.path);
+
+  let embeddingCompletedAt = new Date();
+
+  for (const file of allFiles) {
+    try {
+      const symbolRows = await db.select().from(symbols).where(eq(symbols.fileId, file.id));
+      const ranges = computeChunkRanges(file.content!, symbolRows as Array<ExtractedSymbol & { kind: string }>);
+
+      const chunkTexts = ranges.map((range) => sliceChunkText(file.content!, range.startLine, range.endLine));
+      const embeddings = await generateEmbeddings(chunkTexts);
+
+      const rows = ranges.map((range, idx) => ({
+        repositoryId: file.repositoryId,
+        fileId: file.id,
+        startLine: range.startLine,
+        endLine: range.endLine,
+        embedding: embeddings[idx]
+      }));
+
+      if (rows.length > 0) {
+        await db.insert(embeddingChunks).values(rows);
+      }
+    } catch (e) {
+      console.error(`[poller] embedding failed for file ${file.path} in job ${jobId}:`, e);
+    }
+  }
+
+  await db.update(analysisJobs).set({ embeddingCompletedAt }).where(eq(analysisJobs.id, jobId));
+
+  // Known gap: Reanalysis is not yet implemented. When it is built, this
+  // pipeline must first delete all existing EmbeddingChunk (and File/Symbol)
+  // rows for this repository before inserting new ones, otherwise stale
+  // chunks from a prior successful job will coexist with new ones.
+  const [updatedJob] = await db.select().from(analysisJobs).where(eq(analysisJobs.id, jobId));
+  if (updatedJob && updatedJob.parsingCompletedAt && updatedJob.embeddingCompletedAt) {
+    await db.update(analysisJobs).set({ status: "completed" }).where(eq(analysisJobs.id, jobId));
+    await db.update(repositories).set({ status: "ready" }).where(eq(repositories.id, repositoryId));
+  }
 }
 
 function sleep(ms: number): Promise<void> {

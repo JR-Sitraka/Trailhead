@@ -39,7 +39,7 @@ describe("AnalysisJob poller", () => {
     await pollOnce(repo.id);
 
     const running = await db.select().from(analysisJobs).where(eq(analysisJobs.id, job.id));
-    expect(running[0].status).toBe("running");
+    expect(running[0].status).toBe("completed");
 
     const otherStillQueued = await db.select().from(analysisJobs).where(eq(analysisJobs.id, otherJob.id));
     expect(otherStillQueued[0].status).toBe("queued");
@@ -47,7 +47,7 @@ describe("AnalysisJob poller", () => {
     await pollOnce(repo.id);
 
     const stillRunning = await db.select().from(analysisJobs).where(eq(analysisJobs.id, job.id));
-    expect(stillRunning[0].status).toBe("running");
+    expect(stillRunning[0].status).toBe("completed");
 
     const otherStillQueuedAfter = await db.select().from(analysisJobs).where(eq(analysisJobs.id, otherJob.id));
     expect(otherStillQueuedAfter[0].status).toBe("queued");
