@@ -60,9 +60,8 @@ describe("POST /api/repositories — ZIP upload integration", () => {
     const body = await response.json();
     expect(body.error).toContain("Path traversal");
 
-    const rows = await db.select().from(repositories);
-    const matching = rows.filter((r) => r.name === uniqueName);
-    expect(matching.length).toBe(0);
+    const rows = await db.select().from(repositories).where(eq(repositories.name, uniqueName));
+    expect(rows.length).toBe(0);
   }, 30000);
 
   it("returns 422 for a ZIP with a real Unix symlink entry pointing outside root, and no Repository row is created", async () => {
@@ -76,9 +75,8 @@ describe("POST /api/repositories — ZIP upload integration", () => {
     const body = await response.json();
     expect(body.error).toContain("Unsafe symlink");
 
-    const rows = await db.select().from(repositories);
-    const matching = rows.filter((r) => r.name === uniqueName);
-    expect(matching.length).toBe(0);
+    const rows = await db.select().from(repositories).where(eq(repositories.name, uniqueName));
+    expect(rows.length).toBe(0);
   }, 30000);
 
   it("returns 201 and creates a Repository row with status 'queued' for a valid clean ZIP", async () => {
@@ -111,9 +109,8 @@ describe("POST /api/repositories — ZIP size limit", () => {
     const body = await response.json();
     expect(body.error).toContain("150MB");
 
-    const rows = await db.select().from(repositories);
-    const matching = rows.filter((r) => r.name === "huge");
-    expect(matching.length).toBe(0);
+    const rows = await db.select().from(repositories).where(eq(repositories.name, "huge"));
+    expect(rows.length).toBe(0);
   }, 60000);
 });
 
@@ -125,13 +122,36 @@ describe("POST /api/repositories — invalid ZIP archive", () => {
     const body = await response.json();
     expect(body.error).toContain("Invalid ZIP archive");
 
-    const rows = await db.select().from(repositories);
-    const matching = rows.filter((r) => r.name === "corrupt");
-    expect(matching.length).toBe(0);
+    const rows = await db.select().from(repositories).where(eq(repositories.name, "corrupt"));
+    expect(rows.length).toBe(0);
   }, 30000);
 });
 
 describe("POST /api/repositories — GitHub import integration", () => {
+  const SHARED_URLS = [
+    "https://github.com/octocat/Hello-World",
+    "https://github.com/octocat/Spoon-Knife",
+    "https://github.com/sindresorhus/got"
+  ];
+
+  beforeAll(async () => {
+    for (const url of SHARED_URLS) {
+      const toDelete = await db.select().from(repositories).where(eq(repositories.sourceUrl, url));
+      for (const r of toDelete) {
+        await db.delete(repositories).where(eq(repositories.id, r.id));
+      }
+    }
+  });
+
+  afterAll(async () => {
+    for (const url of SHARED_URLS) {
+      const toDelete = await db.select().from(repositories).where(eq(repositories.sourceUrl, url));
+      for (const r of toDelete) {
+        await db.delete(repositories).where(eq(repositories.id, r.id));
+      }
+    }
+  });
+
   async function makeGithubRequest(url: string): Promise<Response> {
     const formData = new FormData();
     formData.append("source", "github");
@@ -172,9 +192,8 @@ describe("POST /api/repositories — GitHub import integration", () => {
     const body = await response.json();
     expect(body.error).toContain("Invalid GitHub URL");
 
-    const rows = await db.select().from(repositories);
-    const matching = rows.filter((r) => r.sourceUrl === url);
-    expect(matching.length).toBe(0);
+    const rows = await db.select().from(repositories).where(eq(repositories.sourceUrl, url));
+    expect(rows.length).toBe(0);
   }, 30000);
 
   it("rejects a nonexistent GitHub repo with 400 and creates no row", async () => {
@@ -184,9 +203,8 @@ describe("POST /api/repositories — GitHub import integration", () => {
     const body = await response.json();
     expect(body.error).toBe("Repository not found");
 
-    const rows = await db.select().from(repositories);
-    const matching = rows.filter((r) => r.sourceUrl === url);
-    expect(matching.length).toBe(0);
+    const rows = await db.select().from(repositories).where(eq(repositories.sourceUrl, url));
+    expect(rows.length).toBe(0);
   }, 30000);
 
   it("rejects a private GitHub repo with 400 and a distinct message, and creates no row", async () => {
@@ -196,9 +214,8 @@ describe("POST /api/repositories — GitHub import integration", () => {
     const body = await response.json();
     expect(body.error).toBe("Repository is private");
 
-    const rows = await db.select().from(repositories);
-    const matching = rows.filter((r) => r.sourceUrl === url);
-    expect(matching.length).toBe(0);
+    const rows = await db.select().from(repositories).where(eq(repositories.sourceUrl, url));
+    expect(rows.length).toBe(0);
   }, 30000);
 
   it("returns 502 when GitHub HEAD-commit fetch fails, and creates no Repository row", async () => {
@@ -224,9 +241,8 @@ describe("POST /api/repositories — GitHub import integration", () => {
       const body = await response.json();
       expect(body.error).toContain("Failed to fetch repository commit");
 
-      const rows = await db.select().from(repositories);
-      const matching = rows.filter((r) => r.sourceUrl === url);
-      expect(matching.length).toBe(0);
+      const rows = await db.select().from(repositories).where(eq(repositories.sourceUrl, url));
+      expect(rows.length).toBe(0);
     } finally {
       vi.restoreAllMocks();
     }
