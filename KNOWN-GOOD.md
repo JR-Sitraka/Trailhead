@@ -187,6 +187,33 @@ corrected, not silently deleted.
   logging a warning, and returning zero symbols for that file. This
   satisfies the "catch-and-continue" requirement without relying on
   try/catch around parse().
+- [2026-07-22] next.config.js: serverComponentsExternalPackages alone
+  does NOT externalize Node built-ins for modules reached via
+  src/server/poller.ts -> src/instrumentation.ts (web-tree-sitter,
+  postgres) — the instrumentation.ts bundle path doesn't inherit
+  App-Router server-component externalization the way normal route
+  handlers do. A webpack.externals override in next.config.js is
+  additionally required. Confirmed via real next build error traces
+  before/after.
+- [2026-07-22] The original next.config.js had "pg" in
+  serverComponentsExternalPackages — dead config, package.json has no
+  pg dependency, nothing imports it. Only "postgres" is the real
+  driver in use. Corrected.
+- [2026-07-22] @huggingface/transformers produced zero next build
+  errors on its own (not yet wired into any real code path beyond the
+  D1 proof test) — do not add it to externals speculatively; if D2's
+  real wiring introduces a build error, diagnose from the real error
+  output at that point, same discipline as this fix.
+- [2026-07-22] tailwindcss version mismatch: postcss.config.mjs and
+  globals.css were already Tailwind v4-correct, but package.json's
+  top-level tailwindcss was pinned to ^3.4.0 while @tailwindcss/postcss
+  (v4) carried its own nested v4 dependency — PostCSS resolved the
+  stale top-level v3 package for `@import "tailwindcss"`, masked
+  behind the earlier Node-builtins build failure until that was fixed.
+  Fixed by bumping top-level tailwindcss to ^4.0.0 to match. next
+  build is now fully green (confirmed: static generation completes,
+  zero errors). Lesson: a Tailwind v4 PostCSS config alongside a
+  stale v3 top-level install will reproduce this exact failure mode.
 
 ## Project hard rules
 
