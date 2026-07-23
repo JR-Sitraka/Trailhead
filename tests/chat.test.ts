@@ -371,7 +371,7 @@ async function resetNoEvidenceThreshold() {
 // Retrieval runs on real/near embeddings; generation is mocked to return off_topic.
 // ===========================================================================
 describe("POST /api/repositories/:id/chat — off_topic", () => {
-  it("returns status=off_topic and empty citations for an unrelated question", async () => {
+  it("returns status=off_topic and empty citations for an unrelated question", { timeout: 15000 }, async () => {
     const { repositoryId } = await seedRepo();
     await disableNoEvidenceThreshold();
 

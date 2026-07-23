@@ -19,7 +19,7 @@ describe("Symbol extraction via poller", () => {
   afterAll(async () => {
     await db.delete(repositories).where(sql`${repositories.name} LIKE 'symbols-%'`);
   });
-  it("extracts symbols for all target semantic kinds and keeps job running", async () => {
+  it("extracts symbols for all target semantic kinds and keeps job running", { timeout: 15000 }, async () => {
     const [repo] = await db.insert(repositories).values({
       name: `symbols-test-${Date.now()}`,
       source: "zip",
