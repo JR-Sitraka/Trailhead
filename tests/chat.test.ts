@@ -55,25 +55,27 @@ function resetGenaiMock() {
   genaictx.genRespCount = 0;
 }
 
-vi.mock("@google/genai", () => {
-  const FakeGenAI: any = class FakeGoogleGenAI {
+vi.mock("groq-sdk", () => {
+  const FakeGroq: any = class FakeGroq {
     constructor(..._args: any[]) {
       genaictx.genRespCount++;
       return {
-        models: {
-          generateContent: async () => {
-            if (genaictx.rejectStatus !== null) {
-              const err: any = new Error(genaictx.rejectMessage);
-              err.status = genaictx.rejectStatus;
-              throw err;
-            }
-            return { text: genaictx.responseText };
+        chat: {
+          completions: {
+            create: async () => {
+              if (genaictx.rejectStatus !== null) {
+                const err: any = new Error(genaictx.rejectMessage);
+                err.status = genaictx.rejectStatus;
+                throw err;
+              }
+              return { choices: [{ message: { content: genaictx.responseText } }] };
+            },
           },
         },
       };
     }
   };
-  return { GoogleGenAI: FakeGenAI };
+  return { default: FakeGroq };
 });
 
 // ---------------------------------------------------------------------------
@@ -473,6 +475,110 @@ describe("POST /api/repositories/:id/chat — malformed JSON response → 502", 
     await disableNoEvidenceThreshold();
 
     setGenaiAnswer("I'm sorry, I cannot answer that question.");
+
+    const { resp, body } = await makeChatRequest(repositoryId, {
+      question: "Where is express imported?",
+    });
+    expect(resp.status).toBe(502);
+    expect(body.error).toBe("Generation provider error");
+  });
+});
+
+// ===========================================================================
+// E2E: syntactically-valid JSON but wrong shape → 502 (json_object mode
+// guarantees valid JSON syntax but NOT schema compliance)
+// ===========================================================================
+describe("POST /api/repositories/:id/chat — valid JSON, wrong shape → 502", () => {
+  it("returns 502 when the model returns schema-compliant JSON without a status field", async () => {
+    const { repositoryId } = await seedRepo();
+    await disableNoEvidenceThreshold();
+
+    setGenaiAnswer('{"answer":"Express is imported on line 1.","citations":[1]}');
+
+    const { resp, body } = await makeChatRequest(repositoryId, {
+      question: "Where is express imported?",
+    });
+    expect(resp.status).toBe(502);
+    expect(body.error).toBe("Generation provider error");
+  });
+
+  it("returns 502 when the model returns an unexpected status value", async () => {
+    const { repositoryId } = await seedRepo();
+    await disableNoEvidenceThreshold();
+
+    setGenaiAnswer('{"status":"bogus","answer":"N/A","citations":[]}');
+
+    const { resp, body } = await makeChatRequest(repositoryId, {
+      question: "Where is express imported?",
+    });
+    expect(resp.status).toBe(502);
+    expect(body.error).toBe("Generation provider error");
+  });
+});
+
+// ===========================================================================
+// E2E: successful answered response with valid citations
+// ===========================================================================
+describe("POST /api/repositories/:id/chat — answered with valid citations", () => {
+  it("returns status=answered with resolved citations", async () => {
+    const { repositoryId, fileId } = await seedRepo();
+    await disableNoEvidenceThreshold();
+
+    setGenaiAnswer(
+      '{"status":"answered","answer":"Express is imported on line 1 from the express package.","citations":[1]}'
+    );
+
+    const { resp, body } = await makeChatRequest(repositoryId, {
+      question: "Where is express imported?",
+    });
+    expect(resp.status).toBe(200);
+    expect(body.status).toBe("answered");
+    expect(body.answer).toBeTruthy();
+    expect(body.citations).toHaveLength(1);
+    expect(body.citations[0].fileId).toBe(fileId);
+    expect(body.citations[0].startLine).toBe(4);
+    expect(body.citations[0].endLine).toBe(7);
+  });
+});
+
+// ===========================================================================
+// E2E: generation failure → 502 via the Groq SDK error shape
+// Groq surfaces errors with e.status (not e.statusCode). The chat.ts catch
+// block normalises (e.status ?? e.statusCode ?? 500) to 502 with a fresh
+// Error, and the route returns 502 with "Generation provider error".
+// ===========================================================================
+describe("POST /api/repositories/:id/chat — Groq error shape → 502", () => {
+  it("maps a Groq-style 404 (invalid model, e.status=404) to 502 — not 500", async () => {
+    const { repositoryId } = await seedRepo();
+    await disableNoEvidenceThreshold();
+
+    setGenaiReject(404, "Not Found: model does not exist");
+
+    const { resp, body } = await makeChatRequest(repositoryId, {
+      question: "Where is express imported?",
+    });
+    expect(resp.status).toBe(502);
+    expect(body.error).toBe("Generation provider error");
+  });
+
+  it("maps a Groq-style 429 (e.status=429, e.statusCode absent) to 502 via e.status fallback", async () => {
+    const { repositoryId } = await seedRepo();
+    await disableNoEvidenceThreshold();
+
+    setGenaiReject(429, "RESOURCE_EXHAUSTED");
+
+    const { resp, body } = await makeChatRequest(repositoryId, {
+      question: "Where is express imported?",
+    });
+    expect(resp.status).toBe(502);
+    expect(body.error).toBe("Generation provider error");
+  });
+
+  it("normalises a 500 provider error to 502 (consistent treatment of all GenAI failures)", async () => {
+    const { repositoryId } = await seedRepo();
+    await disableNoEvidenceThreshold();
+
+    setGenaiReject(500, "INTERNAL — Groq server error");
 
     const { resp, body } = await makeChatRequest(repositoryId, {
       question: "Where is express imported?",

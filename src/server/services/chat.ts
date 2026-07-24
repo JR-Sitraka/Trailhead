@@ -2,7 +2,7 @@ import { db } from "@/server/db";
 import { embeddingChunks, files } from "@/server/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { generateEmbeddings } from "./embeddings";
-import { GoogleGenAI } from "@google/genai";
+import Groq from "groq-sdk";
 
 export interface ChatRequest {
   question: string;
@@ -29,7 +29,7 @@ function getNoEvidenceThreshold(): number {
   return noEvidenceThresholdOverride ?? NO_EVIDENCE_THRESHOLD;
 }
 
-const GEMINI_MODEL = "gemini-2.5-flash";
+const GROQ_MODEL = "llama-3.3-70b-versatile";
 
 export function validateQuestion(question: string): void {
   const trimmed = question.trim();
@@ -114,9 +114,9 @@ export async function generateAnswer(
   chunks: Array<{ id: string; fileId: string; startLine: number; endLine: number }>,
   history: ChatRequest["history"]
 ): Promise<{ status: "answered" | "off_topic" | "no_evidence"; answer: string; citations: number[] }> {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    return { status: "no_evidence", answer: "Generation not configured: GEMINI_API_KEY is missing.", citations: [] };
+    return { status: "no_evidence", answer: "Generation not configured: GROQ_API_KEY is missing.", citations: [] };
   }
 
   const chunksWithText = await Promise.all(
@@ -146,25 +146,18 @@ export async function generateAnswer(
     `{ "status": "no_evidence", "answer": "<explanation>", "citations": [] }\n\n` +
     `Evidence chunks:\n${labeledEvidence}${historySection}\n\nQuestion: ${question}\n\nRespond now with only a JSON object.`;
 
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = new Groq({ apiKey });
 
   try {
-    const response = await ai.models.generateContent({
-      model: GEMINI_MODEL,
-      contents: prompt,
-      config: {
-        responseSchema: {
-          type: "object",
-          properties: {
-            status: { type: "string", enum: ["answered", "off_topic", "no_evidence"] },
-            answer: { type: "string" },
-            citations: { type: "array", items: { type: "integer" } },
-          },
-          required: ["status", "answer", "citations"],
-        },
-      },
-    });
-    const rawText = response.text;
+    const chatResponse = (await ai.chat.completions.create({
+      model: GROQ_MODEL,
+      messages: [
+        { role: "user", content: prompt },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.2,
+    })) as any;
+    const rawText = chatResponse.choices?.[0]?.message?.content;
     if (typeof rawText !== "string" || !rawText.trim()) {
       const err: any = new Error("Generation returned empty response text");
       err.status = 502;
@@ -197,10 +190,9 @@ export async function generateAnswer(
     };
   } catch (e: any) {
     const status = (e.status ?? e.statusCode ?? 500) as number;
-    if ([429, 500, 502, 503, 504].includes(status)) {
-      throw e;
-    }
-    throw e;
+    const err: any = new Error(e.message ?? "Generation provider error");
+    err.status = 502;
+    throw err;
   }
 }
 
