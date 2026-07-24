@@ -250,6 +250,20 @@ corrected, not silently deleted.
   Reverted generation model to gemini-2.5-flash. Lesson: verify
   third-party free-tier API claims against a real call, same standard
   already applied to this project's own environment assumptions.
+- [2026-07-22] CORRECTED: this project's actual Google AI Studio
+  project shows a real RPD ceiling of 20 for BOTH gemini-2.5-flash AND
+  gemini-3.5-flash (confirmed via the live Rate Limits dashboard, not
+  just error payloads) — not the 1,500 RPD documented broadly online.
+  This is NOT a 3.5-Flash-specific issue; the earlier revert to 2.5
+  Flash did not fix the underlying constraint. Likely cause: Google
+  often applies a lower "cold start" quota to unverified/no-billing
+  projects than the publicly documented ceiling. A "Set up billing"
+  banner is visible directly above the rate-limit table in AI Studio
+  — investigate whether enabling billing (without necessarily
+  incurring cost, if usage stays within free-tier request pricing)
+  raises the real quota. Until resolved, treat 20 req/day as this
+  project's actual operating ceiling for real-API testing, not 1,500 —
+  budget test rounds accordingly.
 
 ## Project hard rules
 

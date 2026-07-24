@@ -53,6 +53,37 @@ the model ID string throughout `chat.ts` and its tests. No other
 code/architecture change — the swap is exactly as cheap as ADR-004's
 original "one internal abstraction" design intended it to be.
 
+**Update (2026-07-22, fourth):** Switching generation provider from
+Gemini entirely to **Groq (llama-3.3-70b-versatile)**. Root cause: the
+actual Google AI Studio account backing this project has a real RPD
+ceiling of 20 for ALL Gemini Flash models (confirmed via the live
+Rate Limits dashboard, not just error payloads) — not the 1,500
+documented broadly, and not specific to 3.5 Flash as first suspected.
+The path to raising it (enabling billing) is blocked by a known,
+currently-unresolved Google-side bug (error OR_BACR2_44), reported by
+multiple developers on Google's own forums over several months with
+no fix timeline. 20 req/day is not workable for iterative development
+— this project alone exhausted it multiple times in a single evening
+of test runs.
+
+Groq chosen over OpenRouter for this switch: directly confirmed
+higher, real free-tier ceiling (~1,000 RPD / 30 RPM, OpenAI-compatible
+request format), no additional provider-routing layer needed, and
+`chat.ts`'s existing structure (single internal abstraction, JSON
+response parsing already implemented) ports over with a client swap,
+not a redesign — again validating ADR-004's original "swap should be
+a config change" design goal. Real tradeoff, stated honestly: an
+open-weight model (Llama 3.3 70B) versus a proprietary frontier model
+— instruction-following quality on Ask's strict evidence-grounded
+citation task is being verified for real in this switch, not assumed
+equivalent.
+
+**Consequence:** @google/genai and GEMINI_API_KEY are no longer used
+by chat.ts. groq-sdk + GROQ_API_KEY replace them. Prior real Gemini
+verification evidence (JSON-parsing fix, citation validation, off_topic
+handling) remains valid as proof the surrounding pipeline logic is
+correct — only the generation-call layer itself changes.
+
 **Context:** MVP-B Slice 1 introduces this project's first
 LLM-dependent work — semantic retrieval and grounded-answer generation
 for the Ask screen. The PRD locks a zero-spend cost constraint (Slice
