@@ -286,6 +286,20 @@ corrected, not silently deleted.
   distances, not engineered near-ties) but worth knowing: "the same
   question asked twice" is not guaranteed to retrieve in bit-identical
   order for genuinely close candidates.
+- [2026-07-23] Tailwind v4's @theme block uses kebab-case custom
+  property names (--color-text-muted), which become kebab-case utility
+  classes (text-muted, bg-text-muted) — NOT the camelCase used in the
+  original Magic Patterns mocks' v3-style JS configs (textMuted). This
+  is correct and intentional, not a naming inconsistency to "fix" —
+  CSS custom properties don't support camelCase the way JS object keys
+  do. Confirmed consistent end-to-end in WorkspaceHeader.tsx.
+- [2026-07-23] As of this entry, zero repositories in trailhead_dev
+  have ever reached status='ready' — every 'ready' repository that
+  exists anywhere was created via vitest test runs against
+  trailhead_test. The full pipeline has never been exercised through
+  a real npm run dev session end-to-end. WorkspaceHeader's success/
+  analyzing/failed pill colors and real-SHA rendering are unverified
+  against real dev-server data as a result.
 
 ## Project hard rules
 
