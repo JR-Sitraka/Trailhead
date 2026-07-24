@@ -14,6 +14,11 @@ export const repositories = pgTable("repositories", {
   source: sourceTypeEnum("source").notNull(),
   sourceUrl: text("source_url"),
   commitSha: varchar("commit_sha", { length: 64 }),
+  primaryLanguage: varchar("primary_language", { length: 64 }),
+  framework: varchar("framework", { length: 64 }),
+  packageManager: varchar("package_manager", { length: 32 }),
+  buildTool: varchar("build_tool", { length: 64 }),
+  testFrameworkSummary: text("test_framework_summary"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull()
 });

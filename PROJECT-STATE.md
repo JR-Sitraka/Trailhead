@@ -4,74 +4,62 @@
 `orchestrator.md`'s mid-project session handoff procedure.**
 
 ## Product
-**Trailhead** — Repository Intelligence Platform. Backend (full
-pipeline + Ask/Chat + Symbols + Reanalyze) is complete and proven
-end-to-end through real running dev-server sessions, not just tests.
-Frontend has a working foundation (shared header, routing, canonical
-tokens); Dashboard's real content is next.
+**Trailhead** — Repository Intelligence Platform. Backend fully
+complete (import, preprocessing, symbols, embeddings, Ask/Chat,
+Symbols API, Reanalyze/Delete). Frontend: foundation + Dashboard both
+complete and real-verified. Six workspace screens remain placeholders.
 
 ## Phase
-**Reanalyze feature genuinely complete**, closing two long-deferred
-gaps from Step D2 (AnalysisJob lookup ordering, delete-and-replace
-semantics). Took three separate interrupted Kilo Code sessions to
-land — all real work preserved and correctly resumed each time, none
-lost. Real E2E proof: a live reanalyze on `sindresorhus/got` showed
-genuine `ready→analyzing→ready` transitions and confirmed every
-Symbol/EmbeddingChunk row got fresh IDs (old data genuinely replaced,
-not just recounted) — under real ~16-minute CPU-bound processing time,
-not a mocked shortcut.
+**Dashboard is the first fully complete, real, end-to-end screen in
+this project** — real data, real Import/Delete/Reanalyze wiring, real
+409 handling, real dual-cadence polling (fast + baseline), every
+accessibility detail from the approved mock preserved.
 
 ## Where everything actually lives
-- **Full backend (import, preprocessing, symbols, embeddings, Ask/
-  Chat, Symbols API, Reanalyze, Delete):** all complete, all committed,
-  all real.
-- **Frontend foundation:** canonical tokens, WorkspaceHeader, routing
-  shell — done, verified against real pipeline data.
-- **`links.md`:** all 7 approved Magic Patterns screens' real source
-  already pulled into this conversation's history, ready to hand to
-  Kilo Code per-screen.
+- **Full backend + UI-Foundation-1 (tokens, WorkspaceHeader,
+  routing):** complete, committed, real — see prior rounds.
+- **Dashboard** (`src/components/repository/`): List, Import, Delete,
+  Reanalyze all real-wired. Two independent polling mechanisms (5s
+  fast / 30s baseline) both real-verified via dev-server request logs.
+  `src/app/page.tsx` renders it.
+- **`links.md`:** real source for all 7 approved screens already
+  pulled into this conversation's history — Overview, Explorer,
+  Symbols, Search, Chat, Export still need their real ports.
 
 ## Key decisions
-*(Unchanged, plus:)* Reanalyze does NOT implement mid-job cancellation
-— Delete returns 409 against any active job, full stop, rather than
-building a real abort/cancel mechanism (deliberately scoped out,
-stated explicitly). Delete-and-replace clears Symbol/EmbeddingChunk
-rows before new parsing starts (not after success, per
-architecture.md's original framing) — File rows are kept as re-
-parseable input; a failed reanalysis leaves analysis output empty but
-raw file content intact, a stated, deliberate tradeoff for
-implementation simplicity over strict failure-safety.
+*(Unchanged, plus:)* Dashboard's GitHub-import branch selector was
+deliberately dropped (no real endpoint exists to fetch a repo's real
+branch list before import) — real backend default-branch behavior is
+used instead. Polling uses two independent effects (fast/conditional,
+baseline/unconditional) rather than one — deliberate, not accidental
+complexity.
 
 ## Open questions
-- **Dashboard is the next real target** — entry point, self-contained,
-  every endpoint it needs (List/Import/Delete/Reanalyze) now genuinely
-  exists and works.
-- `tests/reanalysis.test.ts`'s fresh-import test has a known, logged
-  timing-dependency fragility (see `KNOWN-GOOD.md`) — not urgent, real
-  future hardening candidate.
-- All prior open items unchanged: per-screen frontend content
-  (Overview/Explorer/Symbols/Search/Chat/Export all still
-  placeholders), Symbols' kind-badge colors (deferred to that
-  screen's task), hover-modifier visual confirmation, Gemini quota
-  (dormant, Groq primary), screen-reader behavior, `/export/context`
+- **Six workspace screens still placeholders** — Overview, Explorer,
+  Symbols, Search, Chat, Export. Real Magic Patterns source for all
+  six already pulled and available in this conversation's history.
+- Symbols' 5 kind-badge colors — deferred to that screen's task.
+- All prior open items unchanged: hover-modifier visual confirmation,
+  Gemini quota (dormant), screen-reader behavior, `/export/context`
   fallback test, questions-only context-blending, repo cleanup,
-  branch-selector logic, corrupt-ZIP string-matching fragility,
-  codeload.github.com's separate rate limit, embedding cross-call
-  non-determinism.
+  corrupt-ZIP string-matching fragility, embedding cross-call
+  non-determinism, `tests/reanalysis.test.ts`'s known timing fragility.
 
 ## Current blocker
 None.
 
 ## Last completed action
-Reanalyze feature's fresh-import regression guard confirmed genuinely
-reliable (10/10 real reruns, mechanistically explained via real
-source-code timing analysis) — 2026-07-24.
+Dashboard fully closed — baseline poll added and real-verified for
+externally-created repositories, all four API integrations proven end
+to end — 2026-07-24.
 
 ## Next valid moves
-1. **Dashboard's real content** — real source already pulled from
-   Magic Patterns, all backend endpoints now exist. Natural next task.
-2. Then the six workspace screens in user-facing order.
+1. **Repository Overview** — natural next screen (first workspace tab,
+   real source already pulled, real backend data — `File.category`,
+   framework detection — already exists).
+2. Then Explorer → Symbols → Search → Chat → Export, in user-facing
+   order.
 
 ## Files changed last round
-- `KNOWN-GOOD.md` (reanalyze test fragility logged)
+- `KNOWN-GOOD.md` (baseline poll, lucide-react brand-icon removal)
 - `PROJECT-STATE.md` (this file)

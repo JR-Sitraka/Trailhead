@@ -4,6 +4,7 @@ import { eq, sql } from "drizzle-orm";
 import { extractSymbols, type ExtractedSymbol } from "./services/symbols";
 import { computeChunkRanges, sliceChunkText } from "./services/embeddingChunker";
 import { generateEmbeddings } from "./services/embeddings";
+import { detectStackFacts } from "./services/stackFacts";
 
 // Scope limit (stated, not silently dropped): function kind only covers
 // top-level function declarations, top-level const/let arrow-function and
@@ -31,6 +32,10 @@ export async function runAnalysisPhases(jobId: string): Promise<void> {
     sql`${files.repositoryId} = ${repositoryId} AND ${files.skipped} = false AND ${files.content} IS NOT NULL AND ${files.language} IN ('typescript', 'javascript')`
   ).orderBy(files.path);
 
+  const allFiles = await db.select().from(files).where(
+    sql`${files.repositoryId} = ${repositoryId}`
+  );
+
   const allSymbols: Array<{ fileId: string; kind: "function" | "export" | "class" | "interface" | "import"; name: string; startLine: number; endLine: number }> = [];
 
   for (const file of jobFiles) {
@@ -53,6 +58,23 @@ export async function runAnalysisPhases(jobId: string): Promise<void> {
   if (allSymbols.length > 0) {
     await db.insert(symbols).values(allSymbols);
   }
+
+  const stackFacts = detectStackFacts(
+    allFiles.map(f => ({
+      path: f.path,
+      language: f.language,
+      skipped: f.skipped,
+      content: f.content
+    }))
+  );
+
+  await db.update(repositories).set({
+    primaryLanguage: stackFacts.primaryLanguage,
+    framework: stackFacts.framework,
+    packageManager: stackFacts.packageManager,
+    buildTool: stackFacts.buildTool,
+    testFrameworkSummary: stackFacts.testFrameworkSummary
+  }).where(eq(repositories.id, repositoryId));
 
   await db.update(analysisJobs).set({ parsingCompletedAt: new Date() }).where(eq(analysisJobs.id, jobId));
 
