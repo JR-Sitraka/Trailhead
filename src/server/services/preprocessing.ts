@@ -397,9 +397,11 @@ export async function validateZipSafety(zipBuffer: Buffer, sourceId: string): Pr
         try {
           const fd = fs.openSync(filePath, "r");
           const headerBuf = Buffer.alloc(16);
-          fs.readSync(fd, headerBuf, 0, 16, 0);
+          const bytesRead = fs.readSync(fd, headerBuf, 0, 16, 0);
           fs.closeSync(fd);
-          isBinaryByContent = detectBinaryBySignature(headerBuf);
+          isBinaryByContent = detectBinaryBySignature(
+            bytesRead > 0 ? headerBuf.slice(0, bytesRead) : Buffer.alloc(0)
+          );
         } catch {
           // ignore read errors
         }

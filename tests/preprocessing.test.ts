@@ -167,4 +167,50 @@ describe("validateZipSafety", () => {
     ]);
     await expect(validateZipSafety(zip, "test-symlink-abs")).rejects.toThrow(SecurityError);
   }, 10000);
+
+  it("does not flag realistic text files as binary — readme.md, .eslintrc.json, tsconfig.json", async () => {
+    const readme = `# Trailhead Project\n\nWelcome to the Trailhead project.\n\n## Features\n\n- GitHub repository import\n- Code analysis and symbol extraction\n- AI-powered Q&A over codebases\n\n## Getting Started\n\n\`\`\`bash\nnpm install\nnpm run dev\n\`\`\`\n`;
+    const eslintrc = JSON.stringify(
+      {
+        extends: ["eslint:recommended"],
+        parser: "@typescript-eslint/parser",
+        env: { node: true, es2021: true },
+        rules: { semi: ["error", "always"] },
+      },
+      null,
+      2
+    );
+    const tsconfig = JSON.stringify(
+      {
+        compilerOptions: { target: "ES2022", module: "NodeNext", strict: true },
+        include: ["src/**/*"],
+      },
+      null,
+      2
+    );
+    const zip = createZip([
+      { name: "readme.md", content: readme },
+      { name: ".eslintrc.json", content: eslintrc },
+      { name: "tsconfig.json", content: tsconfig },
+    ]);
+    const result = await validateZipSafety(zip, "test-text-no-binary");
+    for (const f of result.files) {
+      expect(f.skipReason).not.toBe("binary_file");
+    }
+    expect(result.files.some((f) => f.path === "readme.md" && !f.skipped)).toBe(true);
+    expect(result.files.some((f) => f.path === ".eslintrc.json" && !f.skipped)).toBe(true);
+    expect(result.files.some((f) => f.path === "tsconfig.json" && !f.skipped)).toBe(true);
+  }, 10000);
+
+  it("does not flag short text files as binary due to null-byte padding in read buffer", async () => {
+    const zip = createZip([
+      { name: "readme.md", content: "hello world" },
+      { name: ".eslintrc.json", content: "{}" },
+      { name: "tsconfig.json", content: '{"compilerOptions":{}}' },
+    ]);
+    const result = await validateZipSafety(zip, "test-short-text-no-binary");
+    for (const f of result.files) {
+      expect(f.skipReason).not.toBe("binary_file");
+    }
+  }, 10000);
 });
