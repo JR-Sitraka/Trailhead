@@ -83,7 +83,7 @@ export async function retrieveChunks(
       SELECT id, file_id, start_line, end_line, cosine_distance(embedding, ${vectorStr}::vector) AS cosine_distance
       FROM ${embeddingChunks}
       WHERE repository_id = ${repositoryId}
-      ORDER BY cosine_distance ASC
+      ORDER BY cosine_distance ASC, id ASC
       LIMIT ${K}
     `
   );
