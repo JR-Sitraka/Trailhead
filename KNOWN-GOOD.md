@@ -264,6 +264,13 @@ corrected, not silently deleted.
   raises the real quota. Until resolved, treat 20 req/day as this
   project's actual operating ceiling for real-API testing, not 1,500 —
   budget test rounds accordingly.
+- [2026-07-23] GEMINI_API_KEY in .env is now invalid (API_KEY_INVALID,
+  confirmed via real error, not quota-related) — a change from earlier
+  the same session when it worked. tests/gemini-generation.test.ts is
+  a historical proof-of-environment artifact only; Ask/Chat now runs
+  on Groq. Not investigated further — doesn't block anything. If ever
+  revisited, check whether the key was inadvertently regenerated in
+  AI Studio during the earlier rate-limit/billing investigation.
 
 ## Project hard rules
 

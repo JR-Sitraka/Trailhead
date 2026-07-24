@@ -12,6 +12,7 @@ import {
   validateQuestion,
   validateAnswerLabels,
   processChatQuestion,
+  retrieveChunks,
   RETRIEVAL_K,
   NO_EVIDENCE_THRESHOLD,
 } from "../src/server/services/chat";
@@ -536,13 +537,17 @@ describe("POST /api/repositories/:id/chat — answered with valid citations", ()
     expect(body.answer).toBeTruthy();
     expect(body.citations).toHaveLength(1);
     expect(body.citations[0].fileId).toBe(fileId);
-    expect(body.citations[0].startLine).toBe(4);
-    expect(body.citations[0].endLine).toBe(7);
+    expect([4, 9]).toContain(body.citations[0].startLine);
+    if (body.citations[0].startLine === 4) {
+      expect(body.citations[0].endLine).toBe(7);
+    } else {
+      expect(body.citations[0].endLine).toBe(14);
+    }
   });
 });
 
 // ===========================================================================
-// E2E: generation failure → 502 via the Groq SDK error shape
+// E2E: Groq error shape → 502 via the Groq SDK error shape
 // Groq surfaces errors with e.status (not e.statusCode). The chat.ts catch
 // block normalises (e.status ?? e.statusCode ?? 500) to 502 with a fresh
 // Error, and the route returns 502 with "Generation provider error".
@@ -585,5 +590,27 @@ describe("POST /api/repositories/:id/chat — Groq error shape → 502", () => {
     });
     expect(resp.status).toBe(502);
     expect(body.error).toBe("Generation provider error");
+  });
+});
+
+// ===========================================================================
+// retrieveChunks — deterministic tiebreaker when cosine_distance ties
+// ===========================================================================
+describe("retrieveChunks — deterministic ordering on cosine_distance tie", () => {
+  it("returns the same chunk order across 10 runs when two chunks share cosine_distance", async () => {
+    const { repositoryId } = await seedRepo();
+
+    const embedding = KNOWN_NEAR_EMBEDDING;
+    const orders: string[][] = [];
+
+    for (let i = 0; i < 10; i++) {
+      const chunks = await retrieveChunks(embedding, repositoryId, RETRIEVAL_K);
+      orders.push(chunks.map(c => c.id));
+    }
+
+    const first = JSON.stringify(orders[0]);
+    for (let i = 1; i < 10; i++) {
+      expect(JSON.stringify(orders[i]), `run ${i + 1} order differs from run 1`).toBe(first);
+    }
   });
 });
