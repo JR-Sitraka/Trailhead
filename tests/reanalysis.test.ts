@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "../src/server/db";
 import {
@@ -21,7 +21,7 @@ const PREFIX = `reanalysis-${Date.now()}`;
 // ---------------------------------------------------------------------------
 async function getRepos(): Promise<Response> {
   const request = new NextRequest("http://localhost/api/repositories");
-  return GetRepos(request);
+  return GetRepos();
 }
 
 async function getRepo(id: string): Promise<Response> {

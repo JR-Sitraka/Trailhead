@@ -4,84 +4,74 @@
 `orchestrator.md`'s mid-project session handoff procedure.**
 
 ## Product
-**Trailhead** — Repository Intelligence Platform. Backend (MVP-A
-pipeline + Ask/Chat + Symbols API) is complete and proven end-to-end,
-including now through a real running dev server, not just tests.
-Frontend foundation is built; per-screen content is next.
+**Trailhead** — Repository Intelligence Platform. Backend (full
+pipeline + Ask/Chat + Symbols + Reanalyze) is complete and proven
+end-to-end through real running dev-server sessions, not just tests.
+Frontend has a working foundation (shared header, routing, canonical
+tokens); Dashboard's real content is next.
 
 ## Phase
-**UI-Foundation-1 complete and verified.** Canonical Tailwind v4
-tokens (reconciled from two naming eras across the 7 approved
-screens), real shared WorkspaceHeader (real data, real navigation),
-real routing shell for all 6 workspace tabs + Dashboard placeholder.
-Verified against a real repository that completed the full pipeline
-through `npm run dev` itself — first genuine end-to-end run outside
-of vitest all session.
+**Reanalyze feature genuinely complete**, closing two long-deferred
+gaps from Step D2 (AnalysisJob lookup ordering, delete-and-replace
+semantics). Took three separate interrupted Kilo Code sessions to
+land — all real work preserved and correctly resumed each time, none
+lost. Real E2E proof: a live reanalyze on `sindresorhus/got` showed
+genuine `ready→analyzing→ready` transitions and confirmed every
+Symbol/EmbeddingChunk row got fresh IDs (old data genuinely replaced,
+not just recounted) — under real ~16-minute CPU-bound processing time,
+not a mocked shortcut.
 
 ## Where everything actually lives
-- **Backend (Steps A–D2, Ask/Chat, Symbols API):** all complete,
-  all committed, all real — see prior rounds.
-- **Frontend foundation:** `src/app/globals.css` (canonical `@theme`
-  tokens, kebab-case per Tailwind v4's CSS-first config — NOT the
-  camelCase used in the original Magic Patterns mocks, this is
-  correct/intentional, see `KNOWN-GOOD.md`), `src/components/
-  WorkspaceHeader.tsx` (real data via Server Component layout),
-  `src/app/repositories/[id]/layout.tsx` + six placeholder tab pages,
-  `src/app/page.tsx` (Dashboard placeholder).
-- **`links.md`** (repo root) has all 7 verified Magic Patterns URLs
-  for the approved screens — real code already pulled and read for
-  Dashboard, Overview, Explorer, Symbols, Search, Chat, Export.
-  Real source content for all 7 is in this conversation's own
-  history, ready to hand to Kilo Code per-screen without re-fetching.
+- **Full backend (import, preprocessing, symbols, embeddings, Ask/
+  Chat, Symbols API, Reanalyze, Delete):** all complete, all committed,
+  all real.
+- **Frontend foundation:** canonical tokens, WorkspaceHeader, routing
+  shell — done, verified against real pipeline data.
+- **`links.md`:** all 7 approved Magic Patterns screens' real source
+  already pulled into this conversation's history, ready to hand to
+  Kilo Code per-screen.
 
 ## Key decisions
-*(Unchanged, plus:)* Frontend token naming is kebab-case (Tailwind v4
-`@theme` requirement), canonical scheme is the one Chat/Export's mocks
-used (matches `design-tokens.md`'s documented prose), not the older
-naming Dashboard/Overview/Explorer/Symbols/Search's mocks used —
-values were identical across both, naming reconciliation only.
+*(Unchanged, plus:)* Reanalyze does NOT implement mid-job cancellation
+— Delete returns 409 against any active job, full stop, rather than
+building a real abort/cancel mechanism (deliberately scoped out,
+stated explicitly). Delete-and-replace clears Symbol/EmbeddingChunk
+rows before new parsing starts (not after success, per
+architecture.md's original framing) — File rows are kept as re-
+parseable input; a failed reanalysis leaves analysis output empty but
+raw file content intact, a stated, deliberate tradeoff for
+implementation simplicity over strict failure-safety.
 
 ## Open questions
-- **Per-screen content is next** — Dashboard, Overview, Explorer,
-  Symbols, Search, Chat, Export all still need their real content
-  ported (currently placeholder pages) and wired to real backend
-  endpoints (all of which already exist and work).
-- Symbols' 5 kind-badge colors (function/class/interface/import/
-  export) — deliberately not added as global tokens, deferred to
-  whichever task actually builds the Symbols screen content.
-- Hover-state modifier values (`primary/90` etc. replacing the old
-  mocks' separate hover hex tokens) — not yet visually confirmed
-  against the original mock's exact hover shade, low-risk, worth a
-  glance when that screen's interactions get built.
-- All prior open items unchanged: shared Gemini quota risk (dormant
-  now that Groq is primary), Symbols/Search person-verification,
-  screen-reader behavior across Ask/Chat/Export, `/export/context`
-  fallback-correctness test, questions-only context-blending,
-  cross-screen retrofit sweep pattern (now actively avoided by
-  extracting WorkspaceHeader once, worth confirming this pattern
-  holds as more screens get built), repo cleanup, branch-selector
-  logic, corrupt-ZIP catch's string-matching fragility, AnalysisJob
-  lookup ordering (deferred to Reanalyze), codeload.github.com's
-  separate rate limit, embedding cross-call non-determinism.
+- **Dashboard is the next real target** — entry point, self-contained,
+  every endpoint it needs (List/Import/Delete/Reanalyze) now genuinely
+  exists and works.
+- `tests/reanalysis.test.ts`'s fresh-import test has a known, logged
+  timing-dependency fragility (see `KNOWN-GOOD.md`) — not urgent, real
+  future hardening candidate.
+- All prior open items unchanged: per-screen frontend content
+  (Overview/Explorer/Symbols/Search/Chat/Export all still
+  placeholders), Symbols' kind-badge colors (deferred to that
+  screen's task), hover-modifier visual confirmation, Gemini quota
+  (dormant, Groq primary), screen-reader behavior, `/export/context`
+  fallback test, questions-only context-blending, repo cleanup,
+  branch-selector logic, corrupt-ZIP string-matching fragility,
+  codeload.github.com's separate rate limit, embedding cross-call
+  non-determinism.
 
 ## Current blocker
 None.
 
 ## Last completed action
-UI-Foundation-1 verified end-to-end against a real repository
-(sindresorhus/got) that completed the full pipeline through a real
-`npm run dev` session — real screenshots confirm status pill, SHA
-display, and tab navigation all working correctly — 2026-07-23.
+Reanalyze feature's fresh-import regression guard confirmed genuinely
+reliable (10/10 real reruns, mechanistically explained via real
+source-code timing analysis) — 2026-07-24.
 
 ## Next valid moves
-1. **Dashboard's real content** — natural next screen (entry point,
-   self-contained, real `GET/POST/DELETE /api/repositories` already
-   built and proven). Real source already pulled from Magic Patterns
-   in this conversation's history.
-2. Then the six workspace screens, roughly in the order a user would
-   actually encounter them: Overview → Explorer → Symbols → Search →
-   Chat → Export.
+1. **Dashboard's real content** — real source already pulled from
+   Magic Patterns, all backend endpoints now exist. Natural next task.
+2. Then the six workspace screens in user-facing order.
 
 ## Files changed last round
-- `KNOWN-GOOD.md` (real end-to-end pipeline confirmation)
+- `KNOWN-GOOD.md` (reanalyze test fragility logged)
 - `PROJECT-STATE.md` (this file)

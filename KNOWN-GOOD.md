@@ -324,6 +324,21 @@ corrected, not silently deleted.
   audit-trail assertion instead of a live poll-timing check — do NOT
   fix by simply raising the timeout, that would mask rather than solve
   the real observability gap.
+- [2026-07-24] Dashboard's polling has two independent mechanisms:
+  fast poll (5s, only runs while local state has an active repo) and
+  baseline poll (30s, runs unconditionally on mount) — the fast poll
+  alone can't discover repositories created outside the Dashboard's
+  own Add-repository flow (another tab, direct API calls); the
+  baseline poll exists specifically to catch those. Both real-verified
+  via dev-server request logs, not headless browser automation (which
+  hung for 85+ minutes on an earlier attempt — avoid CDP/headless
+  Chrome for this kind of check going forward, npm run dev's own
+  request logging is sufficient and far more reliable for this
+  project's verification needs).
+- [2026-07-24] lucide-react 1.0 removed all brand icons (GitHub,
+  Facebook, Figma, Slack, etc.) for legal/licensing reasons — GithubIcon
+  is not available; use an inline SVG instead. Real, dated change
+  (June 2026), not a version mix-up.
 
 ## Project hard rules
 
