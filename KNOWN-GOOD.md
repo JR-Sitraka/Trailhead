@@ -300,6 +300,30 @@ corrected, not silently deleted.
   a real npm run dev session end-to-end. WorkspaceHeader's success/
   analyzing/failed pill colors and real-SHA rendering are unverified
   against real dev-server data as a result.
+- [2026-07-23] CONFIRMED (was open gap): a real repository
+  (sindresorhus/got, id 0aa69121-92ad-4750-af26-97ccbd3dbf2a) has now
+  completed the full pipeline through a real npm run dev session —
+  first genuine end-to-end proof outside of vitest. WorkspaceHeader's
+  ready/success pill color and real commitSha display both confirmed
+  correct via real browser screenshots. One real parse error was hit
+  and correctly isolated (source/index.ts skipped, job completed
+  anyway) — the first real-world (non-fixture) confirmation that
+  Step C's per-file error isolation works as designed.
+- [2026-07-24] tests/reanalysis.test.ts's fresh-import analyzing-
+  checkpoint test relies on real WASM (web-tree-sitter) + ONNX
+  (transformers.js) cold-start latency (900ms+ per real 10-run
+  confirmation) comfortably exceeding its 50ms poll window — not a
+  deterministic guarantee. The underlying correctness IS guaranteed
+  architecturally (poller.ts sets status='analyzing' synchronously
+  before any processing begins, confirmed via source read) — only the
+  TEST's ability to observe the window is timing-dependent. One rare
+  failure (out of many runs across this session) is unreproduced after
+  10/10 clean reruns; plausible one-off system I/O caching effect, not
+  a logic bug. Future hardening candidate (not urgent): redesign this
+  specific test with either a heavier real fixture or a post-hoc
+  audit-trail assertion instead of a live poll-timing check — do NOT
+  fix by simply raising the timeout, that would mask rather than solve
+  the real observability gap.
 
 ## Project hard rules
 

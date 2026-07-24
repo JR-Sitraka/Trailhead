@@ -32,11 +32,16 @@ async function parseFormData(request: NextRequest): Promise<{ source: "github" |
 export async function GET() {
   try {
     const allRepos = await db.select().from(repositories).orderBy(desc(repositories.createdAt));
-    const jobs = await db.select().from(analysisJobs);
-    const jobMap = new Map(jobs.map((j) => [j.repositoryId, j]));
+    const allJobs = await db.select().from(analysisJobs).orderBy(desc(analysisJobs.createdAt));
+    const latestJobByRepo = new Map<string, typeof allJobs[0]>();
+    for (const j of allJobs) {
+      if (!latestJobByRepo.has(j.repositoryId)) {
+        latestJobByRepo.set(j.repositoryId, j);
+      }
+    }
     const result = allRepos.map((r) => ({
       ...r,
-      analysisJob: jobMap.get(r.id) || null
+      analysisJob: latestJobByRepo.get(r.id) || null
     }));
     return NextResponse.json(result);
   } catch (error) {

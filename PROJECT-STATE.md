@@ -4,78 +4,84 @@
 `orchestrator.md`'s mid-project session handoff procedure.**
 
 ## Product
-**Trailhead** — Repository Intelligence Platform. MVP-A and MVP-B are
-both fully planned end-to-end. Backend implementation has made major
-progress; frontend remains entirely unbuilt.
+**Trailhead** — Repository Intelligence Platform. Backend (MVP-A
+pipeline + Ask/Chat + Symbols API) is complete and proven end-to-end,
+including now through a real running dev server, not just tests.
+Frontend foundation is built; per-screen content is next.
 
 ## Phase
-**MVP-A's analysis pipeline (import → ready) plus a first real MVP-B
-feature (Ask/Chat) are both genuinely complete on the backend.** The
-Symbols API endpoint is also done. Everything is real, tested, and
-committed. **No frontend UI exists anywhere in this project** — every
-screen so far is a Magic Patterns mock, never built as real Next.js
-UI or wired to any of these real, working APIs.
+**UI-Foundation-1 complete and verified.** Canonical Tailwind v4
+tokens (reconciled from two naming eras across the 7 approved
+screens), real shared WorkspaceHeader (real data, real navigation),
+real routing shell for all 6 workspace tabs + Dashboard placeholder.
+Verified against a real repository that completed the full pipeline
+through `npm run dev` itself — first genuine end-to-end run outside
+of vitest all session.
 
 ## Where everything actually lives
-- **Steps A–D2 (import, preprocessing, symbol extraction, embeddings,
-  Repository.status='ready'):** all closed, all committed, all real.
-- **Ask/Chat (Slice 1, first real MVP-B feature):** fully implemented
-  — retrieval, citation-label validation, generation. Originally built
-  against Gemini; switched to **Groq (llama-3.3-70b-versatile)**
-  tonight after discovering this project's actual Google account has
-  a real 20 req/day ceiling on all Gemini Flash models (not the 1,500
-  documented broadly), blocked from raising via a known,
-  currently-unresolved Google billing bug (OR_BACR2_44). Groq proven
-  working end-to-end with real API calls, real citation resolution,
-  and a real deterministic-ordering fix for a genuine (if narrow)
-  retrieval tiebreaker bug.
-- **GET /api/repositories/:id/symbols:** done, server-side kind
-  filtering verified via direct DB comparison, zero-symbols case
-  handled correctly.
-- **KNOWN-GOOD.md** carries the full accumulated environment/
-  implementation knowledge from tonight's entire arc — required
-  reading before any further backend work.
+- **Backend (Steps A–D2, Ask/Chat, Symbols API):** all complete,
+  all committed, all real — see prior rounds.
+- **Frontend foundation:** `src/app/globals.css` (canonical `@theme`
+  tokens, kebab-case per Tailwind v4's CSS-first config — NOT the
+  camelCase used in the original Magic Patterns mocks, this is
+  correct/intentional, see `KNOWN-GOOD.md`), `src/components/
+  WorkspaceHeader.tsx` (real data via Server Component layout),
+  `src/app/repositories/[id]/layout.tsx` + six placeholder tab pages,
+  `src/app/page.tsx` (Dashboard placeholder).
+- **`links.md`** (repo root) has all 7 verified Magic Patterns URLs
+  for the approved screens — real code already pulled and read for
+  Dashboard, Overview, Explorer, Symbols, Search, Chat, Export.
+  Real source content for all 7 is in this conversation's own
+  history, ready to hand to Kilo Code per-screen without re-fetching.
 
 ## Key decisions
-*(Unchanged, plus:)* Generation provider is now Groq, not Gemini — see
-ADR-004's fourth addendum for full reasoning. `retrieveChunks` uses
-`ORDER BY cosine_distance ASC, id ASC` for deterministic tiebreaking.
+*(Unchanged, plus:)* Frontend token naming is kebab-case (Tailwind v4
+`@theme` requirement), canonical scheme is the one Chat/Export's mocks
+used (matches `design-tokens.md`'s documented prose), not the older
+naming Dashboard/Overview/Explorer/Symbols/Search's mocks used —
+values were identical across both, naming reconciliation only.
 
 ## Open questions
-- **Frontend is entirely unbuilt** — this is the largest real gap in
-  the project right now, not a minor item. Every screen exists only
-  as a Magic Patterns mock from early in the project; none are wired
-  to any real backend endpoint.
-- `tests/gemini-generation.test.ts` is a historical proof-of-
-  environment artifact only — GEMINI_API_KEY is now genuinely invalid
-  (confirmed real API_KEY_INVALID error, not quota-related); not
-  investigated further since Ask/Chat no longer depends on it.
-- All prior open items unchanged: Symbols/Search person-verification,
-  Symbols' zero-symbols empty state (now backend-verified, still
-  needs real UI verification once frontend exists), screen-reader
-  behavior across Ask/Chat/Export, `/export/context` fallback-
-  correctness test, questions-only context-blending, cross-screen
-  retrofit sweep pattern, repo cleanup (stray zip fixtures /
-  tsconfig.tsbuildinfo), branch-selector logic, corrupt-ZIP catch's
-  string-matching fragility, AnalysisJob lookup ordering (deferred to
-  Reanalyze), codeload.github.com's separate rate limit, embedding
-  cross-call non-determinism (see KNOWN-GOOD.md, not expected to
-  affect real usage).
+- **Per-screen content is next** — Dashboard, Overview, Explorer,
+  Symbols, Search, Chat, Export all still need their real content
+  ported (currently placeholder pages) and wired to real backend
+  endpoints (all of which already exist and work).
+- Symbols' 5 kind-badge colors (function/class/interface/import/
+  export) — deliberately not added as global tokens, deferred to
+  whichever task actually builds the Symbols screen content.
+- Hover-state modifier values (`primary/90` etc. replacing the old
+  mocks' separate hover hex tokens) — not yet visually confirmed
+  against the original mock's exact hover shade, low-risk, worth a
+  glance when that screen's interactions get built.
+- All prior open items unchanged: shared Gemini quota risk (dormant
+  now that Groq is primary), Symbols/Search person-verification,
+  screen-reader behavior across Ask/Chat/Export, `/export/context`
+  fallback-correctness test, questions-only context-blending,
+  cross-screen retrofit sweep pattern (now actively avoided by
+  extracting WorkspaceHeader once, worth confirming this pattern
+  holds as more screens get built), repo cleanup, branch-selector
+  logic, corrupt-ZIP catch's string-matching fragility, AnalysisJob
+  lookup ordering (deferred to Reanalyze), codeload.github.com's
+  separate rate limit, embedding cross-call non-determinism.
 
 ## Current blocker
 None.
 
 ## Last completed action
-GET /api/repositories/:id/symbols implemented and verified; embedding
-non-determinism finding logged — 2026-07-23.
+UI-Foundation-1 verified end-to-end against a real repository
+(sindresorhus/got) that completed the full pipeline through a real
+`npm run dev` session — real screenshots confirm status pill, SHA
+display, and tab navigation all working correctly — 2026-07-23.
 
 ## Next valid moves
-1. **Export (Slice 2a)** — reuses Ask's retrieval/generation
-   machinery directly, now proven on Groq.
-2. **Start real frontend implementation** — the largest, most
-   visible gap. Every backend endpoint built tonight has zero UI.
-3. Opportunistically: everything in Open questions above.
+1. **Dashboard's real content** — natural next screen (entry point,
+   self-contained, real `GET/POST/DELETE /api/repositories` already
+   built and proven). Real source already pulled from Magic Patterns
+   in this conversation's history.
+2. Then the six workspace screens, roughly in the order a user would
+   actually encounter them: Overview → Explorer → Symbols → Search →
+   Chat → Export.
 
 ## Files changed last round
-- `KNOWN-GOOD.md` (embedding non-determinism finding)
+- `KNOWN-GOOD.md` (real end-to-end pipeline confirmation)
 - `PROJECT-STATE.md` (this file)

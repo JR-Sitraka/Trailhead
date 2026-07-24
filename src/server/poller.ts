@@ -22,6 +22,11 @@ export async function runAnalysisPhases(jobId: string): Promise<void> {
     return;
   }
 
+  await db.delete(symbols).where(
+    sql`${symbols.fileId} IN (SELECT ${files.id} FROM ${files} WHERE ${files.repositoryId} = ${repositoryId})`
+  );
+  await db.delete(embeddingChunks).where(eq(embeddingChunks.repositoryId, repositoryId));
+
   const jobFiles = await db.select().from(files).where(
     sql`${files.repositoryId} = ${repositoryId} AND ${files.skipped} = false AND ${files.content} IS NOT NULL AND ${files.language} IN ('typescript', 'javascript')`
   ).orderBy(files.path);
@@ -102,31 +107,40 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export async function pollOnce(scopeRepositoryId?: string): Promise<void> {
-  try {
-    const [job] = await db.execute(
-      sql`
-        UPDATE ${analysisJobs}
-        SET status = 'running', updated_at = now()
-        WHERE id = (
-          SELECT id FROM ${analysisJobs}
-           WHERE status = 'queued'
-             ${scopeRepositoryId ? sql`AND repository_id = ${scopeRepositoryId}` : sql``}
-           ORDER BY created_at ASC
-           LIMIT 1
-           FOR UPDATE SKIP LOCKED
-        )
-        RETURNING id
-      `
-    );
-
-    if (!job) return;
-
-    const jobId = job.id as string;
-
+  export async function pollOnce(scopeRepositoryId?: string): Promise<void> {
     try {
-      await runAnalysisPhases(jobId);
-    } catch (e) {
+      const [job] = await db.execute(
+        sql`
+          UPDATE ${analysisJobs}
+          SET status = 'running', updated_at = now()
+          WHERE id = (
+            SELECT id FROM ${analysisJobs}
+             WHERE status = 'queued'
+               ${scopeRepositoryId ? sql`AND ${analysisJobs.repositoryId} = ${scopeRepositoryId}` : sql``}
+             ORDER BY created_at ASC
+             LIMIT 1
+             FOR UPDATE SKIP LOCKED
+          )
+          RETURNING id, repository_id
+        `
+      );
+
+      if (!job) {
+        console.log("[poller] pollOnce: no queued job picked up");
+        return;
+      }
+
+      const jobId = job.id as string;
+      const repositoryId = (job as any).repository_id as string;
+      console.log("[poller] picked up job", jobId, "for repo", repositoryId);
+
+      await db.update(repositories).set({ status: "analyzing" }).where(eq(repositories.id, repositoryId));
+      console.log("[poller] set repo to analyzing");
+
+      try {
+        await runAnalysisPhases(jobId);
+        console.log("[poller] runAnalysisPhases completed");
+      } catch (e) {
       console.error(`[poller] runAnalysisPhases failed for job ${jobId}:`, e);
       await db.update(analysisJobs).set({ status: "failed" }).where(eq(analysisJobs.id, jobId));
     }
