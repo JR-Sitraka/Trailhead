@@ -271,6 +271,21 @@ corrected, not silently deleted.
   on Groq. Not investigated further — doesn't block anything. If ever
   revisited, check whether the key was inadvertently regenerated in
   AI Studio during the earlier rate-limit/billing investigation.
+- [2026-07-23] transformers.js/onnxruntime-node's CPU backend is NOT
+  bit-exact deterministic across SEPARATE invocations, even though a
+  single process/test embedding the same text twice showed
+  MAX DIFF: 0 (see the D1 proof, earlier this session). Real
+  confirmed case: retrieveChunks's ORDER BY cosine_distance ASC, id
+  ASC tiebreaker is correctly deterministic given identical inputs,
+  but the QUERY embedding itself varies by tiny floating-point amounts
+  between real request calls (likely ONNX Runtime's multi-threaded
+  execution changing summation order between runs) — enough to flip
+  which of two near-identically-distant chunks ranks first, in an
+  artificially-tied test fixture. Not expected to affect real
+  retrieval quality (genuine chunks have meaningfully different
+  distances, not engineered near-ties) but worth knowing: "the same
+  question asked twice" is not guaranteed to retrieve in bit-identical
+  order for genuinely close candidates.
 
 ## Project hard rules
 
