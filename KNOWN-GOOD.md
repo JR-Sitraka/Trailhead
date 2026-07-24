@@ -339,6 +339,33 @@ corrected, not silently deleted.
   Facebook, Figma, Slack, etc.) for legal/licensing reasons — GithubIcon
   is not available; use an inline SVG instead. Real, dated change
   (June 2026), not a version mix-up.
+- [2026-07-24] Fixed real bug in preprocessing.ts's binary-content
+  detection: the on-disk header-read path always passed a full
+  Buffer.alloc(16) (zero-initialized) to detectBinaryBySignature(),
+  even when fs.readSync returned fewer than 16 bytes for short files —
+  the null-byte tail pushed short, genuinely-text files (e.g. an
+  11-byte "hello world") over the 30% null-byte threshold, falsely
+  flagging them binary_file. Fixed by slicing to the real bytesRead
+  count before the check. Real DB check confirmed zero currently-
+  imported repositories were affected (bug only manifested on files
+  shorter than 16 bytes, rare in practice). Found via Overview's real
+  verification round using a test fixture with unrealistically short
+  file content — a good reminder that "realistic" test fixtures
+  (not just minimal/empty ones) sometimes matter for catching real
+  edge-case bugs, not just for readability.
+- [2026-07-25] Explorer's earlier verification round used manually
+  seeded test data (scripts/seed-explorer-test.ts, since deleted) that
+  looked like real pipeline output but wasn't — a hardcoded
+  skipReason: "binary_file" on .gitignore, never actually produced by
+  preprocessing.ts. Re-verified with a genuine fresh import
+  (sindresorhus/got, post binary-detection-fix): real pipeline
+  correctly leaves .gitignore (54 bytes, short text) unskipped, and
+  correctly skips genuinely binary files (.ai/.png/.sketch). .svg is
+  also skipped — via the file-extension list, not content-sniffing,
+  a separate and likely intentional behavior (SVGs are commonly
+  treated as opaque/binary despite being XML) — not yet explicitly
+  confirmed as a deliberate product decision, just noting it's a
+  different code path than the bug that was just fixed.
 
 ## Project hard rules
 
