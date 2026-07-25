@@ -33,7 +33,30 @@ export async function POST(
       return NextResponse.json({ error: "Missing required field: question (string)" }, { status: 400 });
     }
 
-    const resolvedHistory: Array<{ question: string; answer: string | null; citations: Array<{ fileId: string; path: string; startLine: number; endLine: number }> }> = Array.isArray(history) ? history : [];
+    if (history !== undefined && !Array.isArray(history)) {
+      return NextResponse.json({ error: "history must be an array" }, { status: 400 });
+    }
+
+    const resolvedHistory: Array<{ question: string; answer: string | null; citations: Array<{ fileId: string; path: string; startLine: number; endLine: number }> }> = [];
+
+    if (Array.isArray(history)) {
+      for (let i = 0; i < history.length; i++) {
+        const entry = history[i];
+        if (
+          typeof entry !== 'object' ||
+          entry === null ||
+          typeof (entry as any).question !== 'string' ||
+          ((entry as any).answer !== null && typeof (entry as any).answer !== 'string') ||
+          !Array.isArray((entry as any).citations)
+        ) {
+          return NextResponse.json(
+            { error: `Malformed history entry at index ${i}` },
+            { status: 400 }
+          );
+        }
+        resolvedHistory.push(entry as any);
+      }
+    }
 
     const trimmedQuestion = question.trim();
     if (!trimmedQuestion) {
@@ -41,13 +64,6 @@ export async function POST(
     }
     if (trimmedQuestion.length > 500) {
       return NextResponse.json({ error: "Question must be at most 500 characters" }, { status: 400 });
-    }
-
-    if (resolvedHistory.length > 0) {
-      return NextResponse.json(
-        { error: "Non-empty history is not supported in this slice. Send an empty array." },
-        { status: 422 }
-      );
     }
 
     try {

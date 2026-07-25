@@ -338,18 +338,65 @@ describe("POST /api/repositories/:id/chat — 400 over-length", () => {
 });
 
 // ===========================================================================
-// E2E: 422 non-empty history (Slice 1 — always reject before retrieval)
+// Multi-turn: valid history is accepted and forwarded to processChatQuestion
 // ===========================================================================
-describe("POST /api/repositories/:id/chat — 422 non-empty history (Slice 1)", () => {
-  it("returns 422 for non-empty history without calling generation", async () => {
+describe("POST /api/repositories/:id/chat — valid history (Slice 2b)", () => {
+  it("returns 200 with valid history; generation is called", async () => {
+    const { repositoryId } = await seedRepo();
+    await disableNoEvidenceThreshold();
+
+    setGenaiAnswer(
+      '{"status":"answered","answer":"Express is imported on line 1.","citations":[1]}'
+    );
+
+    const { resp, body } = await makeChatRequest(repositoryId, {
+      question: "Where is express imported?",
+      history: [
+        { question: "first", answer: null, citations: [] },
+      ],
+    });
+    expect(resp.status).toBe(200);
+    expect(body.status).toBe("answered");
+    expect(genaictx.genRespCount).toBe(1);
+  });
+});
+
+// ===========================================================================
+// Multi-turn: malformed history shape is rejected with 400
+// ===========================================================================
+describe("POST /api/repositories/:id/chat — malformed history (Slice 2b)", () => {
+  it("returns 400 for missing question field in history entry", async () => {
     const { repositoryId } = await seedRepo();
 
     const { resp, body } = await makeChatRequest(repositoryId, {
       question: "anything",
-      history: [{ question: "prev", answer: null, citations: [] }],
+      history: [{ answer: null, citations: [] }] as any,
     });
-    expect(resp.status).toBe(422);
-    expect(body.error).toContain("history");
+    expect(resp.status).toBe(400);
+    expect(body.error).toContain("history entry");
+    expect(genaictx.genRespCount).toBe(0);
+  });
+
+  it("returns 400 for invalid answer type (number instead of string|null)", async () => {
+    const { repositoryId } = await seedRepo();
+
+    const { resp, body } = await makeChatRequest(repositoryId, {
+      question: "anything",
+      history: [{ question: "prev", answer: 42, citations: [] }] as any,
+    });
+    expect(resp.status).toBe(400);
+    expect(body.error).toContain("history entry");
+    expect(genaictx.genRespCount).toBe(0);
+  });
+
+  it("returns 400 when history is not an array", async () => {
+    const { repositoryId } = await seedRepo();
+
+    const { resp } = await makeChatRequest(repositoryId, {
+      question: "anything",
+      history: "bad" as any,
+    });
+    expect(resp.status).toBe(400);
     expect(genaictx.genRespCount).toBe(0);
   });
 });

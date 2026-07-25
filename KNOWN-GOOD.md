@@ -401,6 +401,18 @@ corrected, not silently deleted.
   this is the actual safety net, not the prompt's reliability alone.
   Worth revisiting if real usage shows the model skipping markers more
   than occasionally.
+- [2026-07-25] Reanalyze's delete-and-replace logic wiped
+  sindresorhus/got's 2,479 embeddings mid-session when it was
+  reanalyzed for an unrelated verification — this is correct, expected
+  behavior (not a bug), but it's a real illustration that this
+  project's dev-database fixture data is NOT stable across rounds.
+  A repository confirmed to have real data in one round can lose it
+  later if any reanalyze/delete-and-replace-triggering action touches
+  it, even indirectly. Don't assume a repository's data still matches
+  an earlier round's description — check directly before relying on
+  it for verification. openai/DALL-E (7cf3a196, 22 chunks, 11 real
+  Python files) is a real, currently-populated fixture as of this
+  entry.
 
 ## Project hard rules
 
