@@ -377,6 +377,22 @@ corrected, not silently deleted.
   inserted" test repository proves frontend rendering only, never
   real pipeline behavior — same caution as Explorer's earlier
   seed-explorer-test.ts finding.
+- [2026-07-25] PostgreSQL's 'english' tsvector config does NOT split
+  camelCase identifiers — "getPayments" tokenizes as one indivisible
+  lexeme, so an FTS query for "payments" alone (stemmed to
+  'payment':*) returns zero matches. Confirmed via real Postgres
+  query, not assumed from architecture.md's stated reasoning. This is
+  why Search's exact-substring (ILIKE) pass is load-bearing, not
+  redundant with FTS — most real code-search queries (function/
+  variable names) will only match via the exact pass, not FTS.
+- [2026-07-25] Frontend component testing infrastructure added
+  (@testing-library/react, @testing-library/user-event, happy-dom;
+  vitest.config.ts extended to include tests/**/*.test.tsx). First
+  real usage: tests/search-page.test.tsx, including a genuine race-
+  condition proof (stale debounced response resolving after a newer
+  one, confirming only the latest result renders). Available for any
+  future screen needing real component-level test coverage, not just
+  API/dev-server verification.
 
 ## Project hard rules
 
