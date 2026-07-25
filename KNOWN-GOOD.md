@@ -366,6 +366,17 @@ corrected, not silently deleted.
   treated as opaque/binary despite being XML) — not yet explicitly
   confirmed as a deliberate product decision, just noting it's a
   different code path than the bug that was just fixed.
+- [2026-07-25] Symbols' zero-symbols empty state genuinely verified
+  end-to-end for the first time (openai/DALL-E, a real 5-file Python
+  repo, real import → real poller completion → real GET returning
+  [] → real "No symbols found" render). A prior attempt this same
+  round used a manually-seeded DB row instead of a real import — that
+  only proved the frontend renders an empty array correctly, not that
+  the real pipeline genuinely produces zero symbols for a real
+  non-TS/JS repository. Worth remembering: a "seeded" or "manually
+  inserted" test repository proves frontend rendering only, never
+  real pipeline behavior — same caution as Explorer's earlier
+  seed-explorer-test.ts finding.
 
 ## Project hard rules
 
