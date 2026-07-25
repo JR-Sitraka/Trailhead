@@ -454,6 +454,29 @@ corrected, not silently deleted.
   remapped by position, when the array's own membership/order isn't
   guaranteed sequential, is a latent bug class — check for this
   pattern elsewhere if new citation-like features get built.
+- [2026-07-25] A hung/interrupted `next build` (e.g. from Claude Code's
+  background-task execution taking 46+ minutes) can leave node
+  processes running that hold locks on .next/'s build cache — any
+  subsequent build attempt then hangs indefinitely with ZERO output,
+  even before "Creating an optimized production build..." appears.
+  Fix: kill all node processes (Get-Process node | Stop-Process
+  -Force) AND delete .next/ before retrying — killing processes alone
+  wasn't enough, the stale cache also needed clearing. If a future
+  build hangs with no output at all (not just slow), check for stray
+  node processes first before assuming a real code problem.
+- [2026-07-25] chat.test.ts's citation-label-preservation test was
+  flaky (1/5 isolated runs) — not a production bug. retrieveChunks's
+  `ORDER BY cosine_distance ASC, id ASC` IS genuinely deterministic
+  given fixed row IDs (already proven separately, 10/10). The flake
+  was the TEST fixture using identical embeddings for multiple chunks
+  (to force a tie), combined with fresh random UUIDs generated on
+  every test run — meaning WHICH chunk won the tie varied by run even
+  though the tiebreak rule itself never changed. Fixed by giving the
+  test's extra file a genuinely distinct embedding instead of relying
+  on tie-order. Lesson: any test deliberately constructing identical-
+  embedding ties should use fixed/seeded IDs if the test's assertions
+  depend on a specific row winning, not just rely on the ordering rule
+  being deterministic in the abstract.
 
 ## Project hard rules
 

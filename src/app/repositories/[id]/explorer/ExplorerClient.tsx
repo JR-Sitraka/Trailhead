@@ -8,6 +8,7 @@ import {
   ChevronRightIcon,
   AlertTriangleIcon,
 } from 'lucide-react';
+import { highlightCode, mapToShikiLang, type HighlightedLines } from '@/lib/shiki';
 
 type TreeNode =
   | { type: 'folder'; name: string; path: string; children: TreeNode[] }
@@ -165,6 +166,8 @@ export default function ExplorerClient({ repoId, initialFiles }: ExplorerClientP
   const [skipReason, setSkipReason] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [highlightedLines, setHighlightedLines] = useState<HighlightedLines | null>(null);
+  const [highlightError, setHighlightError] = useState(false);
 
   const handleToggle = useCallback((path: string) => {
     setExpanded(prev => {
@@ -196,6 +199,8 @@ export default function ExplorerClient({ repoId, initialFiles }: ExplorerClientP
     }
 
     setLoading(true);
+    setHighlightedLines(null);
+    setHighlightError(false);
     try {
       const encodedPath = encodeURIComponent(path);
       const res = await fetch(`/api/repositories/${repoId}/files/${encodedPath}`);
@@ -207,6 +212,14 @@ export default function ExplorerClient({ repoId, initialFiles }: ExplorerClientP
       }
       const data: FileContentResponse = await res.json();
       setFileContent(data.content);
+      const highlighted = await highlightCode(data.content, data.language);
+      if (highlighted) {
+        setHighlightedLines({ lines: highlighted.lines, highlighterError: highlighted.highlighterError });
+        setHighlightError(highlighted.highlighterError);
+      } else {
+        setHighlightedLines(null);
+        setHighlightError(false);
+      }
     } catch {
       setError('Network error loading file content');
     } finally {
@@ -269,16 +282,23 @@ export default function ExplorerClient({ repoId, initialFiles }: ExplorerClientP
         {fileContent && !isSkippedSelected && !loading && !error && (
           <table className="w-full border-collapse">
             <tbody>
-              {fileContent.split('\n').map((line, index) => (
-                <tr key={index} className="hover:bg-surface-hover/50">
-                  <td className="w-12 select-none border-r border-border-muted py-0 pr-3 text-right font-mono text-xs text-text-muted">
-                    {index + 1}
-                  </td>
-                  <td className="whitespace-pre py-0 pl-3 font-mono text-[13px] text-text-primary/90">
-                    {escapeHtml(line)}
-                  </td>
-                </tr>
-              ))}
+                {(highlightedLines ? highlightedLines.lines : fileContent.split('\n')).map((lineHtml, index) => (
+                  <tr key={index} className="hover:bg-surface-hover/50">
+                    <td className="w-12 select-none border-r border-border-muted py-0 pr-3 text-right font-mono text-xs text-text-muted">
+                      {index + 1}
+                    </td>
+                    {highlightedLines ? (
+                      <td
+                        className="whitespace-pre py-0 pl-3 font-mono text-[13px] text-text-primary/90"
+                        dangerouslySetInnerHTML={{ __html: lineHtml }}
+                      />
+                    ) : (
+                      <td className="whitespace-pre py-0 pl-3 font-mono text-[13px] text-text-primary/90">
+                        {lineHtml}
+                      </td>
+                    )}
+                  </tr>
+                ))}
             </tbody>
           </table>
         )}

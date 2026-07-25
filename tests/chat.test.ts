@@ -108,6 +108,7 @@ const FILE_CONTENT = [
 // query text. Self-similarity (query uses this same vector when chunked via
 // generateEmbeddings in processChatQuestion) gives distance near 0.
 const KNOWN_NEAR_EMBEDDING = new Array(384).fill(0).map((_, i) => 0.2 + 0.001 * i);
+const EXTRA_FILE_EMBEDDING = new Array(384).fill(0).map((_, i) => 0.5 + 0.001 * i);
 
 beforeEach(() => {
   genaictx.genRespCount = 0;
@@ -613,7 +614,7 @@ describe("POST /api/repositories/:id/chat — answered with non-sequential citat
       repositoryId,
       startLine: 1,
       endLine: 2,
-      embedding: KNOWN_NEAR_EMBEDDING,
+      embedding: EXTRA_FILE_EMBEDDING,
     });
 
     setGenaiAnswer(
