@@ -1,7 +1,5 @@
-export default function SymbolsPage() {
-  return (
-    <div className="py-8">
-      <h1 className="text-2xl font-semibold">Symbols</h1>
-    </div>
-  );
+import SymbolsClient from './SymbolsClient';
+
+export default async function SymbolsPage({ params }: { params: { id: string } }) {
+  return <SymbolsClient repoId={params.id} />;
 }
