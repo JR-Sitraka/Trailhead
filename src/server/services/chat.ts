@@ -180,7 +180,7 @@ export async function generateAnswer(
 
   const prompt =
     `You are a strict Q&A assistant for a code repository. Answer ONLY from the provided evidence chunks below. ` +
-    `Place each citation label in square brackets IMMEDIATELY after the relevant claim in your prose, e.g. 'validates tokens against the session store[1]'. ` +
+    `Place each citation label in square brackets IMMEDIATELY after the relevant claim in your prose. ` +
     `Do NOT collect citations into a separate list at the end. Every bracket label that appears in your answer text MUST also appear in the citations array. ` +
     `The labels are 1-indexed mapping to the chunks in order.\n\n` +
     `Respond with JSON in exactly this shape:\n` +

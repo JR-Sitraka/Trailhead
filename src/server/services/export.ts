@@ -3,6 +3,7 @@ import { repositories, files, symbols, embeddingChunks } from "@/server/db/schem
 import { eq, and, sql } from "drizzle-orm";
 import { embedQuestion, retrieveChunks } from "@/server/services/chat";
 import { generateEmbeddings } from "./embeddings";
+import Groq from "groq-sdk";
 
 export interface ExportJsonResponse {
   repository: {
@@ -129,6 +130,253 @@ export async function getExportJson(repositoryId: string): Promise<ExportJsonRes
     },
     notAnalyzed: notAnalyzedRows.map(r => ({ path: r.path, reason: r.skipReason })),
   };
+}
+
+export interface ContextSummaryResponse {
+  content: string;
+  generatedVia: "llm" | "deterministic-fallback";
+}
+
+const GROQ_MODEL = "llama-3.3-70b-versatile";
+
+const CONTEXT_SUMMARY_K = 8;
+
+export async function retrieveEntryPointChunks(repositoryId: string) {
+  const entrypointFileRows = await db.select({ id: files.id })
+    .from(files)
+    .where(and(
+      eq(files.repositoryId, repositoryId),
+      eq(files.category, "entrypoint")
+    ));
+
+  const entrypointFileIds = entrypointFileRows.map(r => r.id);
+
+  let chunks: Array<{ id: string; fileId: string; startLine: number; endLine: number }> = [];
+
+  if (entrypointFileIds.length > 0) {
+    const epChunks = await db.select({
+      id: embeddingChunks.id,
+      fileId: embeddingChunks.fileId,
+      startLine: embeddingChunks.startLine,
+      endLine: embeddingChunks.endLine,
+    })
+      .from(embeddingChunks)
+      .innerJoin(files, eq(embeddingChunks.fileId, files.id))
+      .where(and(
+        eq(embeddingChunks.repositoryId, repositoryId),
+        eq(files.category, "entrypoint")
+      ))
+      .limit(CONTEXT_SUMMARY_K);
+
+    chunks = epChunks;
+  }
+
+  if (chunks.length < 5) {
+    const importSymbolRows = await db.select({ fileId: symbols.fileId, count: sql<number>`COUNT(*)` })
+      .from(symbols)
+      .innerJoin(files, eq(symbols.fileId, files.id))
+      .where(and(
+        eq(files.repositoryId, repositoryId),
+        eq(symbols.kind, "import")
+      ))
+      .groupBy(symbols.fileId)
+      .orderBy(sql`count DESC`)
+      .limit(1);
+
+    if (importSymbolRows.length > 0) {
+      const centralFileId = importSymbolRows[0].fileId;
+      const existingFileIds = new Set(chunks.map(c => c.fileId));
+      if (!existingFileIds.has(centralFileId)) {
+        const extraChunks = await db.select({
+          id: embeddingChunks.id,
+          fileId: embeddingChunks.fileId,
+          startLine: embeddingChunks.startLine,
+          endLine: embeddingChunks.endLine,
+        })
+          .from(embeddingChunks)
+          .where(and(
+            eq(embeddingChunks.repositoryId, repositoryId),
+            eq(embeddingChunks.fileId, centralFileId)
+          ))
+          .limit(CONTEXT_SUMMARY_K - chunks.length);
+
+        chunks = [...chunks, ...extraChunks];
+      }
+    }
+  }
+
+  return chunks.map(c => ({
+    id: c.id,
+    fileId: c.fileId,
+    startLine: c.startLine,
+    endLine: c.endLine,
+  }));
+}
+
+export function buildDeterministicFallback(contextJson: ExportJsonResponse): string {
+  const lines: string[] = [];
+
+  lines.push(`# ${contextJson.repository.name}`);
+  lines.push("");
+  lines.push(`> **Source:** ${contextJson.repository.source}${contextJson.repository.sourceUrl ? ` — ${contextJson.repository.sourceUrl}` : ""}`);
+  if (contextJson.repository.commitSha) {
+    lines.push(`> **Commit:** ${contextJson.repository.commitSha}`);
+  }
+  lines.push("");
+
+  const stackParts: string[] = [];
+  if (contextJson.stack.primaryLanguage) {
+    stackParts.push(`primary language is **${contextJson.stack.primaryLanguage}**`);
+  } else {
+    stackParts.push(`primary language is not specified`);
+  }
+  if (contextJson.stack.framework) {
+    stackParts.push(`uses the **${contextJson.stack.framework}** framework`);
+  } else {
+    stackParts.push(`framework is not specified`);
+  }
+  if (contextJson.stack.packageManager) {
+    stackParts.push(`package manager is **${contextJson.stack.packageManager}**`);
+  } else {
+    stackParts.push(`package manager is not specified`);
+  }
+  if (contextJson.stack.buildTool) {
+    stackParts.push(`build tool is **${contextJson.stack.buildTool}**`);
+  } else {
+    stackParts.push(`build tool is not specified`);
+  }
+  if (contextJson.stack.testFrameworkSummary) {
+    stackParts.push(`test framework summary: **${contextJson.stack.testFrameworkSummary}**`);
+  } else {
+    stackParts.push(`test framework summary is not specified`);
+  }
+
+  lines.push("## Stack");
+  lines.push("");
+  lines.push(`This is a repository ${stackParts.join("; ")}.`);
+  lines.push("");
+
+  if (contextJson.entryPoints.length > 0) {
+    lines.push("## Entry Points");
+    lines.push("");
+    for (const ep of contextJson.entryPoints) {
+      lines.push(`- \`${ep.path}\``);
+    }
+    lines.push("");
+  }
+
+  if (contextJson.configFiles.length > 0) {
+    lines.push("## Configuration Files");
+    lines.push("");
+    for (const cf of contextJson.configFiles) {
+      lines.push(`- \`${cf.path}\``);
+    }
+    lines.push("");
+  }
+
+  if (contextJson.symbols.count > 0) {
+    lines.push("## Symbols");
+    lines.push("");
+    const byKind = contextJson.symbols.byKind;
+    const parts: string[] = [];
+    for (const [kind, count] of Object.entries(byKind)) {
+      parts.push(`${count} ${kind}(s)`);
+    }
+    lines.push(`Total symbols: **${contextJson.symbols.count}** (${parts.join(", ")}).`);
+    lines.push("");
+  }
+
+  if (contextJson.notAnalyzed.length > 0) {
+    lines.push("## Not Analyzed");
+    lines.push("");
+    for (const na of contextJson.notAnalyzed) {
+      const reason = na.reason ? ` (${na.reason})` : "";
+      lines.push(`- \`${na.path}\`${reason}`);
+    }
+    lines.push("");
+  }
+
+  return lines.join("\n").trim();
+}
+
+export async function generateContextSummary(repositoryId: string): Promise<ContextSummaryResponse> {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) {
+    const contextJson = await getExportJson(repositoryId);
+    return { content: buildDeterministicFallback(contextJson), generatedVia: "deterministic-fallback" };
+  }
+
+  const chunks = await retrieveEntryPointChunks(repositoryId);
+
+  if (chunks.length === 0) {
+    const contextJson = await getExportJson(repositoryId);
+    return { content: buildDeterministicFallback(contextJson), generatedVia: "deterministic-fallback" };
+  }
+
+  const contextJson = await getExportJson(repositoryId);
+
+  const chunksWithText = await Promise.all(
+    chunks.map(async (chunk) => {
+      const text = await reSliceChunkText(chunk.fileId, chunk.startLine, chunk.endLine);
+      return { ...chunk, text };
+    })
+  );
+
+  const labeledEvidence = chunksWithText
+    .map((chunk, i) => `[CHUNK ${i + 1}] file=${chunk.fileId} lines ${chunk.startLine}-${chunk.endLine}:\n${chunk.text}`)
+    .join("\n\n");
+
+  const prompt =
+    `You are a strict repository documentation assistant. Synthesize a concise, evidence-grounded prose summary of this repository from the provided evidence chunks. ` +
+    `Place each citation label in square brackets IMMEDIATELY after the relevant claim in your prose. ` +
+    `Do NOT collect citations into a separate list at the end. Every bracket label that appears in your answer text MUST also appear in the citations array. ` +
+    `The labels are 1-indexed mapping to the chunks in order.\n\n` +
+    `Respond with JSON in exactly this shape:\n` +
+    `{ "status": "answered", "answer": "<your prose summary with inline bracket citations>", "citations": [<integer labels of chunks you cited>] }\n` +
+    `OR, if you cannot produce a grounded summary from the evidence: ` +
+    `{ "status": "no_evidence", "answer": "<explanation>", "citations": [] }\n\n` +
+    `Evidence chunks:\n${labeledEvidence}\n\nRespond now with only a JSON object.`;
+
+  const ai = new Groq({ apiKey });
+
+  try {
+    const chatResponse = (await ai.chat.completions.create({
+      model: GROQ_MODEL,
+      messages: [
+        { role: "user", content: prompt },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.2,
+    })) as any;
+
+    const rawText = chatResponse.choices?.[0]?.message?.content;
+    if (typeof rawText !== "string" || !rawText.trim()) {
+      return { content: buildDeterministicFallback(contextJson), generatedVia: "deterministic-fallback" };
+    }
+
+    let parsed;
+    try {
+      parsed = JSON.parse(rawText) as { status: string; answer: string; citations: number[] };
+    } catch {
+      return { content: buildDeterministicFallback(contextJson), generatedVia: "deterministic-fallback" };
+    }
+
+    if (!parsed || parsed.status !== "answered") {
+      return { content: buildDeterministicFallback(contextJson), generatedVia: "deterministic-fallback" };
+    }
+
+    const citations: number[] = parsed.citations ?? [];
+    const validLabels = new Set(Array.from({ length: chunks.length }, (_, i) => i + 1));
+    const allValid = citations.every(label => Number.isInteger(label) && validLabels.has(label));
+
+    if (!allValid) {
+      return { content: buildDeterministicFallback(contextJson), generatedVia: "deterministic-fallback" };
+    }
+
+    return { content: parsed.answer ?? "", generatedVia: "llm" };
+  } catch {
+    return { content: buildDeterministicFallback(contextJson), generatedVia: "deterministic-fallback" };
+  }
 }
 
 export async function getTaskPacket(repositoryId: string, task: string): Promise<TaskPacketResult[]> {

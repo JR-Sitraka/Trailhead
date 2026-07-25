@@ -401,6 +401,30 @@ corrected, not silently deleted.
   this is the actual safety net, not the prompt's reliability alone.
   Worth revisiting if real usage shows the model skipping markers more
   than occasionally.
+- [2026-07-25] REAL, CONFIRMED LIMITATION (affects BOTH Chat and
+  Export/context equally): label-range citation validation proves that
+  every bracket label in the model's prose maps to a real, retrieved
+  EmbeddingChunk — but it does NOT prove that the prose surrounding
+  each label is actually grounded in that chunk's content. Confirmed
+  via live export/context call against sindresorhus/escape-string-regexp:
+  Groq returned a valid `answered` response with in-range citations
+  [1] and [3], but the prose contained the phrase "session store"
+  which appears nowhere in the retrieved evidence (index.js and
+  test.js). Root cause: the prompt contained a hardcoded illustrative
+  example `e.g. 'the session store[1]'` (and chat.ts had `e.g.
+  'validates tokens against the session store[1]'`) — the model
+  echoed example content into unrelated output. Fixed by removing the
+  concrete-content examples from both prompts (replaced with a bare
+  format instruction, no content-specific example). After the fix,
+  three consecutive live calls against the same repo produced
+  identical, fully-grounded output with no ungrounded claims.
+  Standing product limitation: even with prompt hygiene, the model
+  could still inject plausible-sounding but ungrounded prose between
+  valid citation labels. Label validation is a mechanical check, not
+  a semantic one. This is inherent to the current architecture and
+  should be documented honestly anywhere citation behavior is
+  described — it is not a bug to be fixed, but a known constraint of
+  the approach.
 - [2026-07-25] Reanalyze's delete-and-replace logic wiped
   sindresorhus/got's 2,479 embeddings mid-session when it was
   reanalyzed for an unrelated verification — this is correct, expected
