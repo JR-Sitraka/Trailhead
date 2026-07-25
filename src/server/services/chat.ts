@@ -16,6 +16,49 @@ export interface ChatCitation {
   endLine: number;
 }
 
+export interface InlineCitationSegment {
+  type: "text";
+  content: string;
+}
+
+export interface InlineCitationMarker {
+  type: "citation";
+  label: number;
+  citation: ChatCitation;
+}
+
+export type InlineCitationSegmentOrMarker = InlineCitationSegment | InlineCitationMarker;
+
+export function parseInlineCitations(
+  answer: string,
+  labelToCitation: Map<number, ChatCitation>
+): InlineCitationSegmentOrMarker[] {
+  const segments: InlineCitationSegmentOrMarker[] = [];
+  const regex = /\[(\d+)\]/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(answer)) !== null) {
+    if (match.index > lastIndex) {
+      segments.push({ type: "text", content: answer.slice(lastIndex, match.index) });
+    }
+    const label = parseInt(match[1], 10);
+    const citation = labelToCitation.get(label);
+    if (citation) {
+      segments.push({ type: "citation", label, citation });
+    } else {
+      segments.push({ type: "text", content: match[0] });
+    }
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < answer.length) {
+    segments.push({ type: "text", content: answer.slice(lastIndex) });
+  }
+
+  return segments;
+}
+
 export const RETRIEVAL_K = 8;
 
 export const NO_EVIDENCE_THRESHOLD = 0.7;
@@ -137,10 +180,11 @@ export async function generateAnswer(
 
   const prompt =
     `You are a strict Q&A assistant for a code repository. Answer ONLY from the provided evidence chunks below. ` +
-    `Cite every claim using integer labels in square brackets, e.g. [1], [3], referencing the chunk numbers as assigned below. ` +
+    `Place each citation label in square brackets IMMEDIATELY after the relevant claim in your prose, e.g. 'validates tokens against the session store[1]'. ` +
+    `Do NOT collect citations into a separate list at the end. Every bracket label that appears in your answer text MUST also appear in the citations array. ` +
     `The labels are 1-indexed mapping to the chunks in order.\n\n` +
     `Respond with JSON in exactly this shape:\n` +
-    `{ "status": "answered", "answer": "<your prose answer>", "citations": [<integer labels of chunks you cited>] }\n` +
+    `{ "status": "answered", "answer": "<your prose answer with inline bracket citations>", "citations": [<integer labels of chunks you cited>] }\n` +
     `OR, if the question is unrelated to the evidence: { "status": "off_topic", "answer": "<explanation>", "citations": [] }\n` +
     `OR, if the question cannot be answered from the evidence despite being on-topic: ` +
     `{ "status": "no_evidence", "answer": "<explanation>", "citations": [] }\n\n` +

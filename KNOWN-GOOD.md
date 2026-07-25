@@ -393,6 +393,14 @@ corrected, not silently deleted.
   one, confirming only the latest result renders). Available for any
   future screen needing real component-level test coverage, not just
   API/dev-server verification.
+- [2026-07-25] Chat's inline citation markers: 5/5 real Groq calls
+  produced correctly-placed bracket labels in prose. Small sample size
+  — treat as a good early signal, not a guaranteed 100% rate long-term.
+  The parseInlineCitations() function already degrades gracefully
+  (unmatched/malformed brackets render as plain text, not an error) —
+  this is the actual safety net, not the prompt's reliability alone.
+  Worth revisiting if real usage shows the model skipping markers more
+  than occasionally.
 
 ## Project hard rules
 
