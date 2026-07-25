@@ -1,14 +1,7 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'framer-motion';
-import {
-  CodeIcon,
-  FileIcon,
-  GitCommitHorizontalIcon,
-  RefreshCwIcon,
-  Trash2Icon,
-} from 'lucide-react';
+import { RefreshCwIcon, Trash2Icon, FileIcon, GitCommitHorizontalIcon } from 'lucide-react';
 import { StatusPill } from './StatusPill';
 import type { Repository } from './types';
 
@@ -20,10 +13,12 @@ function GithubIcon({ className }: { className?: string }) {
   );
 }
 
-// ROW_GRID: grid-template-columnums must align exactly with the header row
-// in Dashboard.tsx. Header columns: name | commitSha | lastAnalyzed |
-// status | actions — do not change one without changing the other.
-const ROW_GRID = 'grid grid-cols-[1fr_120px_140px_110px_1fr] items-center gap-4';
+// ROW_GRID: column widths MUST stay identical (string-for-string) to the
+// header row's grid template in Dashboard.tsx. CSS Grid auto-sizes each
+// grid container independently — two separate grids using the same
+// template syntax will NOT align with each other unless the explicit
+// widths match exactly.
+const ROW_GRID = 'grid grid-cols-[minmax(0,1.6fr)_110px_110px_140px_230px] items-center gap-4';
 
 interface RepoRowProps {
   repo: Repository;
@@ -31,69 +26,72 @@ interface RepoRowProps {
   onDelete: () => void;
 }
 
-const SOURCE_ICONS: Record<string, React.ReactNode> = {
-  github: <GithubIcon className="h-4 w-4 text-text-muted" />,
-  zip: <FileIcon className="h-4 w-4 text-text-muted" />,
-};
-
 export function RepoRow({ repo, onReanalyze, onDelete }: RepoRowProps) {
+  const shortSha = repo.commitSha ? repo.commitSha.slice(0, 7) : null;
+  const SourceIcon = repo.source === 'github' ? GithubIcon : FileIcon;
+
   return (
-    <motion.div
-      className={`${ROW_GRID} rounded-card border border-border-muted bg-surface px-4 py-3 transition-colors hover:bg-surface-hover`}
-      layout
-    >
-      {/* Name / path */}
-      <div className="flex min-w-0 items-center gap-3">
-        <div className="shrink-0">{SOURCE_ICONS[repo.source] ?? <CodeIcon className="h-4 w-4 text-text-muted" />}</div>
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-text-primary">{repo.name}</p>
-          <p className="truncate text-xs text-text-muted">{repo.path}</p>
-        </div>
+    <div className={`${ROW_GRID} px-4 py-3 transition-colors hover:bg-surface-hover`}>
+      {/* Repository column */}
+      <div className="flex min-w-0 items-center gap-2.5">
+        <SourceIcon className="h-4 w-4 shrink-0 text-text-muted" />
+        <span className="truncate text-sm font-medium text-text-primary">{repo.path}</span>
       </div>
 
-      {/* Commit SHA */}
-      <div className="flex items-center gap-1.5 overflow-hidden">
-        <GitCommitHorizontalIcon className="h-3.5 w-3.5 shrink-0 text-text-muted" />
-        <span className="truncate font-mono text-xs text-text-muted">
-          {repo.commitSha ? repo.commitSha.slice(0, 7) : '—'}
-        </span>
+      {/* Status column */}
+      <div className="justify-self-start">
+        <StatusPill status={repo.status} />
       </div>
 
-      {/* Last analyzed */}
-      <span className="truncate text-xs text-text-muted">{repo.lastAnalyzed}</span>
+      {/* Last commit column */}
+      <div className="justify-self-start">
+        {shortSha ? (
+          <span className="inline-flex items-center gap-1 font-mono text-[13px] text-text-muted">
+            <GitCommitHorizontalIcon className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+            {shortSha}
+          </span>
+        ) : (
+          <span className="font-mono text-[13px] text-text-muted/60">—</span>
+        )}
+      </div>
 
-      {/* Status pill */}
-      <StatusPill status={repo.status} />
+      {/* Updated column */}
+      <div className="justify-self-start text-xs text-text-muted">{repo.lastAnalyzed}</div>
 
-      {/* Actions */}
-      <div className="flex items-center justify-end gap-2">
+      {/* Actions column */}
+      <div className="flex items-center gap-2 justify-self-end">
         <a
           href={`/repositories/${repo.id}/overview`}
-          className={`rounded-control px-3 py-1.5 text-xs font-medium transition-colors ${
-            repo.status === 'ready'
-              ? 'border border-border-muted text-text-primary hover:bg-surface-hover'
-              : 'cursor-not-allowed border border-border-muted text-text-muted/50'
-          }`}
           aria-disabled={repo.status !== 'ready'}
           onClick={(e) => {
             if (repo.status !== 'ready') e.preventDefault();
           }}
+          className={`rounded-control px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 ${
+            repo.status === 'ready'
+              ? 'bg-primary text-white hover:bg-primary/90'
+              : 'cursor-not-allowed bg-primary/25 text-white/60'
+          }`}
         >
           Open
         </a>
         <button
+          type="button"
           onClick={onReanalyze}
-          className="rounded-control border border-border-muted px-3 py-1.5 text-xs font-medium text-text-muted transition-colors hover:bg-surface-hover hover:text-text-primary"
+          className="inline-flex items-center gap-1.5 rounded-control border border-border-muted bg-transparent px-3 py-1.5 text-xs font-medium text-text-primary transition-colors hover:border-text-muted/60 hover:bg-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
         >
-          <RefreshCwIcon className="h-3.5 w-3.5" />
+          <RefreshCwIcon className="h-3.5 w-3.5" strokeWidth={2} />
+          Reanalyze
         </button>
         <button
+          type="button"
           onClick={onDelete}
-          className="rounded-control border border-border-muted px-3 py-1.5 text-xs font-medium text-text-muted transition-colors hover:border-danger/50 hover:text-danger"
+          aria-label={`Delete ${repo.name}`}
+          title="Delete"
+          className="rounded-control p-1.5 text-text-muted transition-colors hover:bg-danger/10 hover:text-danger focus:outline-none focus-visible:ring-2 focus-visible:ring-danger/40"
         >
-          <Trash2Icon className="h-3.5 w-3.5" />
+          <Trash2Icon className="h-4 w-4" strokeWidth={2} />
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 }
