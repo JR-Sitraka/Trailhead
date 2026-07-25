@@ -14,6 +14,7 @@ export interface ChatCitation {
   path: string;
   startLine: number;
   endLine: number;
+  label: number;
 }
 
 export interface InlineCitationSegment {
@@ -268,15 +269,19 @@ export async function processChatQuestion(
   }
 
   const citationMap = new Map(chunks.map((c, i) => [i + 1, c]));
-  const resolvedCitations: ChatCitation[] = result.citations
-    .map(label => citationMap.get(label))
-    .filter((c): c is NonNullable<typeof c> => c !== undefined)
-    .map(c => ({
-      fileId: c.fileId,
-      path: "",
-      startLine: c.startLine,
-      endLine: c.endLine,
-    }));
+  const resolvedCitations: { label: number; fileId: string; path: string; startLine: number; endLine: number }[] = [];
+  for (const label of result.citations) {
+    const c = citationMap.get(label);
+    if (c) {
+      resolvedCitations.push({
+        label,
+        fileId: c.fileId,
+        path: "",
+        startLine: c.startLine,
+        endLine: c.endLine,
+      });
+    }
+  }
 
   for (const citation of resolvedCitations) {
     const [fileRow] = await db.select({ path: files.path }).from(files).where(eq(files.id, citation.fileId));

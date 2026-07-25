@@ -135,6 +135,7 @@ export async function getExportJson(repositoryId: string): Promise<ExportJsonRes
 export interface ContextSummaryResponse {
   content: string;
   generatedVia: "llm" | "deterministic-fallback";
+  citations: Array<{ label: number; fileId: string; path: string; startLine: number; endLine: number }>;
 }
 
 const GROQ_MODEL = "llama-3.3-70b-versatile";
@@ -303,14 +304,14 @@ export async function generateContextSummary(repositoryId: string): Promise<Cont
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
     const contextJson = await getExportJson(repositoryId);
-    return { content: buildDeterministicFallback(contextJson), generatedVia: "deterministic-fallback" };
+    return { content: buildDeterministicFallback(contextJson), generatedVia: "deterministic-fallback", citations: [] };
   }
 
   const chunks = await retrieveEntryPointChunks(repositoryId);
 
   if (chunks.length === 0) {
     const contextJson = await getExportJson(repositoryId);
-    return { content: buildDeterministicFallback(contextJson), generatedVia: "deterministic-fallback" };
+    return { content: buildDeterministicFallback(contextJson), generatedVia: "deterministic-fallback", citations: [] };
   }
 
   const contextJson = await getExportJson(repositoryId);
@@ -318,7 +319,8 @@ export async function generateContextSummary(repositoryId: string): Promise<Cont
   const chunksWithText = await Promise.all(
     chunks.map(async (chunk) => {
       const text = await reSliceChunkText(chunk.fileId, chunk.startLine, chunk.endLine);
-      return { ...chunk, text };
+      const [fileRow] = await db.select({ path: files.path }).from(files).where(eq(files.id, chunk.fileId));
+      return { ...chunk, text, path: fileRow?.path ?? "" };
     })
   );
 
@@ -351,18 +353,18 @@ export async function generateContextSummary(repositoryId: string): Promise<Cont
 
     const rawText = chatResponse.choices?.[0]?.message?.content;
     if (typeof rawText !== "string" || !rawText.trim()) {
-      return { content: buildDeterministicFallback(contextJson), generatedVia: "deterministic-fallback" };
+      return { content: buildDeterministicFallback(contextJson), generatedVia: "deterministic-fallback", citations: [] };
     }
 
     let parsed;
     try {
       parsed = JSON.parse(rawText) as { status: string; answer: string; citations: number[] };
     } catch {
-      return { content: buildDeterministicFallback(contextJson), generatedVia: "deterministic-fallback" };
+      return { content: buildDeterministicFallback(contextJson), generatedVia: "deterministic-fallback", citations: [] };
     }
 
     if (!parsed || parsed.status !== "answered") {
-      return { content: buildDeterministicFallback(contextJson), generatedVia: "deterministic-fallback" };
+      return { content: buildDeterministicFallback(contextJson), generatedVia: "deterministic-fallback", citations: [] };
     }
 
     const citations: number[] = parsed.citations ?? [];
@@ -370,12 +372,23 @@ export async function generateContextSummary(repositoryId: string): Promise<Cont
     const allValid = citations.every(label => Number.isInteger(label) && validLabels.has(label));
 
     if (!allValid) {
-      return { content: buildDeterministicFallback(contextJson), generatedVia: "deterministic-fallback" };
+      return { content: buildDeterministicFallback(contextJson), generatedVia: "deterministic-fallback", citations: [] };
     }
 
-    return { content: parsed.answer ?? "", generatedVia: "llm" };
+    const resolvedCitations = citations
+      .map(label => ({ label, chunk: chunksWithText[label - 1] }))
+      .filter(({ chunk }) => chunk)
+      .map(({ label, chunk }) => ({
+        label,
+        fileId: chunk.fileId,
+        path: chunk.path,
+        startLine: chunk.startLine,
+        endLine: chunk.endLine,
+      }));
+
+    return { content: parsed.answer ?? "", generatedVia: "llm", citations: resolvedCitations };
   } catch {
-    return { content: buildDeterministicFallback(contextJson), generatedVia: "deterministic-fallback" };
+    return { content: buildDeterministicFallback(contextJson), generatedVia: "deterministic-fallback", citations: [] };
   }
 }
 

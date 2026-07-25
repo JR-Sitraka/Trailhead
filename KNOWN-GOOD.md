@@ -437,6 +437,23 @@ corrected, not silently deleted.
   it for verification. openai/DALL-E (7cf3a196, 22 chunks, 11 real
   Python files) is a real, currently-populated fixture as of this
   entry.
+- [2026-07-25] Fixed real citation-mislabeling bug affecting BOTH
+  Chat and Export: backend citation responses were flattened arrays
+  with no label field, and frontends rebuilt the label→citation map
+  by ARRAY POSITION (i+1) rather than the model's actual original
+  bracket label. When the model cited non-sequential labels (e.g.
+  [1] and [3], skipping [2] — a real, observed live scenario), the
+  positional remapping silently broke: [3] in the prose would fail to
+  resolve (rendering as plain text) or resolve to the wrong citation.
+  Fixed by having both chat.ts and export.ts emit an explicit `label`
+  field on each citation, and both frontends (AnswerCard.tsx,
+  ExportClient.tsx) build the map from that real field instead of
+  array position. Found via careful post-hoc review of a real live
+  response, not caught by any automated test until this round added
+  one. Worth remembering: any array returned to a frontend that gets
+  remapped by position, when the array's own membership/order isn't
+  guaranteed sequential, is a latent bug class — check for this
+  pattern elsewhere if new citation-like features get built.
 
 ## Project hard rules
 

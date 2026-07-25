@@ -6,6 +6,7 @@ const makeCitation = (label: number, fileId: string = `f${label}`): ChatCitation
   path: `src/file${label}.ts`,
   startLine: label * 10,
   endLine: label * 10 + 5,
+  label,
 });
 
 describe("parseInlineCitations", () => {
@@ -92,6 +93,20 @@ describe("parseInlineCitations", () => {
       { type: "text", content: "found in auth" },
       { type: "citation", label: 1, citation: makeCitation(1) },
       { type: "text", content: "." },
+    ]);
+  });
+
+  it("resolves non-sequential labels correctly when the map has gaps", () => {
+    const map = new Map<number, ChatCitation>([
+      [1, makeCitation(1)],
+      [3, makeCitation(3)],
+    ]);
+    const result = parseInlineCitations("claim a[1] and claim b[3]", map);
+    expect(result).toEqual([
+      { type: "text", content: "claim a" },
+      { type: "citation", label: 1, citation: makeCitation(1) },
+      { type: "text", content: " and claim b" },
+      { type: "citation", label: 3, citation: makeCitation(3) },
     ]);
   });
 });

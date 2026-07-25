@@ -3,6 +3,7 @@ export interface ChatCitation {
   path: string;
   startLine: number;
   endLine: number;
+  label: number;
 }
 
 export interface InlineCitationSegment {

@@ -352,7 +352,51 @@ describe("GET /api/repositories/:id/export/context — LLM path", () => {
     expect(body.content).toBeTruthy();
     expect(body.content).toContain("TypeScript");
     expect(body.content).toContain("Express");
+    expect(Array.isArray(body.citations)).toBe(true);
+    expect(body.citations.length).toBeGreaterThan(0);
+    expect(body.citations[0]).toHaveProperty("fileId");
+    expect(body.citations[0]).toHaveProperty("path");
+    expect(body.citations[0]).toHaveProperty("startLine");
+    expect(body.citations[0]).toHaveProperty("endLine");
     expect(groqCtx.callCount).toBe(1);
+  });
+});
+
+describe("GET /api/repositories/:id/export/context — LLM path with non-sequential citation labels", () => {
+  it("preserves original model labels in the response even when a middle label is skipped", async () => {
+    const { repositoryId: repoId, entrypointFileId } = await seedRepo({
+      entryPoints: true,
+      configFiles: true,
+      symbols: true,
+      entrypointEmbeddings: 2,
+    });
+
+    if (!entrypointFileId) {
+      throw new Error("entrypointFileId is required for this test");
+    }
+
+    await db.insert(ecTable).values({
+      fileId: entrypointFileId,
+      repositoryId: repoId,
+      startLine: 1,
+      endLine: 3,
+      embedding: KNOWN_NEAR_EMBEDDING,
+    });
+
+    setGroqAnswer(
+      '{"status":"answered","answer":"This is an entry point [1] and a related chunk [3].","citations":[1,3]}'
+    );
+
+    const { resp, body } = await makeContextRequest(repoId);
+    expect(resp.status).toBe(200);
+    expect(body.generatedVia).toBe("llm");
+    expect(body.citations).toHaveLength(2);
+    expect(body.citations[0]).toHaveProperty("label");
+    expect(body.citations[0].label).toBe(1);
+    expect(body.citations[0].path).toBe("src/entrypoint.ts");
+    expect(body.citations[1]).toHaveProperty("label");
+    expect(body.citations[1].label).toBe(3);
+    expect(body.citations[1].path).toBe("src/entrypoint.ts");
   });
 });
 
@@ -376,6 +420,7 @@ describe("GET /api/repositories/:id/export/context — Groq error → fallback",
     expect(body.generatedVia).toBe("deterministic-fallback");
     expect(body.content).toBeTruthy();
     expect(body.content.length).toBeGreaterThan(0);
+    expect(body.citations).toEqual([]);
   });
 
   it("returns 200 with generatedVia='deterministic-fallback' when Groq throws a 429", async () => {

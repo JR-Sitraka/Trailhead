@@ -11,7 +11,7 @@ type Props = {
 };
 
 export default function AnswerCard({ answer, citations, repoId }: Props) {
-  const labelToCitation = new Map(citations.map((c, i) => [i + 1, c]));
+  const labelToCitation = new Map(citations.map(c => [c.label, c]));
   const segments = parseInlineCitations(answer, labelToCitation);
 
   return (

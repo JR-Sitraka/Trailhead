@@ -593,6 +593,55 @@ describe("POST /api/repositories/:id/chat — answered with valid citations", ()
   });
 });
 
+describe("POST /api/repositories/:id/chat — answered with non-sequential citation labels", () => {
+  it("returns citations that preserve original model labels even when a middle label is skipped", async () => {
+    const { repositoryId, fileId } = await seedRepo();
+    await disableNoEvidenceThreshold();
+
+    const [f] = await db.select().from(files).where(eq(files.repositoryId, repositoryId));
+    const [extraFile] = await db.insert(files).values({
+      repositoryId,
+      path: "src/utils.ts",
+      size: 100,
+      language: "typescript",
+      content: "export function helper() { return 42; }\n",
+      skipped: false,
+      skipReason: null,
+    }).returning();
+    await db.insert(ecTable).values({
+      fileId: extraFile.id,
+      repositoryId,
+      startLine: 1,
+      endLine: 2,
+      embedding: KNOWN_NEAR_EMBEDDING,
+    });
+
+    setGenaiAnswer(
+      '{"status":"answered","answer":"Express is imported on line 1 [1] and there is also a helper in utils [3].","citations":[1,3]}'
+    );
+
+    const { resp, body } = await makeChatRequest(repositoryId, {
+      question: "What files are in this repo?",
+    });
+
+    expect(resp.status).toBe(200);
+    expect(body.status).toBe("answered");
+    expect(body.citations).toHaveLength(2);
+    expect(body.citations.map((c: any) => c.label)).toEqual([1, 3]);
+
+    /* 
+
+Seed repo inserts two chunks on `fileId` (the main test file). The third
+    chunk is on `extraFile.id`. Whatever the retrieval order, labels 1 and 3
+    must be mapped back to the chunks they actually identify. At minimum we
+    confirm the returned fileIds are consistent with retrieval for this repo.
+    */
+    const fileIds = body.citations.map((c: any) => c.fileId);
+    expect(fileIds.filter((id: string) => id === fileId).length).toBeGreaterThanOrEqual(1);
+    expect(fileIds.filter((id: string) => id === extraFile.id).length).toBeGreaterThanOrEqual(1);
+  });
+});
+
 // ===========================================================================
 // E2E: Groq error shape → 502 via the Groq SDK error shape
 // Groq surfaces errors with e.status (not e.statusCode). The chat.ts catch
