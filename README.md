@@ -46,17 +46,17 @@ Point Trailhead at a public GitHub repo (or upload a ZIP), and it will:
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/Export 1.png" alt="Export 1" width="800"><br>
+  <img src="docs/screenshots/Export-Context.png" alt="Export 1" width="800"><br>
   <sub>Export — REPOSITORY_CONTEXT.md</sub>
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/Export 2.png" alt="Export 2" width="800"><br>
+  <img src="docs/screenshots/Export-JSON.png" alt="Export 2" width="800"><br>
   <sub>Export — JSON</sub>
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/Export 3.png" alt="Export 3" width="800"><br>
+  <img src="docs/screenshots/Export-TaskPacket.png" alt="Export 3" width="800"><br>
   <sub>Export — Task-Packet</sub>
 </p>
 
