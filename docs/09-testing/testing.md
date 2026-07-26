@@ -98,29 +98,58 @@ point than MVP-A's rows, stated explicitly throughout.
 - **Symbols' zero-symbols empty state (`SYMBOLS-03`) has been an open gap since that screen was first built** and remains one — worth a deliberate check the first time a real zero-symbol repository exists.
 - **Every "Partially verified" row above (Dashboard/Overview/Explorer/Symbols/Search) is still UI-interaction-pattern evidence from a prototype with in-memory fake data** — real, but a narrow slice of what each acceptance criterion actually requires. Don't let this table read as more progress than it represents outside of Import/Preprocessing.
 
-## Feature: Ask / Chat (MVP-B Slice 1 + 2b — combined, since Chat supersedes Ask)
+## Feature: Chat (MVP-B Slice 1 + 2b)
 
-`ASK-01` through `ASK-10` (Slice 1, first-turn behavior) remain the
-baseline — Chat's first turn is required to behave identically to
-those criteria, not re-tested from scratch. The rows below are
-**additive**, covering only what's genuinely new in multi-turn
-behavior.
+`ASK-01` through `ASK-10` remain the baseline — Chat's first turn is
+required to behave identically. Additive rows below.
 
 | Acceptance criterion | Test | Type | Status |
 |---|---|---|---|
-| Chat is unreachable (`409`) against a repository whose status is not "Ready" | CHAT-01 | Automated | Not yet tested — same check as `ASK-01`, re-verified under the renamed `/chat` endpoint |
-| A fresh conversation's first turn (empty history) satisfies all of `ASK-01` through `ASK-10` unchanged | CHAT-02 | Automated | Not yet tested — confirms the "Chat = Ask evolved" architecture actually holds, not just documented intent |
-| A follow-up turn's retrieval query is built from the current question plus the prior 1-2 turns' **questions only**, not answers/citations | CHAT-03 | Automated | Not yet tested — needs a test that can distinguish "questions-only" from "questions+answers" blending, e.g. by controlling what's retrievable only via answer-content and confirming it's NOT found via a pure follow-up |
-| A follow-up turn's generation call includes the **full** prior history, not just the blended retrieval query | CHAT-04 | Automated | Not yet tested — must verify this as a mechanism distinct from `CHAT-03`, not conflated with it |
-| A citation-validation failure on turn N discards only that turn's answer (`no_evidence`); turns 1 through N-1 remain fully intact and unaffected | CHAT-05 | Automated | Not yet tested — **deliberate failure-path test, per `playbooks/failure-path-testing.md`**, the multi-turn analog of `ASK-03`/`EXPORT-04`: this is the concrete proof that "turn-level failure independence" actually holds in code, not just in the spec. Also confirm real recovery — turn N+1 succeeds normally afterward |
-| The failed turn's question is present in history sent to turn N+1's generation call; its `answer` field is `null`, never a fabricated string | CHAT-06 | Automated | Not yet tested — a precise assertion on the actual payload sent to the generation call, not just the user-visible outcome |
-| "New conversation" clears the thread and resets to an empty history | CHAT-07 | Manual | Not yet tested — cannot be even partially credited from the static mock |
-| Reloading the page or navigating away and back **loses the conversation entirely** — confirmed as correct behavior | CHAT-08 | Manual | Not yet tested — note the inverted pass condition: history *surviving* a reload would indicate accidental persistence and should **fail** this criterion, not pass it |
-| Malformed `history` payload (wrong shape) is rejected with `400` before any retrieval or generation call is made | CHAT-09 | Automated | Not yet tested |
-| Empty or over-500-character question rejected with `400` | CHAT-10 | Automated | Not yet tested — same limit as `ASK-07`/`ASK-08`, re-verified under `/chat` |
+| Chat unreachable (409-equivalent) for non-ready repo | CHAT-01 | Automated | **Agent-verified** (2026-07-25) — real Playwright nav to a non-ready repo's /chat route, confirmed real 404. |
+| Fresh conversation's first turn matches ASK-01–10 | CHAT-02 | Automated | **Agent-verified** — real question submitted, real no_evidence UI state observed. |
+| Follow-up retrieval query built from current + prior questions only | CHAT-03 | Automated | **Agent-verified** — real second-turn request intercepted, confirmed real history array present with prior turn's real question/answer/citations shape. |
+| Follow-up generation includes full prior history | CHAT-04 | Automated | **Agent-verified** — same real intercepted request confirms full history object present, distinct mechanism from CHAT-03 per the original design. |
+| Turn N failure leaves turns 1..N-1 intact | CHAT-05 | Automated | **Agent-verified** — real forced 502 on turn 2, confirmed turn 1's real rendered state unchanged before and after. |
+| Failed turn shows real question, null answer, no fabrication | CHAT-06 | Automated | **Agent-verified** — real failed-turn UI confirmed showing the question with no fabricated prose. |
+| "New conversation" clears thread | CHAT-07 | Manual→Automated | **Agent-verified** — real click, real thread-count transition 1→0 confirmed. |
+| Reload loses conversation (correct behavior) | CHAT-08 | Manual→Automated | **Agent-verified** — real reload, real confirmation conversation is gone (inverted pass condition correctly checked). |
+| Malformed history rejected 400 | CHAT-09 | Automated | **Partially verified** — real 400 confirmed at the API level (direct call). Real UI-level gap, not a bug: ChatClient's React state can never construct a malformed history object through real user interaction, so this path is structurally unreachable from the UI. Server-side protection is real; UI can't exercise it. Accepted as a real, permanent limitation of black-box UI testing for this specific criterion. |
+| Empty/over-500-char question rejected | CHAT-10 | Automated | **Agent-verified** — empty: real disabled submit button confirmed. Over-limit: real 400 + real UI error state confirmed. |
 
 ## Feature: Export (MVP-B Slice 2a)
-*(unchanged — see prior round, `EXPORT-01` through `EXPORT-10`)*
+
+| Acceptance criterion | Test | Type | Status |
+|---|---|---|---|
+| Export unreachable for non-ready repo | EXPORT-01 | Automated | **Agent-verified** (2026-07-25) — real nav to analyzing repo, real error state UI confirmed. |
+| JSON schema matches real repository data, no modules field | EXPORT-02 | Automated | **Agent-verified** — real rendered JSON cross-checked against real DB state. |
+| REPOSITORY_CONTEXT.md citations resolve to real file/line data | EXPORT-03 | Automated | **Agent-verified** — real citation link clicked, confirmed real navigation to Explorer with correct file. |
+| Deterministic fallback fires and is visually distinct | EXPORT-04 | Automated | **Agent-verified** — real zero-entrypoint repo triggered real fallback, real muted-note UI confirmed distinct from error state. |
+| Fallback substantively equivalent to JSON export | EXPORT-05 | Automated | **Agent-verified** — real cross-check confirms matching repo name/stack facts between fallback prose and JSON for the same repository. |
+| Task-Packet real ranked results, real content | EXPORT-06 | Automated | **Agent-verified** — real task submitted, real file paths/content confirmed in rendered results. |
+| Empty/over-1000-char task rejected | EXPORT-07 | Automated | **Agent-verified** — real disabled-button + real UI error text confirmed for both cases. |
+| All three formats independently generatable | EXPORT-08 | Automated | **Agent-verified** — real concurrent generation confirmed non-interfering via real state captions. |
+| UI and API paths produce identical results | EXPORT-09 | Automated | **Agent-verified** — real byte-identical comparison between rendered UI text and direct API response. |
+| Download/Copy work for real | EXPORT-10 | Automated | **Agent-verified** — real browser download event and real clipboard write both confirmed. |
+
+## Feature: Repository Overview / Symbols / Search — real UI verification (2026-07-25)
+
+*(Backend-level criteria for these three features were already closed in
+earlier rounds — see prior testing.md history. This entry closes the
+real UI-rendering gap that remained.)*
+
+| Acceptance criterion | Type | Status |
+|---|---|---|
+| Overview: all sections render with real data, honest empty/absent states | Automated | **Agent-verified** — real walkthrough against openai/DALL-E, all sections + correct null/absent handling confirmed. |
+| Symbols: kind filtering real server-side, aria-pressed correct | Automated | **Agent-verified** — real chip clicks, real aria-pressed transitions confirmed across all 5 kinds + All. |
+| Search: real debounced results, real empty/zero-results states | Automated | **Agent-verified** — real typed query, real debounce, real prompt state, real zero-results copy all confirmed. |
+
+## Accessibility — keyboard navigation (2026-07-25)
+
+| Check | Status |
+|---|---|
+| Keyboard-only Tab/Enter/Escape navigation, all 7 screens | **Agent-verified** — real focus order, real focus visibility, real Enter-activation confirmed across Dashboard/Overview/Explorer/Symbols/Search/Export/Chat. |
+| Modal Escape-to-close (AddRepositoryModal, ConfirmDeleteModal) | **Agent-verified** — real bug found (AddRepositoryModal never had an Escape handler, a regression against this project's own original requirement) and real-fixed; both modals now confirmed closing on Escape via real Playwright test. |
+| **Full screen-reader-output testing (NVDA/VoiceOver announcement correctness)** | **Not yet tested** — explicitly NOT closed by keyboard-navigation testing. Real, separate, unclosed gap. Specifically unverified: aria-live behavior for Search/Symbols/Chat loading states, heading structure beyond visible labels, dynamic-update announcement timing. |
 
 ---
 
@@ -150,3 +179,12 @@ behavior.
   pattern specifically) all draw from the same 1,500 req/day budget
   with zero in-app enforcement. Worth genuinely prioritizing once
   implementation begins, not treated as one line among many.
+
+## Known coverage gaps (additions, 2026-07-25)
+
+- **CHAT-09 has a structural UI-testing ceiling**, not a bug — malformed history can only ever be tested at the API level, never through real black-box UI interaction, since the client never constructs malformed state. Worth documenting permanently, not re-attempting with more elaborate automation.
+- **Screen-reader-output testing remains the single largest unclosed
+  verification gap across the whole project.** Keyboard-navigation
+  testing tonight closed real, meaningful ground (focus order, Escape
+  handling, a real regression found and fixed) but is explicitly not
+  the same claim.

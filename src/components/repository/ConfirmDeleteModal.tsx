@@ -40,6 +40,15 @@ export function ConfirmDeleteModal({ isOpen, repoName, onConfirm, onCancel }: Co
     if (!confirming) onCancel();
   };
 
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !confirming) onCancel();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, confirming, onCancel]);
+
   return (
     <AnimatePresence>
       {isOpen && (

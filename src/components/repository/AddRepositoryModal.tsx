@@ -94,6 +94,15 @@ export function AddRepositoryModal({ isOpen, onClose, onAdd }: AddRepositoryModa
     if (!submitting) onClose();
   };
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !submitting) onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, submitting, onClose]);
+
   return (
     <AnimatePresence>
       {isOpen && (

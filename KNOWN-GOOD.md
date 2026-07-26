@@ -477,6 +477,23 @@ corrected, not silently deleted.
   embedding ties should use fixed/seeded IDs if the test's assertions
   depend on a specific row winning, not just rely on the ordering rule
   being deterministic in the abstract.
+- [2026-07-25] CONFIRMED, REAL LIMITATION: Xenova/all-MiniLM-L6-v2
+  (ADR-004's embedding model choice) has no code-semantic
+  understanding — real controlled test shows it matches surface
+  tokens over meaning (query vs literal filename string "./index.js":
+  0.26 distance; query vs the actual file's real code content: 0.90).
+  This causes real, observed retrieval failures on trivially-
+  answerable questions (sindresorhus/escape-string-regexp: "what's
+  inside index.js" ranks the real index.js content #10-11, behind
+  package.json which merely references the filename). Threshold
+  tuning (0.7→0.75, applied same date) is a real but partial
+  mitigation — it does not fix the underlying ranking problem. A real
+  fix requires a code-aware embedding model, which requires its own
+  research pass (must still fit zero-spend/local/transformers.js
+  constraints) — deliberately deferred to a dedicated future session,
+  not attempted here. This reopens part of ADR-004 (embedding model),
+  same as tonight's Gemini→Groq swap reopened its generation-model
+  half.
 
 ## Project hard rules
 

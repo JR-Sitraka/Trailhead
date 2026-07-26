@@ -443,9 +443,11 @@ describe("POST /api/repositories/:id/chat — off_topic", () => {
 
 // ===========================================================================
 // E2E: no_evidence — threshold gate (best chunk exceeds cosine-distance)
-// PLACEHOLDER: NO_EVIDENCE_THRESHOLD = 0.7 is UNJUSTIFIED.
-// This must be tuned against the 5-repo eval corpus before the feature
-// is considered complete.
+// Evidence-informed threshold: raised from 0.7 to 0.75 after real retrieval
+// reproduction on sindresorhus/escape-string-regexp showed the closest match
+// for "which programming language" at 0.7216 (genuinely relevant) with the
+// next candidate at 0.7874. This test's farVector (distance ~1.027) remains
+// safely above threshold — it validates the gate, not the boundary value.
 // Strategy: wipe real chunks and insert a deliberately distant vector.
 // ===========================================================================
 describe("POST /api/repositories/:id/chat — no_evidence (threshold gate)", () => {

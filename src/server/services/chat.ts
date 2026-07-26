@@ -62,7 +62,13 @@ export function parseInlineCitations(
 
 export const RETRIEVAL_K = 8;
 
-export const NO_EVIDENCE_THRESHOLD = 0.7;
+export const NO_EVIDENCE_THRESHOLD = 0.75;
+// Evidence-informed threshold: raised from 0.7 to 0.75 after real retrieval
+// reproduction on sindresorhus/escape-string-regexp showed the closest match
+// for "which programming language" at 0.7216 (genuinely relevant) with the
+// next candidate at 0.7874, a 0.0658 gap. Not comprehensively validated
+// across the full 5-repo eval corpus ask.md requires — treat as tuned but
+// still open to broader calibration.
 let noEvidenceThresholdOverride: number | null = null;
 
 export function setNoEvidenceThresholdOverride(value: number | null) {
