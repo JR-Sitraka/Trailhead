@@ -4,80 +4,92 @@
 `orchestrator.md`'s mid-project session handoff procedure.**
 
 ## Product
-**Trailhead** — Repository Intelligence Platform. **All MVP-A and
-MVP-B Slice 1/2a/2b screens are now real, complete, and end-to-end
-verified.** This is the first point in the project where every
-approved screen has moved from Magic Patterns mock to working code.
+**Trailhead** — Repository Intelligence Platform. **MVP-A and MVP-B
+are both fully implemented, extensively real-verified (backend +
+live UI), and formally reconciled against testing.md.** This is the
+most complete, most rigorously checked state this project has reached.
 
 ## Phase
-**Full application complete: backend pipeline + all 7 frontend
-screens.** Import → preprocessing → symbols → embeddings → ready,
-Ask/Chat (Groq), Symbols API, Search (real FTS+GIN), Export (all
-three formats), Reanalyze/Delete — all real, all tested, all wired to
-real UI. Every screen ported directly from its approved Magic
-Patterns source, not reinvented.
+**MVP-B closed.** Every planned feature (Import, Preprocessing,
+Symbols, Embeddings, Dashboard, Overview, Explorer, Search, Symbols
+UI, Chat, Export) is real, built, and verified — through real API
+calls, real database checks, real Playwright browser automation, and
+real person click-throughs across all 7 screens. `testing.md` reflects
+real, per-criterion evidence for Ask/Chat and Export, not just
+aggregate pass counts. One significant, real, well-documented
+limitation remains open by deliberate choice, not oversight (see
+below) — everything else that was found broken tonight was found and
+fixed for real.
 
 ## Where everything actually lives
-- **Dashboard, Overview, Explorer, Symbols, Search, Chat, Export:**
-  all real, all committed, all real-verified against live data.
-- **Real backend gaps discovered and closed along the way** (not
-  deferred): Dashboard's Delete/Reanalyze endpoints, Overview's Stack/
-  Testing detection, Symbols' zero-symbols empty state (genuine e2e
-  proof), Explorer's per-file content endpoint + a real binary-
-  detection bug fix, Search's entire FTS+GIN backend (built from
-  scratch), Chat's inline citation markers, Export's full three-format
-  backend (JSON/Task-Packet/Context+fallback).
-- **Two real, cross-cutting bugs found and fixed this session,
-  affecting both Chat and Export:** prompt-example leakage causing a
-  hallucinated claim ("session store"), and a citation label-mismatch
-  bug from positional array remapping. Both fixed with real tests.
-- **KNOWN-GOOD.md** carries the full accumulated knowledge from this
-  entire implementation arc.
+- **Full backend + all 7 frontend screens:** complete, committed,
+  real. See `KNOWN-GOOD.md` for the full accumulated record of every
+  real bug found and fixed this session — it's long, and worth
+  reading in full before picking this project back up.
+- **`testing.md`:** now has real, per-criterion Agent-verified status
+  for Chat (CHAT-01–10) and Export (EXPORT-01–10), plus new real UI
+  verification entries for Overview/Symbols/Search and a real
+  keyboard-accessibility pass across all 7 screens.
+- **Person-verification:** you've now personally clicked through and
+  confirmed all 7 screens directly (Dashboard, Explorer, Export
+  earlier; Overview, Symbols, Search, Chat this round) — the one
+  verification tier that can never be delegated to an agent
+  (`principles.md` #2) is genuinely covered.
 
 ## Key decisions
-*(Unchanged, plus:)* Citations are now returned with an explicit
-`label` field (not positionally inferred) across both Chat and
-Export — a real, load-bearing correctness fix.
+*(Unchanged, plus:)* `NO_EVIDENCE_THRESHOLD` raised 0.7→0.75, based on
+one real, documented retrieval data point — not comprehensively
+validated across a full eval corpus, but no longer an arbitrary guess
+either.
 
-## Open questions
-- Person-verification: most of tonight's work is Agent-verified, not
-  yet independently clicked-through by a human in a real browser
-  session — worth a real pass at some point, though the evidence
-  standard throughout has been unusually rigorous (real API calls,
-  real DB checks, real multi-run reproducibility tests).
-- The architectural limitation Export's investigation surfaced —
-  label-range citation validation proves citation TARGETS are real,
-  not that surrounding PROSE is fully grounded — remains real and
-  unsolved (see KNOWN-GOOD.md). Worth real user-facing framing at some
-  point (e.g. a UI note about groundedness limits) if this becomes a
-  priority.
-- All prior smaller open items unchanged: hover-modifier visual
-  confirmation, Search's static FILE_TYPES list (deliberate
-  simplification), Symbols' File Explorer cross-link (deliberately
-  deferred), embedding cross-call non-determinism, reanalysis.test.ts
-  timing fragility, repo cleanup, GEMINI_API_KEY now fully retired in
-  favor of Groq (gemini-generation.test.ts kept as historical proof
-  artifact only).
+## Open questions — one real, significant item, everything else minor
+- **The embedding model (Xenova/all-MiniLM-L6-v2) has no code-semantic
+  understanding — a real, confirmed, significant limitation, not
+  fixed tonight by design.** Real controlled evidence: for the query
+  "what's inside index.js," the model ranks `package.json` (which
+  merely mentions the filename) above the actual real content of
+  `index.js` itself (cosine distance 0.63 vs 0.90 — surface token
+  match beating semantic content match). The 0.75 threshold tune
+  applied tonight is a real, honest partial mitigation; it does not
+  fix the underlying ranking problem. **A real fix requires a
+  code-aware embedding model** (candidates worth researching:
+  something in the CodeBERT/code-specific-embedding family), which
+  must still satisfy the project's zero-spend/local/transformers.js
+  constraints — this needs its own dedicated research session
+  (real ADR update, real re-embedding of every existing repository,
+  real re-verification), not a tail-end addition. This is the
+  **single most important thing to pick up next**, ahead of any other
+  open item below.
+- Screen-reader-output testing (NVDA/VoiceOver) — real, separate,
+  unclosed gap; keyboard-navigation testing (done tonight) explicitly
+  does not close this.
+- CHAT-09 (malformed history rejection) — structurally UI-untestable,
+  permanently Partially-verified by design, not a gap to keep chasing.
+- Questions-only context-blending — still deliberately deferred,
+  unchanged.
+- All smaller prior items unchanged (hover-modifier confirmation,
+  AnalysisJob ordering for Reanalyze, corrupt-ZIP string-matching
+  fragility, codeload.github.com's separate rate limit,
+  cross-call embedding non-determinism).
 
 ## Current blocker
 None.
 
 ## Last completed action
-Export's citation label-mismatch bug fixed and verified (same root
-cause as, and fixed alongside, an identical bug in Chat) — closing out
-all 7 frontend screens as genuinely complete — 2026-07-25.
+NO_EVIDENCE_THRESHOLD tuned to 0.75 based on real retrieval
+investigation; MVP-B formally closed with full testing.md
+reconciliation and complete person-verification across all 7 screens
+— 2026-07-25.
 
 ## Next valid moves
-1. **Person-verification pass** — click through the real running app
-   as an actual user, now that everything exists to click through.
-2. Cross-screen navigation polish (Symbols→Explorer, Search→Explorer
-   jump-to-line links were explicitly deferred throughout tonight —
-   now that Explorer's real per-file content view exists, wiring these
-   real navigational links is cheap, real, and valuable).
-3. MVP-B remaining scope beyond what's built (if any — recommend a
-   fresh review of the full PRD against what's now real, given how
-   much emerged organically tonight beyond the original plan).
+1. **Code-aware embedding model research and swap** — the one real,
+   significant open item. Deserves a fresh session, starting with real
+   candidate research (not assumption) against the zero-spend/local
+   constraint, same discipline as tonight's Gemini→Groq investigation.
+2. V1–V3 scoping, if/when you want to extend beyond MVP-B — would need
+   its own Layer 1 PM interview against the blueprint's later
+   sections, not a continuation of current work.
+3. Screen-reader testing, if prioritized.
 
 ## Files changed last round
-- `KNOWN-GOOD.md` (citation label-mismatch bug documented)
 - `PROJECT-STATE.md` (this file)

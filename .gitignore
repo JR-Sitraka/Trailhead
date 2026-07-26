@@ -9,3 +9,4 @@ out
 *.sqlite
 coverage
 .vitest
+tsconfig.tsbuildinfo
