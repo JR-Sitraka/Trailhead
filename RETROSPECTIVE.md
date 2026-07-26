@@ -454,3 +454,205 @@ Ranked by what actually mattered most this round:
 4. **Lower priority:** the `PROJECT-STATE.md` consolidation-wording gap
    and the sub-slicing vocabulary gap are both real but smaller — worth
    logging, not worth much framework-review time yet.
+
+---
+
+# MVP-B Implementation Retrospective (2026-07-24/25)
+
+Compiled at the close of the full implementation session — from Step
+A (foundational schema/poller) through all 7 real frontend screens
+and the actual public GitHub release. This section covers building,
+not planning — MVP-A's and MVP-B's earlier planning retrospectives
+above remain unchanged and still valid.
+
+## 1. What was actually built
+
+The complete backend: repository import (ZIP + GitHub, real zipball
+handling), safe preprocessing, real tree-sitter symbol extraction,
+real transformers.js embeddings with a symbol-boundary chunking
+algorithm, real Stack/Testing detection heuristics, Ask/Chat (on
+Groq, after a real mid-session provider switch from Gemini), the
+Symbols API, a from-scratch Postgres FTS+GIN Search backend, all
+three Export formats (JSON, Task-Packet, LLM-generated
+REPOSITORY_CONTEXT.md with deterministic fallback), and Reanalyze/
+Delete with real delete-and-replace semantics.
+
+The complete frontend: all 7 approved Magic Patterns screens ported
+to real Next.js code, wired to real endpoints, verified against real
+data through both automated Playwright testing and direct person
+click-through.
+
+The complete release: a real public GitHub repository with an
+accurate, honest README (including a documented known limitation,
+not hidden), MIT license, real screenshots, and the full methodology
+corpus preserved and linked.
+
+## 2. testing.md final tally
+
+Chat (CHAT-01–10) and Export (EXPORT-01–10) both closed with real,
+per-criterion Agent-verified evidence, gathered via a mix of direct
+API testing and real Playwright browser automation. Overview/Symbols/
+Search got real UI-level verification for the first time (previously
+backend-only). A real keyboard-only accessibility pass covered all 7
+screens and found and fixed one genuine regression (see below).
+**Explicitly NOT closed:** full screen-reader-output testing
+(NVDA/VoiceOver) — stated honestly as an open gap in both
+`testing.md` and the public README, not silently dropped.
+
+## 3. Every real bug or gap found, and what actually caught it
+
+This is the highest-value section — every entry below is a real,
+specific incident, not a general impression.
+
+| # | Finding | What caught it |
+|---|---|---|
+| 1 | Symlink detection checked the wrong ZIP field (compression method 99 = AES encryption, not symlink marker) | Direct source-code trace, after being asked to investigate rather than accept a "couldn't test this" report |
+| 2 | Path-traversal check had a redundant, over-broad substring test | Direct source-code trace |
+| 3 | Binary-detection false-positive on short files (zero-padded header buffer) | Real live UI verification (Overview) showing implausible `skipReason` values on plain-text files |
+| 4 | Real dev server was silently writing to the TEST database, not dev | Refusing to accept "invalid API key" as an explanation without seeing the raw error — the raw error revealed the real cause |
+| 5 | `AnalysisJob` lookup was unordered, would silently misbehave once Reanalyze existed | Direct code trace during architecture backfill, well before Reanalyze was built — caught structurally, before it could ever manifest as a real bug |
+| 6 | Citation responses were positionally remapped by array index instead of real label — broke on non-sequential citations | Deliberately investigating a specific edge case (skipped middle label) after noticing the array-length didn't match the label range in a live response |
+| 7 | Framework misdetection (`got` reported as "Express") | Real end-to-end verification against a real, understood repository — caught because the tester recognized the result was implausible for that specific library |
+| 8 | LLM hallucination ("session store") in generated prose despite valid citation labels | **Manual, line-by-line semantic audit of live model output against real retrieved evidence** — citation-validity checking alone did not and could not catch this |
+| 9 | Dashboard's entire top-level header/toolbar was never built | Direct visual comparison of the real running screen against the original approved mock — no automated test was checking for this because none was ever asked to |
+| 10 | `AddRepositoryModal` had no Escape-to-close handler — a real regression against an explicitly-stated original requirement | Real, automated Playwright keyboard-only testing |
+| 11 | Export page rendered `WorkspaceHeader` twice | Direct visual comparison against the mock |
+| 12 | The embedding model (`Xenova/all-MiniLM-L6-v2`) has no code-semantic understanding — ranks a filename mention in `package.json` above a file's own real code | **Live, real usage by a person asking a simple, real question** — every automated test up to that point had exercised retrieval only with engineered/synthetic queries, never a genuinely naive real question |
+| 13 | Several flaky tests (poller timing, citation tiebreaking, reanalysis state transition) | Real repeated-run investigation each time, tracing to a genuine mechanism (real I/O timing, test-fixture UUID randomness, WASM/ONNX cold-start cost) rather than accepting "flaky" as a terminal explanation |
+
+**Pattern worth naming explicitly:** a disproportionate number of the
+most significant findings (#3, #4, #8, #9, #10, #11, #12) were caught
+**only** by a person or agent actually looking at real, live output —
+a screenshot, a live model response read end-to-end, real browser
+interaction — not by any automated test, however thorough. Automated
+testing caught real logic bugs reliably; it did not catch visual
+fidelity loss or semantic/quality degradation even once, across the
+entire session. This is not an argument against automated testing —
+every one of those tests remains real, valuable regression coverage —
+it's a finding about what class of problem it structurally cannot see.
+
+## 4. Where the process deviated from principles.md/orchestrator.md/roles/playbooks
+
+**Worked well, real validation:**
+- The "prove the environment first, build the real thing second"
+  pattern (used for pgvector, web-tree-sitter, transformers.js, Groq,
+  Shiki) caught a real, non-obvious environment gotcha *every single
+  time* it was used, before that gotcha could surface mid-implementation.
+- The four-tier verification discipline (`playbooks/verification-tiers.md`)
+  repeatedly caught mislabeled "pre-existing"/"seeded"/"unrelated"
+  claims — at least six separate times this session, a claim that
+  would have been accepted at face value in a less disciplined process
+  turned out to be wrong on direct inspection.
+- Structured ambiguity escalation (offering real, named options rather
+  than picking silently) was used for every real architecture fork —
+  model provider choice, backend-gap sequencing, license/docs
+  structure — and never once produced a wrong or regretted default.
+
+**Real gaps, improvised in the moment, not covered by any existing
+role or playbook:**
+- **Commit discipline was NOT reliably self-sustaining.** Despite
+  `principles.md` #7 stating it as a cheap, unconditional default,
+  multiple rounds this session had "committed" claims that turned out
+  false, requiring an explicit mid-session correction ("I will
+  explicitly confirm before every round, not trust it happened
+  silently"). This is a real, repeated failure mode with real exposure
+  — several interruptions this session hit *before* work had been
+  checkpointed, and only good diagnostic recovery (not the commit
+  discipline itself) prevented actual loss.
+- **No formal playbook exists for recovering from an interrupted
+  coding-agent session**, despite this exact pattern (check stray
+  processes → check git status/diff → diagnose before resuming) being
+  needed roughly eight to ten separate times this session, across
+  multiple distinct failure modes (API errors, context-compaction
+  failures, hung builds, silent stops with no error at all).
+- **No guidance exists for the specific failure mode of porting a
+  design mock through a text-relay to a second model** — this
+  session found real, repeated fidelity loss (an implicit wrapper
+  context Magic Patterns provides but never appears in the exported
+  file; an entire missing header section; a doubled header on another
+  screen) that traces to a structural cause (Kilo Code has no direct
+  Magic Patterns access, so every port is a real regeneration from
+  pasted text, not a copy). A candidate fix (route the
+  structural/visual portion through Claude Code's existing exact-
+  transcription carve-out) was proposed and used successfully once
+  (Dashboard's real fix), but was never formalized as a repeatable
+  procedure — it was ad hoc each time.
+- **Windows-specific build fragility** (stray `node` processes and a
+  stale `.next` cache combining to produce either a silent multi-hour
+  hang or an `EPERM` file-lock error) recurred at least three separate
+  times. The fix (kill node processes, delete `.next/`) is now
+  well-documented in `KNOWN-GOOD.md`, but nothing prompts an agent to
+  check for this proactively before a build, only reactively after
+  one fails.
+
+## 5. Ad hoc decisions the kit doesn't currently cover
+
+- **Mid-project product-runtime model swaps under real-world quota
+  discovery.** The kit's `adr-tool-setup.template.md` covers choosing
+  the *coding* tool/model — it has no equivalent guidance for the
+  *product's own* runtime LLM choice, which this session had to
+  revisit twice (Gemini 2.5→3.5→back to 2.5→Groq) in response to real,
+  live API behavior contradicting documentation each time.
+- Deferring granular per-criterion `testing.md` updates during a long,
+  fast-moving implementation stretch, then doing one large,
+  evidence-backed reconciliation pass at the end — worked well in
+  practice, but wasn't something any existing role or playbook
+  actually recommended; it was a real-time judgment call.
+
+## 6. Prune and consolidate
+
+- **`KNOWN-GOOD.md` has grown very large** over one session — every
+  future task now reads the full accumulated history per `AGENTS.md`
+  kernel rule 7. Worth considering whether it should be split by
+  category (Windows/environment-specific vs. product-logic-specific
+  vs. tool-specific) before it becomes a real per-task context cost,
+  though this is a real tradeoff against fragmenting a single source
+  of truth — not an obvious call either way.
+- No contradiction or duplication found between `PROJECT-STATE.md` and
+  this retrospective — the discipline of keeping `PROJECT-STATE.md` to
+  pointers/status only, per its own template, held up in practice.
+
+## 7. Two-project promotion rule
+
+None of the findings above have been confirmed on a second project —
+all remain project-local candidates, **except** the commit-discipline
+gap (section 4), which is worth flagging as a borderline case for
+immediate promotion: it's arguably a real, repeated exposure to actual
+data-loss risk (`principles.md` #7's own stated justification for
+promoting safety-critical findings immediately), not merely a
+one-off inconvenience. Recommend treating this one as promotion-
+worthy now rather than waiting for a second project, given the
+severity argument; everything else stays logged here, first
+observation, hold.
+
+## 8. Summary for the framework-review conversation
+
+Ranked by what actually matters most:
+
+1. **Commit-discipline enforcement is a real, unsolved gap** —
+   stating it as a default in `principles.md` isn't sufficient on its
+   own; something more structurally enforced (a required checkpoint
+   step in the task-packet template itself, not just a stated norm)
+   is worth real consideration. **Promotion status: candidate for
+   immediate promotion, given the safety/data-loss justification.**
+2. **No interrupted-session-recovery playbook exists**, despite
+   needing this exact procedure repeatedly. **First observation — hold**,
+   but a strong one given how many times it recurred within this
+   single project alone.
+3. **Mock-port-fidelity loss through a text-relay to a second model
+   is a real, structural, repeatable failure class** — worth a real
+   playbook (`playbooks/visualization-prompting.md` already covers
+   *generating* mocks; nothing covers *porting* an approved mock into
+   a real codebase through an intermediary). **First observation —
+   hold**, though the Claude-Code-exact-transcription approach is a
+   concrete, tested candidate fix worth trying deliberately on a
+   second project rather than starting from scratch.
+4. Everything else in sections 4–6 is real but lower priority —
+   genuinely useful data, not urgent to act on.
+
+**What's strongly reaffirmed, not new:** the environment-proof-first
+pattern, the verification-tiers discipline, and structured ambiguity
+escalation. These aren't new findings — they're existing kit
+principles that got real, repeated, successful exercise this session
+and held up completely. Worth noting as confirmation, not just
+silence.

@@ -5,91 +5,85 @@
 
 ## Product
 **Trailhead** — Repository Intelligence Platform. **MVP-A and MVP-B
-are both fully implemented, extensively real-verified (backend +
-live UI), and formally reconciled against testing.md.** This is the
-most complete, most rigorously checked state this project has reached.
+are both fully implemented, extensively verified (real API/DB/browser
+evidence, formally reconciled against testing.md), and publicly
+released.** Live at `github.com/JR-Sitraka/Trailhead`.
 
 ## Phase
-**MVP-B closed.** Every planned feature (Import, Preprocessing,
-Symbols, Embeddings, Dashboard, Overview, Explorer, Search, Symbols
-UI, Chat, Export) is real, built, and verified — through real API
-calls, real database checks, real Playwright browser automation, and
-real person click-throughs across all 7 screens. `testing.md` reflects
-real, per-criterion evidence for Ask/Chat and Export, not just
-aggregate pass counts. One significant, real, well-documented
-limitation remains open by deliberate choice, not oversight (see
-below) — everything else that was found broken tonight was found and
-fixed for real.
+**This chat session is closing. A fresh session will pick up next.**
+Everything built and verified this session is real, committed, and
+pushed — confirmed clean working tree as of this file's writing
+(`git status`: nothing to commit, up to date with origin/main).
 
 ## Where everything actually lives
-- **Full backend + all 7 frontend screens:** complete, committed,
-  real. See `KNOWN-GOOD.md` for the full accumulated record of every
-  real bug found and fixed this session — it's long, and worth
-  reading in full before picking this project back up.
-- **`testing.md`:** now has real, per-criterion Agent-verified status
-  for Chat (CHAT-01–10) and Export (EXPORT-01–10), plus new real UI
-  verification entries for Overview/Symbols/Search and a real
-  keyboard-accessibility pass across all 7 screens.
-- **Person-verification:** you've now personally clicked through and
-  confirmed all 7 screens directly (Dashboard, Explorer, Export
-  earlier; Overview, Symbols, Search, Chat this round) — the one
-  verification tier that can never be delegated to an agent
-  (`principles.md` #2) is genuinely covered.
+- **Full backend + all 7 frontend screens:** complete, real,
+  extensively verified. See `KNOWN-GOOD.md` for the complete
+  accumulated record of every real bug/environment quirk found and
+  fixed — it's long, read it before starting new work, per
+  `AGENTS.md`'s own kernel rule.
+- **`RETROSPECTIVE.md`:** now has THREE sections — MVP-A's planning
+  retrospective, MVP-B's planning retrospective, and (new, this
+  session) the full MVP-B implementation retrospective. Read the
+  implementation section before picking framework-level process
+  decisions back up — it contains real, ranked findings about what
+  the kit itself is missing (see especially: no interrupted-session-
+  recovery playbook, no mock-port-fidelity playbook, commit-discipline
+  enforcement gap).
+- **`testing.md`:** real, per-criterion status for Chat/Export;
+  real UI verification for Overview/Symbols/Search; real keyboard-
+  accessibility results across all 7 screens.
+- **Public repo:** README, LICENSE, real screenshots, methodology
+  corpus preserved at root and linked from the README.
 
 ## Key decisions
-*(Unchanged, plus:)* `NO_EVIDENCE_THRESHOLD` raised 0.7→0.75, based on
-one real, documented retrieval data point — not comprehensively
-validated across a full eval corpus, but no longer an arbitrary guess
-either.
+*(All prior decisions unchanged — this session made no new product
+decisions, only implementation/release ones, already reflected above.)*
 
-## Open questions — one real, significant item, everything else minor
-- **The embedding model (Xenova/all-MiniLM-L6-v2) has no code-semantic
-  understanding — a real, confirmed, significant limitation, not
-  fixed tonight by design.** Real controlled evidence: for the query
-  "what's inside index.js," the model ranks `package.json` (which
-  merely mentions the filename) above the actual real content of
-  `index.js` itself (cosine distance 0.63 vs 0.90 — surface token
-  match beating semantic content match). The 0.75 threshold tune
-  applied tonight is a real, honest partial mitigation; it does not
-  fix the underlying ranking problem. **A real fix requires a
-  code-aware embedding model** (candidates worth researching:
-  something in the CodeBERT/code-specific-embedding family), which
-  must still satisfy the project's zero-spend/local/transformers.js
-  constraints — this needs its own dedicated research session
-  (real ADR update, real re-embedding of every existing repository,
-  real re-verification), not a tail-end addition. This is the
-  **single most important thing to pick up next**, ahead of any other
-  open item below.
-- Screen-reader-output testing (NVDA/VoiceOver) — real, separate,
-  unclosed gap; keyboard-navigation testing (done tonight) explicitly
-  does not close this.
-- CHAT-09 (malformed history rejection) — structurally UI-untestable,
-  permanently Partially-verified by design, not a gap to keep chasing.
-- Questions-only context-blending — still deliberately deferred,
-  unchanged.
-- All smaller prior items unchanged (hover-modifier confirmation,
+## Open questions — real, deliberately left open by choice
+- **Next priority is genuinely undecided, by explicit choice** — two
+  real, live options, neither picked yet:
+  1. **The embedding model swap.** `Xenova/all-MiniLM-L6-v2` has no
+     code-semantic understanding — real, confirmed, documented in the
+     public README itself. A code-aware embedding model would fix
+     this properly; needs its own real research pass (must still fit
+     zero-spend/local/transformers.js constraints), then real
+     re-embedding of every existing repository, then real
+     re-verification. This is real, scoped, bounded work.
+  2. **V1–V3 scoping** from the original blueprint's later sections —
+     a genuinely new planning phase (would need its own Layer 1 PM
+     interview), not a continuation of current implementation work.
+  A future session should read this file, the retrospective, and
+  `KNOWN-GOOD.md`, then make this call explicitly with the person —
+  not default into either silently.
+- Screen-reader-output testing (NVDA/VoiceOver) — real, unclosed,
+  stated honestly in the public README.
+- Framework-level findings from the retrospective (section 8) are
+  real candidates for a separate framework-review conversation,
+  independent of this project's own next steps.
+- All smaller prior items unchanged and still real: CHAT-09's
+  structural UI-testing ceiling (not a bug), questions-only context-
+  blending (deliberately deferred), hover-modifier visual confirmation,
   AnalysisJob ordering for Reanalyze, corrupt-ZIP string-matching
-  fragility, codeload.github.com's separate rate limit,
-  cross-call embedding non-determinism).
+  fragility, codeload.github.com's separate rate limit, embedding
+  cross-call non-determinism.
 
 ## Current blocker
 None.
 
 ## Last completed action
-NO_EVIDENCE_THRESHOLD tuned to 0.75 based on real retrieval
-investigation; MVP-B formally closed with full testing.md
-reconciliation and complete person-verification across all 7 screens
-— 2026-07-25.
+Full MVP-B implementation retrospective compiled and appended to
+`RETROSPECTIVE.md`; this file updated as the final handoff for this
+session — 2026-07-25.
 
 ## Next valid moves
-1. **Code-aware embedding model research and swap** — the one real,
-   significant open item. Deserves a fresh session, starting with real
-   candidate research (not assumption) against the zero-spend/local
-   constraint, same discipline as tonight's Gemini→Groq investigation.
-2. V1–V3 scoping, if/when you want to extend beyond MVP-B — would need
-   its own Layer 1 PM interview against the blueprint's later
-   sections, not a continuation of current work.
-3. Screen-reader testing, if prioritized.
+1. **Pick one of the two open priorities above** (embedding model
+   swap vs. V1–V3 scoping) — the first real decision for whoever picks
+   this up next.
+2. Optionally: bring `RETROSPECTIVE.md`'s implementation section to a
+   separate framework-review conversation, per the kit's own stated
+   process for updating `principles.md`/`orchestrator.md`/`roles/`/
+   `playbooks/` based on real project experience.
 
 ## Files changed last round
+- `RETROSPECTIVE.md` (implementation retrospective appended)
 - `PROJECT-STATE.md` (this file)
