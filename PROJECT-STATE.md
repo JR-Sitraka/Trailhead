@@ -9,10 +9,11 @@ shipped and publicly released. Current phase: **Trailhead Upgrade**
 (project 2 on Starter Kit V4.2, ADR-007, same codebase).
 
 ## Phase
-**Upgrade — Layer 2/3 (UX + IA) drafted, awaiting placement; Layers
-4–6 fork open.** Flows and IA revised in place with dated Upgrade
-additions (items 4 + 5); the other five items confirmed as needing no
-UX/IA work, stated explicitly in both docs.
+**Upgrade — Layer 6 setup (observability panel visual pass).** Layers
+2/3 placed and committed (`c9636ed`). Fork decided 2026-07-27: the
+Dashboard observability panel gets a light visual pass — retrofit of
+the approved Dashboard mock, code-first in Magic Patterns, full
+review split, then design-handoff → visual-parity at implementation.
 
 ## Standing project rules (this phase)
 - **All repo file placement/commits are Claude Code tasks** with a
@@ -21,58 +22,57 @@ UX/IA work, stated explicitly in both docs.
   verdicts and promotion recommendations.
 
 ## Provisional-items trail (V4.2 — feeds retrospective §8, may not be blank)
-- 2026-07-27 — trail opened. No provisional item triggered yet.
+- 2026-07-27 — trail opened.
 - 2026-07-27 — security-reviewer/security-review deliberately not
   triggered: auth deferred to V2/V3. Re-evaluate when observability
   touches API surfaces.
-- 2026-07-27 — design-handoff / visual-parity-review: **pending the
-  Layers 4–6 fork** — they trigger only if the observability panel
-  gets a visual pass + implementation; logged either way once decided.
+- 2026-07-27 — **scheduled by the Layers 4–6 fork decision:**
+  `playbooks/design-handoff.md` + `playbooks/visual-parity-review.md`
+  (will run around the panel's implementation) and
+  `playbooks/visualization-prompting.md`'s credit-exhaustion
+  code-first section (expected to trigger at the panel build —
+  second-project data point if it does).
 
 ## Upgrade scope — FINAL (full detail in product-prd.md)
 Priority: 1 doc-drift fix → 2 golden benchmark (script-only; baseline
 pre-swap) → 3 embedding swap → 4 misdetection fix ("Unknown" state) →
-5 LLM observability (Dashboard panel, confirmed) → 6 screen-reader →
-7 testing closeout. Out: enforcement; auth (→V2/V3); V1 blueprint
-items; benchmark perf metrics (→V1, carried); Group C; persistence;
-query rewriting.
+5 LLM observability (Dashboard panel; visual pass confirmed) → 6
+screen-reader → 7 testing closeout. Out list unchanged — see PRD.
 
 ## Key decisions
-- **Item 5 surface (2026-07-27):** Dashboard-level global panel — not
-  a new tab (retrofit-sweep precedent, MVP-B retro finding #6), not
-  logs-only. Recorded in IA doc.
-- **Item 2 surface (2026-07-27):** script/CLI-only, no UI. Recorded
-  in both UX docs.
-- **ADR-007:** Kit V4.2 adopted, verified. CHANGELOG had no V4.2
-  entry at adoption — recorded for the retrospective.
+- **Layers 4–6 fork (2026-07-27):** option (a) — visual pass for the
+  panel. Reasoning recorded: screen changes without an approved
+  reference contradict the project's own strongest finding (visual
+  defects were caught only by mock-vs-real comparison); also
+  exercises three provisional items this phase owes verdicts on.
+- **Item 5 surface:** Dashboard global panel. **Item 2:** script-only.
+- **ADR-007:** Kit V4.2 adopted, verified.
 - All prior decisions unchanged.
 
 ## Open questions
-- **Layers 4–6 fork (the round's live question):** does the
-  observability panel get (a) a light visual pass — a compiled brief
-  + code-first Magic Patterns build + the full review split, which
-  would trigger the provisional design-handoff/visual-parity
-  playbooks — or (b) spec-only from existing approved components
-  (Card, ListRow, status-caption patterns), skipping Layers 4–6
-  entirely per the sizing rule? Orchestrator recommendation pending
-  discussion in chat.
+- Awaiting from the person: the Magic Patterns URL/ID of the approved
+  Dashboard artifact (code-first retrofit target).
+- Awaiting via agent relay: design-language.md, design-tokens.md,
+  Dashboard brief + component-specs slice (brief inputs).
 - Framework-review conversation — separate track, unchanged.
 
 ## Current blocker
-None — awaiting placement-task run and the Layers 4–6 pick.
+None — brief inputs in flight.
 
 ## Last completed action
-Flows + IA revised in place (Upgrade additions); placement task
-issued — 2026-07-27.
+Fork (a) recorded; brief-input relay task issued — 2026-07-27.
 
 ## Next valid moves
-1. Run placement task (3 files below).
-2. Decide the Layers 4–6 fork → then software-architect light-pass
-   check (does ADR-004's stack cover benchmark harness + observability
-   counters, or new ADR?) → feature specs (Layer 8) for items 2–7.
+1. Person runs the read-relay task + supplies the Magic Patterns
+   Dashboard URL.
+2. Orchestrator compiles the retrofit screen brief
+   (docs/06-components/briefs/dashboard-observability-panel.md) →
+   code-first build in Magic Patterns → compliance pass → human
+   visual approval gate.
+3. Then: architect light-pass check (benchmark harness +
+   observability counters vs. ADR-004 stack) can proceed in parallel
+   with the visual pass if the person wants — it doesn't depend on
+   the panel's pixels.
 
 ## Files changed last round
-- `docs/02-ux/ux-user-flows.md` (Upgrade additions appended)
-- `docs/03-information-architecture/information-architecture.md`
-  (Upgrade additions appended)
 - `PROJECT-STATE.md` (this file)
