@@ -4,81 +4,66 @@
 `orchestrator.md`'s mid-project session handoff procedure.**
 
 ## Product
-**Trailhead** — Repository Intelligence Platform. MVP-A and MVP-B
-shipped and publicly released. Current phase: **Trailhead Upgrade**
-(project 2 on Starter Kit V4.2, ADR-007, same codebase).
+**Trailhead** — Repository Intelligence Platform. MVP-A/B shipped and
+released. Current phase: **Trailhead Upgrade** (project 2 on Starter
+Kit V4.2, ADR-007, same codebase).
 
 ## Phase
-**Upgrade — Layer 6: observability panel built + compliance-passed,
-AT HUMAN VISUAL APPROVAL GATE.** Architect light-pass check done in
-parallel (below). An artefact existing never implies approval — the
-gate is open, not passed.
+**Upgrade — Layer 6: panel + state-demo cycler published, AT HUMAN
+VISUAL APPROVAL GATE (all four states now viewable).** Person
+requested the demo affordance before approving (2026-07-27) —
+delivered. An artefact existing never implies approval.
 
 ## Standing project rules (this phase)
 - All repo file placement/commits are Claude Code tasks with a full
-  task packet every round (person's standing instruction).
+  task packet every round.
 - Same-codebase-continuation qualifier on all §8 verdicts/promotions.
 
-## Provisional-items trail (V4.2 — feeds retrospective §8, may not be blank)
+## Provisional-items trail (V4.2 — feeds retrospective §8)
 - 2026-07-27 — trail opened.
 - 2026-07-27 — security-reviewer deliberately not triggered (auth →
-  V2/V3); re-evaluate when observability API surface is specified.
-- 2026-07-27 — design-handoff + visual-parity scheduled for the
-  panel's implementation (fork-a decision).
-- 2026-07-27 — **visualization-prompting credit-exhaustion section:
-  nuanced data point** — code-first mode used for the panel build **by
-  deliberate choice** (fork-a working mode), not forced by a failed
-  generation call; credits were never tested this round. Honest §8
-  note: mode reconfirmed workable, exhaustion itself not re-observed.
+  V2/V3); re-evaluate at observability API spec.
+- 2026-07-27 — design-handoff + visual-parity scheduled for panel
+  implementation. Handoff must list the mock-only state cycler as a
+  prototype shortcut to strip (playbook step 4).
+- 2026-07-27 — credit-exhaustion nuance: code-first used by choice,
+  exhaustion not re-observed (two publishes this round, zero AI
+  generation calls).
 
-## Upgrade scope — FINAL (full detail in product-prd.md)
-Priority: 1 doc-drift → 2 benchmark (script-only, baseline pre-swap)
-→ 3 embedding swap → 4 "Unknown" state → 5 observability panel (at
-visual gate) → 6 screen-reader → 7 testing closeout. Out list: PRD.
+## Upgrade scope — FINAL (product-prd.md)
+1 doc-drift → 2 benchmark → 3 embedding swap → 4 "Unknown" state →
+5 observability panel (at visual gate) → 6 screen-reader → 7 testing
+closeout.
 
-## Architect light-pass check (2026-07-27) — conclusion
-**No new ADR needed.** Benchmark harness = repo-local Node/TS scripts
-reusing the existing embedding/retrieval modules + test DB;
-observability counters = small persisted store on the existing
-Postgres/Drizzle stack. Zero new technologies or pairings introduced
-→ the pairing-gotcha search rule doesn't trigger yet (it WILL trigger
-in item 3's embedding-model research, per candidate). Precedent:
-Slices 2a/2b also reused ADR-004 with zero new ADRs. Data-model
-details (counter table shape, benchmark result format) belong to the
-full pass alongside feature specs — deferred there explicitly, not
-silently.
+## Architect light-pass conclusion (2026-07-27)
+No new ADR. Benchmark + counters fit ADR-004 stack; data-model detail
+deferred to full pass with feature specs. Pairing-search rule
+triggers at item 3's model research, per candidate.
 
 ## Key decisions
-- **Panel built code-first** on a new MP artifact branch
-  (`3f49e44a…`, from approved `6af558a6…`), published. Compliance
-  pass: zero fails, one honest Unverified (unavailable/zero states
-  code-present but not visually demonstrated).
-- Fork (a), item-5 Dashboard surface, item-2 script-only, ADR-007 —
-  all as previously recorded.
+- Panel artifact lineage: approved `6af558a6…` → reviewed panel
+  `3f49e44a…` → panel+cycler `cfe1be53…` (published, current). The
+  cycler is mock-only demo scaffolding, excluded from the spec.
+- Compliance pass: zero fails, one Unverified (states) — now
+  human-checkable via the cycler.
+- All prior decisions unchanged.
 
 ## Open questions
-- **Human visual approval of the panel** — including the flagged
-  choice: demonstrate unavailable/zero states in the mock first, or
-  defer their visual check to implementation's parity review.
-- Framework-review conversation — separate track, unchanged.
+- **Human visual approval** — person cycles all 4 states and
+  approves / requests changes.
+- Framework-review conversation — separate track.
 
 ## Current blocker
-The human visual gate (by design, not an impediment).
+The human visual gate (by design).
 
 ## Last completed action
-Panel built + published + compliance-reviewed; brief + review docs
-drafted; light-pass concluded — 2026-07-27.
+State-demo cycler added and published — 2026-07-27.
 
 ## Next valid moves
-1. Person views the design (same URL) and approves / requests changes
-   / asks for the state-demo affordance first.
-2. On approval: record the gate here, then Layer 8 — feature specs
-   for items 2–7 (observability spec now unblocked by the light-pass
-   conclusion), then design-handoff when the panel moves to
-   implementation.
+1. Person cycles states, gives verdict.
+2. On approval: record gate, update the review doc's Unverified row
+   to person-confirmed, write the panel's component-spec block, then
+   Layer 8 feature specs (items 2–7) in priority-order batches.
 
 ## Files changed last round
-- `docs/06-components/briefs/dashboard-observability-panel.md` (new)
-- `docs/06-components/briefs/dashboard-observability-panel-review.md`
-  (new)
 - `PROJECT-STATE.md` (this file)
