@@ -5,22 +5,21 @@
 
 ## Product
 **Trailhead** — Repository Intelligence Platform. MVP-A and MVP-B
-fully implemented, verified, publicly released at
-`github.com/JR-Sitraka/Trailhead`. This phase is the **Trailhead
-Upgrade** — project 2 on the Starter Kit, now V4.2 (ADR-007), same
-codebase.
+shipped and publicly released. Current phase: **Trailhead Upgrade**
+(project 2 on Starter Kit V4.2, ADR-007, same codebase).
 
 ## Phase
-**Upgrade — Layer 1 closing.** Scope in/out decided and priority
-order confirmed (2026-07-27). One open scope question remains (golden
-benchmark suite — recommendation issued, awaiting confirm). PRD
-Upgrade section is written immediately after that confirm.
+**Upgrade — Layer 1 COMPLETE (2026-07-27), pending the kit's own
+done-check.** Scope decided, priority confirmed, PRD Upgrade section
+written into `product-prd.md` (revised in place, history preserved).
+Per principles #6, Layer 1 formally closes when Layer 2's owner
+confirms it can start without guessing — that confirmation happens as
+the first act of the next round's Layer 2 open.
 
 ## Standing project rules (this phase)
-- **All repo file placement/commits are Claude Code tasks** — the
-  orchestrator supplies full file contents and a task packet every
-  round (person's standing instruction, 2026-07-27).
-- Same-codebase-continuation qualifier applies to all retrospective §8
+- **All repo file placement/commits are Claude Code tasks** with a
+  full task packet every round (person's standing instruction).
+- Same-codebase-continuation qualifier on all retrospective §8
   verdicts and promotion recommendations.
 
 ## Provisional-items trail (V4.2 — feeds retrospective §8, may not be blank)
@@ -29,74 +28,48 @@ Upgrade section is written immediately after that confirm.
   triggered: auth deferred to V2/V3. Re-evaluate when observability
   touches API surfaces.
 
-## Upgrade scope — decided IN, priority order CONFIRMED (2026-07-27)
-1. **Doc-drift fix** — all docs stating Gemini/1,500-req-day updated
-   to the shipped Groq reality (principles #3).
-2. **Embedding model swap** — constraints unchanged (zero-spend,
-   local, transformers.js). Success measured via retrieval benchmark
-   across the 5-repo corpus: known code questions Top-3; filename
-   refs no longer systematically outrank implementation; semantic
-   questions outperform previous model; no doc-retrieval regression.
-   *(Benchmark question below may insert a new item ahead of this —
-   baseline must be captured on the current model pre-swap either way.)*
-3. **Framework misdetection fix** — no more confident wrong answers;
-   "unknown" becomes an allowed output (spec change, touches
-   Overview/Export display).
-4. **LLM observability, lightweight** — requests made, failures,
-   provider status. NO enforcement, NO budgeting.
-5. **Screen-reader accessibility** — real NVDA or VoiceOver pass; fix
-   discovered issues; document remaining limitations.
-6. **Testing closeout** — IMPORT-04, PREPROC-03 exact 500MB boundary;
-   close already-implemented Dashboard/Explorer rows with real
-   evidence.
-
-## Upgrade scope — decided OUT
-Quota enforcement/budgeting; authentication (explicitly deferred to
-V2/V3); blueprint V1 items (structural graphs, impact analysis);
-carried Group C items (corrupt-ZIP fragility, AnalysisJob ordering,
-codeload rate limit, embedding non-determinism, hover-modifier,
-context-blending revisit); conversation persistence; LLM query
-rewriting; benchmark perf metrics (analysis/indexing runtime, memory)
-if the benchmark itself lands — see open question.
+## Upgrade scope — FINAL (2026-07-27, full detail in product-prd.md)
+Priority order: 1 doc-drift fix (Gemini→Groq) → 2 golden benchmark
+suite (core metrics; baseline on current model BEFORE swap) → 3
+embedding model swap → 4 framework misdetection fix ("unknown"
+allowed) → 5 LLM observability (visibility only) → 6 screen-reader
+pass + fixes → 7 testing closeout (IMPORT-04, PREPROC-03 boundary,
+Dashboard/Explorer rows).
+Out: quota enforcement; auth (→V2/V3); blueprint V1 items; benchmark
+perf metrics (runtime/indexing/memory — **deferred to V1 scope,
+carried not dropped**); all Group C items; persistence; query
+rewriting.
 
 ## Key decisions
-- **ADR-007 (2026-07-27):** Starter Kit V4.2 adopted (renumbered from
-  draft 006 — ADRs 001–006 already existed; ADR-006 is the
-  architecture-data-model backfill). Kit re-copy committed and
-  verified: commit `2515324`, 18 files, clean tree confirmed.
-  First real kit update-propagation event; kit CHANGELOG had no V4.2
-  entry at adoption — recorded in the ADR for the retrospective.
+- **ADR-007 (2026-07-27):** Starter Kit V4.2 adopted; re-copy
+  committed and verified (amended commit `3dcf1ad`, 18 files). Kit
+  CHANGELOG had no V4.2 entry at adoption — recorded for the
+  retrospective's propagation-mechanism report.
+- **Upgrade scope + priority (2026-07-27):** per interview; benchmark
+  added at the person's own initiative — recorded in PRD.
 - All prior decisions unchanged.
 
 ## Open questions
-- **Golden benchmark suite** (person's proposal, 2026-07-27):
-  orchestrator recommendation issued — IN, core metrics only
-  (Top-1/Top-3 retrieval, framework detection, symbol resolution;
-  runtime/memory deferred), inserted ahead of the embedding swap
-  because the swap's "outperforms previous model" criterion requires
-  a pre-swap baseline on the current model. Awaiting confirm/adjust.
-- Commit `2515324`'s message says "ADR-006" while the file is ADR-007
-  — unpushed, amendable; person's call, agent task drafted.
-- Framework-review conversation for retrospective findings — still
-  separate, unchanged.
+- None blocking. Framework-review conversation for retrospective
+  findings remains a separate track, unchanged.
 
 ## Current blocker
-None — awaiting benchmark confirm (then PRD write) and the
-message-amend decision.
+None.
 
 ## Last completed action
-V4.2 re-copy + ADR placement verified against commit evidence;
-priority order confirmed; benchmark recommendation issued —
-2026-07-27.
+PRD Upgrade section written (product-prd.md revised in place);
+placement task issued — 2026-07-27.
 
 ## Next valid moves
-1. Person confirms/adjusts benchmark → PRD Upgrade section written
-   into `product-prd.md` (revised in place, history noted), Layer 1
-   closes.
-2. Optional: amend unpushed commit message via the drafted agent task.
-3. Then Layer 2: identify which in-scope items need UX-flow work
-   (screen-reader fixes, observability surface) vs. none (doc-fix,
-   swap, benchmark).
+1. **Open Layer 2:** confirm Layer 1 done from the UX seat, then
+   decide which items need UX-flow work. Orchestrator's preliminary
+   read (to be tested, not assumed): items 4, 5, 6 touch UI (Overview/
+   Export "unknown" display; observability surface placement; screen-
+   reader fixes) — items 1, 2, 3, 7 likely need no new flows.
+2. Then architecture light-pass check: does ADR-004's stack cover the
+   benchmark harness and observability, or is a new ADR needed?
 
 ## Files changed last round
+- `docs/01-product/product-prd.md` (Upgrade section appended;
+  provider-drift correction note added; MVP-B history preserved)
 - `PROJECT-STATE.md` (this file)
