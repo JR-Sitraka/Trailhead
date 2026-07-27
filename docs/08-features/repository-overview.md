@@ -88,3 +88,32 @@ navigation sense).
 **Out of Scope:** LLM-generated summaries, external-service detection
 beyond what's stated in the confirmed MVP-A scope, confidence scoring
 — all MVP-B.
+
+---
+
+# Upgrade phase amendment (2026-07-27) — "Unknown" detection state (item 4)
+
+Supersedes this spec's treatment of undetectable stack facts; the
+Edge Case above ("undetectable framework → say so plainly") is now a
+first-class requirement, not a hoped-for behavior:
+
+- **Detection may return "Unknown" for any heuristic stack fact**
+  (framework, and by the same rule build tool / test framework /
+  package manager where the heuristic lacks real evidence). "Unknown"
+  is a confident, honest answer — the fix for the documented
+  misdetection class (`got` reported as "Express") is that low-
+  evidence detection stops guessing.
+- **Display:** the stack section renders "Unknown" as an ordinary
+  value in the muted register — visually normal, not an error or
+  warning state. Consistent with the project's honest-empty-state
+  precedent.
+- **Additional acceptance criteria:**
+  - [ ] OVERVIEW-U1: A repository whose framework the heuristic
+        cannot support with real evidence displays "Unknown" — not a
+        guessed framework (verified against a real repo from the
+        misdetection class, e.g. a non-framework library).
+  - [ ] OVERVIEW-U2: A repository with strong framework evidence
+        still detects correctly (no over-correction to Unknown —
+        measured by the benchmark's framework-detection metric).
+- The detection-threshold mechanics live in the analysis layer, not
+  this screen; this amendment fixes what the screen may claim.

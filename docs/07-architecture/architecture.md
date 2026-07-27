@@ -19,7 +19,7 @@ content that was previously just a section header.
 | Search backing (keyword) | PostgreSQL full-text search (tsvector) + exact `ILIKE`/index lookups | Unchanged, still Search's backing. |
 | Search backing (semantic) | `pgvector` extension on the same Postgres instance | Keeps the "one datastore" theme — no separate vector database for a single-operator, zero-spend project. HNSW index, cosine distance. See ADR-004 for the query-pattern gotcha this must avoid — empirically confirmed via real EXPLAIN evidence during implementation (KNOWN-GOOD.md, 2026-07-22). |
 | Embeddings | `@huggingface/transformers` (transformers.js), in-process in the Next.js server | Runs natively in Node (confirmed, ADR-004) — no Python service, no separate process. Model: `Xenova/all-MiniLM-L6-v2` (384-dim), self-hosted, zero marginal cost. |
-| Generation | Gemini 2.5 Flash, free tier, behind one internal abstraction | Most generous current free tier (1,500 req/day, no card) — see ADR-004. Wrapped in one swappable interface since free-tier quotas/model availability can change abruptly. |
+| Generation | Groq (`llama-3.3-70b-versatile`), free tier, behind one internal abstraction | Switched from Gemini during MVP-B implementation (see KNOWN-GOOD.md / RETROSPECTIVE.md). Limits and constraint-shape note: this file's Upgrade section (2026-07-27), which supersedes stale quota references elsewhere. |
 | File content storage | `text` column on the `files` table (not object storage) | Unchanged from MVP-A. Real persistence confirmed during implementation (2026-07-22) — this was a real gap found and fixed, not assumed working from this decision alone; see architecture.md's MVP-A base Data Model section. |
 | Job/worker model | In-process background job (DB-backed `analysis_jobs` table, polled by the UI) — no Redis, no dedicated queue | Unchanged. Implemented as a simple in-process poller (`FOR UPDATE SKIP LOCKED`, 10s interval) via Next.js's instrumentation.ts hook — confirmed working via real server-boot verification (KNOWN-GOOD.md, 2026-07-22). |
 | Auth | None | Unchanged. |
@@ -375,3 +375,99 @@ conversations exist, more urgently than before.
   validate against, since nothing is persisted server-side; accepted
   as a low-priority trust-boundary gap consistent with this project's
   existing no-auth threat model.
+
+---
+
+# Upgrade phase — full-pass additions (2026-07-27)
+
+*(Everything above this section is preserved as written. Where an
+Upgrade correction supersedes earlier text, it is stated here with a
+date rather than silently rewritten — except the Generation stack
+row, corrected in place per principles #3 since it described a
+provider the shipped system does not use.)*
+
+## Provider correction (Upgrade item 1 — doc-drift fix)
+The shipped generation provider is **Groq
+(`llama-3.3-70b-versatile`, free tier)** — switched from Gemini
+during MVP-B implementation (see RETROSPECTIVE.md, implementation
+section, and KNOWN-GOOD.md). Verified against Groq's published
+limits (checked 2026-07-27; treat response headers as the runtime
+source of truth): ~30 requests/min, **1,000 requests/day**, ~12K
+tokens/min, **100K tokens/day** for this model. Every reference to
+"Gemini" or "1,500 req/day" elsewhere in this file and in feature
+specs is historical; this section supersedes them.
+
+**Constraint-shape change, flagged not buried:** the original
+"full conversation history every turn" decision was justified by
+Gemini being request-count-limited, not token-metered. **Groq has a
+real daily token ceiling (100K TPD), so that justification no longer
+holds as stated.** Decision (2026-07-27): behavior unchanged — full
+history remains — but the honest constraint is now on record, the
+observability counters (below) exist to measure real consumption,
+and windowing remains a deferred-pending-real-evidence candidate,
+same status as answer-blending.
+
+## Data Model — Upgrade additions
+
+### LlmRequestLog (new — Upgrade item 5)
+```
+LlmRequestLog
+  id: uuid (pk)
+  createdAt: timestamp with timezone, not null, default now
+  outcome: enum('success', 'failure'), not null
+  provider: varchar(64), not null   -- from config at call time
+```
+Written by the shared generation abstraction on every generation
+call (Chat turns, Export's REPOSITORY_CONTEXT.md — the abstraction
+is the single choke point, so no path can bypass it). A failed write
+is logged and swallowed — counting never breaks generation
+(observability.md's NFR). No FK to Repository — metrics are global
+by design.
+
+### Embedding dimension (pending Upgrade item 3 / ADR-008)
+`EmbeddingChunk.embedding` is `vector(384)` today, matching
+`Xenova/all-MiniLM-L6-v2`. The model swap may change this dimension:
+that is a real schema migration (column alter + full re-embed of
+every repository; no mixed-model state ever queryable — see
+embedding-swap.md). The exact dimension lands in ADR-008 with the
+model choice; nothing changes in this file until then.
+
+### Benchmark artifacts (Upgrade item 2 — zero new tables)
+The benchmark suite is repo-local scripts + committed artifacts
+(corpus manifest with pinned SHAs, ground-truth set, per-run
+reports). It runs against the test database and makes zero LLM
+calls. Consistent with Slices 2a/2b's zero-new-tables pattern.
+
+## API — Upgrade addition
+
+```
+GET /api/observability
+  response (200): {
+    requests: number,      -- today, UTC day
+    failures: number,      -- today, UTC day
+    providerStatus: 'operational' | 'erroring' | 'unknown',
+    providerName: string
+  }
+  errors: 500 only. No parameters, no auth (consistent project-wide),
+  read-only, derived entirely from LlmRequestLog + config.
+```
+Status derivation: latest request's outcome today; `unknown` when no
+request has been observed today. No synthetic health-check call is
+ever made (it would spend quota to measure quota).
+
+## System-wide NFRs — Upgrade restatement
+The shared-quota risk is restated against the real provider: Chat +
+Export share Groq's 1,000 req/day AND 100K tokens/day. Still no
+in-app enforcement (explicit Upgrade exclusion) — but the risk is now
+**measurable** via the observability counters instead of purely
+accepted. The testing.md NFR row is updated to match.
+
+## Explicitly rejected alternatives — Upgrade additions
+- **Synthetic provider health checks.** Rejected — spends real quota
+  to ask about quota; status derives from observed outcomes only.
+- **Per-repository metrics scoping.** Rejected — the constrained
+  resource is global; scoping would add joins and imply a precision
+  the data doesn't need.
+- **Counting local embedding calls.** Rejected — free and local; the
+  panel measures exactly the constrained resource (recorded
+  2026-07-27).

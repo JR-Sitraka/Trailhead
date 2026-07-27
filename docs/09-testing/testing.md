@@ -188,3 +188,66 @@ real UI-rendering gap that remained.)*
   testing tonight closed real, meaningful ground (focus order, Escape
   handling, a real regression found and fixed) but is explicitly not
   the same claim.
+
+---
+
+# Upgrade phase additions (2026-07-27)
+
+## Feature: LLM Observability (Upgrade item 5)
+| Acceptance criterion | Test | Type | Status |
+|---|---|---|---|
+| Successful Chat turn increments today's requests by exactly 1 | OBS-01 | Automated | Not yet tested |
+| Failed generation increments requests+failures, status → erroring | OBS-02 | Automated | Not yet tested |
+| Export REPOSITORY_CONTEXT.md generation counted (shared abstraction) | OBS-03 | Automated | Not yet tested |
+| Zero requests today → 0/0/unknown, panel true zeros (not unavailable) | OBS-04 | Automated | Not yet tested |
+| Metrics store unreachable → panel unavailable AND Chat still succeeds | OBS-05 | Automated (failure-path) | Not yet tested |
+| Status reflects latest outcome (success after failure → operational) | OBS-06 | Automated | Not yet tested |
+| Rendered panel matches approved artifact | OBS-07 | Manual (visual parity) | Not yet tested |
+
+## Feature: Golden Benchmark Suite (Upgrade item 2)
+| Acceptance criterion | Test | Type | Status |
+|---|---|---|---|
+| Full run end-to-end on all 5 corpus repos, well-formed report | BENCH-01 | Automated | Not yet tested |
+| Manifest validation fails fast on broken inputs | BENCH-02 | Automated (failure-path) | Not yet tested |
+| Four query categories, person-verified ground truth | BENCH-03 | Manual | Not yet tested |
+| Baseline report on current model committed BEFORE swap work | BENCH-04 | Manual gate | Not yet tested |
+| Run-to-run jitter measured and characterized | BENCH-05 | Automated | Not yet tested |
+| Framework-detection + symbol-resolution metrics vs ground truth | BENCH-06 | Automated | Not yet tested |
+
+## Feature: Embedding Model Swap (Upgrade item 3)
+| Acceptance criterion | Test | Type | Status |
+|---|---|---|---|
+| ADR-008 records candidates, constraint fit, known-issues searches, decision | SWAP-01 | Manual | Not yet tested |
+| Dimension/config mismatch fails loudly (negative test) | SWAP-02 | Automated (failure-path) | Not yet tested |
+| All repos re-embedded, no queryable mixed-model state | SWAP-03 | Automated | Not yet tested |
+| Post-swap benchmark vs baseline, per-criterion verdicts | SWAP-04 | Automated + Manual verdict | Not yet tested |
+| Mid-run re-embed failure: affected repo non-queryable-not-corrupt, others untouched | SWAP-05 | Automated (failure-path) | Not yet tested |
+| Rollback exercised once for real | SWAP-06 | Manual | Not yet tested |
+
+## Feature: "Unknown" detection state (Upgrade item 4)
+| Acceptance criterion | Test | Type | Status |
+|---|---|---|---|
+| Low-evidence repo shows "Unknown", not a guess (real misdetection-class repo) | OVERVIEW-U1 | Automated + Manual | Not yet tested |
+| Strong-evidence repo still detects correctly (no over-correction) | OVERVIEW-U2 | Automated (benchmark metric) | Not yet tested |
+| JSON export: `framework: null` for Unknown | EXPORT-U1 | Automated | Not yet tested |
+| REPOSITORY_CONTEXT.md states non-detection, both paths | EXPORT-U2 | Automated | Not yet tested |
+
+## Screen-reader pass (Upgrade item 6) — plan
+| Check | Type | Status |
+|---|---|---|
+| aria-live behavior: Search/Symbols/Chat loading states (NVDA or VoiceOver, real output) | Manual | Not yet tested |
+| Heading structure beyond visible labels, all 7 screens + Overview's section headings semantics | Manual | Not yet tested |
+| Dynamic-update announcement timing (Chat turns, job-status polling) | Manual | Not yet tested |
+| ObservabilityPanel: announced sensibly, never in tab order | Manual | Not yet tested |
+| Discovered issues fixed; remaining limitations documented in README | Manual gate | Not yet tested |
+
+## Testing closeout (Upgrade item 7) — carried targets
+*(IMPORT-04 and PREPROC-03's exact-500MB boundary rows above remain
+the targets; Dashboard/Explorer planning-era rows to be closed with
+real evidence where the functionality shipped — statuses updated in
+place when done.)*
+
+## NFR verification — Upgrade restatement
+| Budget (from architecture.md, Upgrade section) | Measured value | Status |
+|---|---|---|
+| Groq free tier: 1,000 req/day AND 100K tokens/day shared across Chat + Export (supersedes the stale Gemini/1,500 row above — provider corrected 2026-07-27) | — | Not yet tested — now MEASURABLE via OBS counters once implemented; measure under real combined load |

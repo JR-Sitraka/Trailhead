@@ -187,3 +187,28 @@ PRD, consistent with every other feature in this project.
   to make that judgment — a real, stated difference, not an
   oversight).
 - Confidence scoring or badges of any kind.
+
+---
+
+# Upgrade phase amendment (2026-07-27) — provider correction + "Unknown" state (items 1 + 4)
+
+- **Provider correction (item 1):** every "Gemini" / "1,500 req/day"
+  reference in this spec is historical — the shipped provider is
+  **Groq (`llama-3.3-70b-versatile`)**; current limits and the
+  constraint-shape note live in `architecture.md`'s Upgrade section,
+  which supersedes the NFR wording above.
+- **"Unknown" stack facts (item 4):** where detection returns
+  "Unknown":
+  - **JSON export:** the affected `stack` field is `null` — never
+    the string "Unknown" (a display label is not a data value), and
+    never a guessed value. Schema shape otherwise unchanged.
+  - **REPOSITORY_CONTEXT.md** (both LLM and deterministic-fallback
+    paths): prose states plainly that the fact was not detected —
+    it never names a framework the data doesn't support.
+- **Additional acceptance criteria:**
+  - [ ] EXPORT-U1: JSON export for an Unknown-framework repository
+        carries `framework: null` (real repo, real rendered JSON).
+  - [ ] EXPORT-U2: REPOSITORY_CONTEXT.md for the same repository
+        states non-detection in both generation paths — verified on
+        the deterministic fallback at minimum (LLM path per
+        availability).
