@@ -11,89 +11,92 @@ Upgrade** — project 2 on the Starter Kit, now V4.2 (ADR-007), same
 codebase.
 
 ## Phase
-**Upgrade — Layer 1 scope interview: in/out decisions made
-(2026-07-27), priority order pending confirmation.** PRD write follows
-the priority confirmation.
+**Upgrade — Layer 1 closing.** Scope in/out decided and priority
+order confirmed (2026-07-27). One open scope question remains (golden
+benchmark suite — recommendation issued, awaiting confirm). PRD
+Upgrade section is written immediately after that confirm.
 
 ## Standing project rules (this phase)
 - **All repo file placement/commits are Claude Code tasks** — the
   orchestrator supplies full file contents and a task packet every
-  round; nothing is left as a manual copy-paste job for the person
-  (person's explicit standing instruction, 2026-07-27).
+  round (person's standing instruction, 2026-07-27).
 - Same-codebase-continuation qualifier applies to all retrospective §8
   verdicts and promotion recommendations.
 
 ## Provisional-items trail (V4.2 — feeds retrospective §8, may not be blank)
 - 2026-07-27 — trail opened. No provisional item triggered yet.
-- 2026-07-27 — `roles/security-reviewer.md` + `playbooks/security-review.md`
-  **deliberately not triggered**: auth explicitly deferred to V2/V3;
-  no upgrade scope item touches auth/sensitive-input surfaces so far.
-  Re-evaluate if observability work touches API surfaces.
+- 2026-07-27 — security-reviewer/security-review deliberately not
+  triggered: auth deferred to V2/V3. Re-evaluate when observability
+  touches API surfaces.
 
-## Upgrade scope — decided IN (2026-07-27 interview)
-1. **Embedding model swap** — constraints unchanged (zero-spend,
-   local, transformers.js). Success = retrieval benchmark across the
-   existing 5-repo corpus: known code questions retrieve relevant
-   implementation files in Top-3; filename references no longer
-   systematically outrank implementation; semantic questions
-   outperform the previous model; no measurable regression on
-   documentation retrieval.
-2. **Framework misdetection fix** — success = detection no longer
-   produces confident wrong answers; "unknown" becomes an allowed
-   output (real spec change, touches Overview/Export display).
-3. **Screen-reader accessibility** — real NVDA or VoiceOver pass;
-   discovered issues fixed; remaining limitations documented.
-4. **Doc-drift fix** — all docs stating Gemini/1,500-req-day updated
-   to the shipped Groq reality (principles #3; mandatory regardless).
-5. **LLM observability, lightweight** — requests made, failures,
-   provider status. Explicitly NO enforcement, NO budgeting.
-6. **Testing closeout** — IMPORT-04 (real multi-branch detection),
-   PREPROC-03 exact 500MB boundary; Dashboard/Explorer rows closed
-   with real evidence where already implemented.
+## Upgrade scope — decided IN, priority order CONFIRMED (2026-07-27)
+1. **Doc-drift fix** — all docs stating Gemini/1,500-req-day updated
+   to the shipped Groq reality (principles #3).
+2. **Embedding model swap** — constraints unchanged (zero-spend,
+   local, transformers.js). Success measured via retrieval benchmark
+   across the 5-repo corpus: known code questions Top-3; filename
+   refs no longer systematically outrank implementation; semantic
+   questions outperform previous model; no doc-retrieval regression.
+   *(Benchmark question below may insert a new item ahead of this —
+   baseline must be captured on the current model pre-swap either way.)*
+3. **Framework misdetection fix** — no more confident wrong answers;
+   "unknown" becomes an allowed output (spec change, touches
+   Overview/Export display).
+4. **LLM observability, lightweight** — requests made, failures,
+   provider status. NO enforcement, NO budgeting.
+5. **Screen-reader accessibility** — real NVDA or VoiceOver pass; fix
+   discovered issues; document remaining limitations.
+6. **Testing closeout** — IMPORT-04, PREPROC-03 exact 500MB boundary;
+   close already-implemented Dashboard/Explorer rows with real
+   evidence.
 
 ## Upgrade scope — decided OUT
-Quota enforcement/budgeting; authentication (deferred explicitly to
-V2/V3); blueprint V1 items (structural graphs, impact analysis —
-still non-binding); all carried Group C items (corrupt-ZIP
-string-matching fragility, AnalysisJob ordering, codeload rate limit,
-embedding cross-call non-determinism, hover-modifier confirmation,
-questions-only context-blending revisit — no real-usage evidence has
-triggered it); conversation persistence; LLM query rewriting.
+Quota enforcement/budgeting; authentication (explicitly deferred to
+V2/V3); blueprint V1 items (structural graphs, impact analysis);
+carried Group C items (corrupt-ZIP fragility, AnalysisJob ordering,
+codeload rate limit, embedding non-determinism, hover-modifier,
+context-blending revisit); conversation persistence; LLM query
+rewriting; benchmark perf metrics (analysis/indexing runtime, memory)
+if the benchmark itself lands — see open question.
 
 ## Key decisions
-- **ADR-007 (2026-07-27):** Starter Kit V4.2 adopted. First real kit
-  update-propagation event; kit CHANGELOG had no V4.2 entry at
-  adoption — recorded for the retrospective.
+- **ADR-007 (2026-07-27):** Starter Kit V4.2 adopted (renumbered from
+  draft 006 — ADRs 001–006 already existed; ADR-006 is the
+  architecture-data-model backfill). Kit re-copy committed and
+  verified: commit `2515324`, 18 files, clean tree confirmed.
+  First real kit update-propagation event; kit CHANGELOG had no V4.2
+  entry at adoption — recorded in the ADR for the retrospective.
 - All prior decisions unchanged.
 
 ## Open questions
-- **Priority order of the six in-scope items** — orchestrator
-  recommendation issued (doc-fix → embedding swap → misdetection →
-  observability → screen-reader → testing closeout, reasoned from the
-  recorded biggest-unknown-first precedent, MVP-B §1); awaiting the
-  person's confirm/reorder.
-- ADR numbering: confirmed 007 is the next sequential number (Claude
-  Code verified in the placement task; the kit's own adr-006 slot was
-  already taken by `adr-006-backfill-architecture-data-model.md`).
+- **Golden benchmark suite** (person's proposal, 2026-07-27):
+  orchestrator recommendation issued — IN, core metrics only
+  (Top-1/Top-3 retrieval, framework detection, symbol resolution;
+  runtime/memory deferred), inserted ahead of the embedding swap
+  because the swap's "outperforms previous model" criterion requires
+  a pre-swap baseline on the current model. Awaiting confirm/adjust.
+- Commit `2515324`'s message says "ADR-006" while the file is ADR-007
+  — unpushed, amendable; person's call, agent task drafted.
 - Framework-review conversation for retrospective findings — still
   separate, unchanged.
 
 ## Current blocker
-None — awaiting priority-order confirmation.
+None — awaiting benchmark confirm (then PRD write) and the
+message-amend decision.
 
 ## Last completed action
-Scope interview in/out decisions recorded; standing file-handling
-rule recorded; Claude Code placement + V4.2 re-copy task packet
-issued — 2026-07-27.
+V4.2 re-copy + ADR placement verified against commit evidence;
+priority order confirmed; benchmark recommendation issued —
+2026-07-27.
 
 ## Next valid moves
-1. Person confirms/reorders priority → PRD Upgrade section written
-   into `product-prd.md` (revised in place, history noted).
-2. Claude Code runs the placement + kit re-copy task packet.
+1. Person confirms/adjusts benchmark → PRD Upgrade section written
+   into `product-prd.md` (revised in place, history noted), Layer 1
+   closes.
+2. Optional: amend unpushed commit message via the drafted agent task.
+3. Then Layer 2: identify which in-scope items need UX-flow work
+   (screen-reader fixes, observability surface) vs. none (doc-fix,
+   swap, benchmark).
 
 ## Files changed last round
 - `PROJECT-STATE.md` (this file)
-- `docs/10-decisions/adr-007-adopt-starter-kit-v4.2.md` (new — content
-  unchanged from previous round's draft except ADR number, renamed
-  from 006 to 007 to avoid collision with the existing
-  `adr-006-backfill-architecture-data-model.md`)
