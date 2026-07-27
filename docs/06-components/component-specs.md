@@ -98,3 +98,61 @@ mock.
 (This is the complete component set for all of MVP-A + MVP-B. No
 components remain scoped to a future slice — Slice 2b was the last
 piece of MVP-B's original scope.)
+
+---
+
+## Component: ObservabilityPanel (Upgrade item 5 — added 2026-07-27)
+
+**Approved reference:** Magic Patterns editor
+`vp4t2zbgxnuknmjjzr6phd`, artifact
+`cfe1be53-07e0-4903-9e93-7e4412b45e06` (person-approved 2026-07-27,
+all four states via the mock-only cycler — the cycler itself is demo
+scaffolding, NOT part of this spec, stripped at handoff).
+
+**Purpose:** Global, passive, glanceable LLM-layer health/usage
+surface on the Dashboard.
+
+**Visual Description:** Compact horizontal strip: Card convention
+(`bg-surface`, `border-border`, `rounded-card`, px-4 py-2.5), wrapping
+flex layout. Leading label group (Activity icon + "LLM observability"
+in the StateCaption register: text-[11px] uppercase tracking-wide
+muted). Then three value groups: Requests and Failures (label in same
+register + value in `font-mono` text-sm text), and Provider (label +
+status pill: `{providerName} · {statusLabel}`).
+
+**States:**
+- **Populated** — real counts, provider pill per status.
+- **True zeros (first run)** — `0` / `0` rendered as real mono zeros;
+  provider status **Unknown** until the first real request (approved
+  decision: the panel never claims unobserved health).
+- **Provider erroring** — failed-red pill treatment; counts still
+  shown.
+- **Metrics unavailable** (`data = null`) — mono em-dash + "metrics
+  unavailable" caption; visually and semantically distinct from
+  zeros; never fake/stale values presented as current.
+No hover/pressed/loading states — the panel is non-interactive.
+
+**Variants:** none. **Sizes:** one; flex-wrap handles narrow widths.
+
+**Responsive Behavior:** `flex-wrap` with gap-x-6/gap-y-2 — value
+groups wrap below the label group on narrow viewports; no breakpoint-
+specific layout.
+
+**Keyboard Navigation:** none — zero interactive elements; the panel
+must never appear in tab order.
+
+**ARIA Requirements:** `<section aria-label="LLM observability">`.
+Live-region behavior (if values ever update in place) is deliberately
+unspecified here — the feature spec scopes updates to on-load only.
+
+**Animations:** none. No pulse on the provider dot (that's
+StatusPill's analyzing-only affordance — not reused here).
+
+**Design Tokens Used:** surface, border, card radius, muted/text,
+status colors ready-green `#3FB950` / failed-red `#E5484D` / muted
+`#8A94A6` (pill fills at the same alpha recipe as StatusPill), Inter,
+JetBrains Mono, existing spacing scale.
+
+**Known Constraints / Limitations:** Global only (no per-repo);
+values current-as-of-page-load; no refresh control, charts, history,
+or enforcement UI — all explicit brief exclusions, not gaps.
