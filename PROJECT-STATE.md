@@ -9,16 +9,16 @@ released. Current phase: **Trailhead Upgrade** (project 2 on Starter
 Kit V4.2, ADR-007, same codebase).
 
 ## Phase
-**Upgrade — Layer 8 open.** Panel visually approved; component spec +
-observability feature spec written. Remaining Layer 8: feature specs
-for items 2 (benchmark), 3 (swap), 4 ("Unknown" state) — next round,
-one batch. Items 1/6/7 are tasks, not features (no specs — they
-execute via task packets + testing.md).
+**Upgrade — Layer 8, batch 2 placed.** Feature specs now exist for
+items 2 (benchmark) and 3 (swap), joining item 5 (observability).
+Remaining Layer 8: item 4's "Unknown"-state amendments to the
+existing Overview/Export specs + the consolidated architecture.md
+full-pass update — both need current-file relays (requested in this
+round's task).
 
 ## Approval gates passed
-- 2026-07-27 — **Dashboard observability panel: human visual approval
-  (all four states cycled and confirmed).** Artifact `cfe1be53…`.
-  Recorded decision: first-run zero state shows provider `unknown`.
+- 2026-07-27 — Dashboard observability panel: human visual approval,
+  all four states. Artifact `cfe1be53…`.
 
 ## Standing project rules (this phase)
 - All repo file placement/commits are Claude Code tasks, full packet
@@ -26,54 +26,45 @@ execute via task packets + testing.md).
 - Same-codebase-continuation qualifier on §8 verdicts/promotions.
 
 ## Provisional-items trail (V4.2 — feeds retrospective §8)
-- 2026-07-27 — trail opened.
-- 2026-07-27 — security-reviewer deliberately not triggered (auth →
-  V2/V3). Observability endpoint is read-only, no auth surface, no
-  sensitive data — re-evaluated at spec time, still not triggered.
-- 2026-07-27 — design-handoff + visual-parity scheduled for panel
-  implementation; handoff strips the mock-only cycler.
-- 2026-07-27 — credit-exhaustion nuance: code-first by choice,
-  exhaustion not re-observed.
+- Unchanged from last round (security-reviewer not triggered;
+  design-handoff/visual-parity scheduled; credit-exhaustion nuance).
 
 ## Upgrade scope — FINAL (product-prd.md)
-1 doc-drift → 2 benchmark → 3 swap → 4 "Unknown" → 5 observability
-(design done, spec done) → 6 screen-reader → 7 testing closeout.
-
-## Architect notes
-Light pass: no new ADR (2026-07-27). Full-pass data-model additions
-now partially concretized by observability.md (counter record,
-metrics payload) — architecture.md gets its consolidated update after
-the remaining feature specs land, one pass, not three.
+1 doc-drift → 2 benchmark (SPEC DONE) → 3 swap (SPEC DONE; hard
+dependency on BENCH-04 baseline; ADR-008 will record the runtime
+model choice) → 4 "Unknown" (amendments pending relays) → 5
+observability (design + spec done) → 6 screen-reader → 7 testing
+closeout.
 
 ## Key decisions
-- Zero-state provider status = `unknown` (evidence-honesty).
-- Embedding counting excluded from observability (local + free — the
-  panel measures exactly the constrained resource).
-- Panel artifact lineage + compliance history: see review doc.
+- Benchmark manifest/versioning model; quota-free runs (retrieval
+  only, zero LLM calls); jitter measured not assumed (carries the
+  known embedding non-determinism honestly).
+- Swap: dimension migration flagged to architecture full pass;
+  rollback must be exercised once for real (SWAP-06); an honest
+  no-candidate-fits outcome is a legitimate ADR-008 result.
 - All prior decisions unchanged.
 
 ## Open questions
 - None blocking. Framework-review conversation — separate track.
 
 ## Current blocker
-None.
+None — awaiting relays (Overview/Export feature specs +
+architecture.md) for Layer 8's final batch.
 
 ## Last completed action
-Gate recorded; review upgraded to person-confirmed; ObservabilityPanel
-component spec + observability feature spec drafted — 2026-07-27.
+Benchmark + swap feature specs drafted; relay task issued —
+2026-07-27.
 
 ## Next valid moves
-1. Place this round's files (agent task issued).
-2. Next round: feature specs for items 2–4 in one batch, then the
-   consolidated architecture.md full-pass update, then testing.md
-   additions (OBS rows + items 6/7 rows) — Layer 8/9 closes, and
-   implementation task-packet compilation begins (design-handoff
-   first, per the scheduled provisional pair).
+1. Place files; relay the three requested docs.
+2. Next round: item 4 amendments in place + consolidated
+   architecture.md full-pass update (counter table, benchmark
+   artifacts, dimension-migration note) + testing.md additions —
+   closing Layers 8/9. Then implementation packets begin:
+   design-handoff for the panel first.
 
 ## Files changed last round
-- `docs/06-components/briefs/dashboard-observability-panel-review.md`
-  (updated — person-confirmed)
-- `docs/06-components/component-specs.md` (ObservabilityPanel block
-  APPENDED — append-only change)
-- `docs/08-features/observability.md` (new)
+- `docs/08-features/benchmark.md` (new)
+- `docs/08-features/embedding-swap.md` (new)
 - `PROJECT-STATE.md` (this file)
