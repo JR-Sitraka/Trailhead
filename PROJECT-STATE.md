@@ -9,11 +9,10 @@ shipped and publicly released. Current phase: **Trailhead Upgrade**
 (project 2 on Starter Kit V4.2, ADR-007, same codebase).
 
 ## Phase
-**Upgrade — Layer 2 (UX/IA) in progress.** Layer 1 closed 2026-07-27
-(done-check passed from the UX seat). Layer 2 scoping issued: items
-1/3/7 need no UX work; item 6 only reactively; items 4 and 5 need
-targeted in-place updates to existing UX/IA docs — two surface
-decisions pending with the person.
+**Upgrade — Layer 2/3 (UX + IA) drafted, awaiting placement; Layers
+4–6 fork open.** Flows and IA revised in place with dated Upgrade
+additions (items 4 + 5); the other five items confirmed as needing no
+UX/IA work, stated explicitly in both docs.
 
 ## Standing project rules (this phase)
 - **All repo file placement/commits are Claude Code tasks** with a
@@ -26,50 +25,54 @@ decisions pending with the person.
 - 2026-07-27 — security-reviewer/security-review deliberately not
   triggered: auth deferred to V2/V3. Re-evaluate when observability
   touches API surfaces.
+- 2026-07-27 — design-handoff / visual-parity-review: **pending the
+  Layers 4–6 fork** — they trigger only if the observability panel
+  gets a visual pass + implementation; logged either way once decided.
 
 ## Upgrade scope — FINAL (full detail in product-prd.md)
-Priority: 1 doc-drift fix → 2 golden benchmark (baseline pre-swap) →
-3 embedding swap → 4 misdetection fix ("unknown" allowed) → 5 LLM
-observability (visibility only) → 6 screen-reader → 7 testing
-closeout. Out: enforcement; auth (→V2/V3); V1 blueprint items;
-benchmark perf metrics (→V1, carried); Group C; persistence; query
-rewriting.
+Priority: 1 doc-drift fix → 2 golden benchmark (script-only; baseline
+pre-swap) → 3 embedding swap → 4 misdetection fix ("Unknown" state) →
+5 LLM observability (Dashboard panel, confirmed) → 6 screen-reader →
+7 testing closeout. Out: enforcement; auth (→V2/V3); V1 blueprint
+items; benchmark perf metrics (→V1, carried); Group C; persistence;
+query rewriting.
 
 ## Key decisions
-- **ADR-007:** Kit V4.2 adopted, verified (`3dcf1ad`). CHANGELOG had
-  no V4.2 entry at adoption — recorded for the retrospective.
-- **Upgrade scope + priority:** PRD Upgrade section, commit `ed6081d`.
+- **Item 5 surface (2026-07-27):** Dashboard-level global panel — not
+  a new tab (retrofit-sweep precedent, MVP-B retro finding #6), not
+  logs-only. Recorded in IA doc.
+- **Item 2 surface (2026-07-27):** script/CLI-only, no UI. Recorded
+  in both UX docs.
+- **ADR-007:** Kit V4.2 adopted, verified. CHANGELOG had no V4.2
+  entry at adoption — recorded for the retrospective.
 - All prior decisions unchanged.
 
 ## Open questions
-- **Item 5 surface:** orchestrator recommends a Dashboard-level
-  panel/indicator over a new 8th tab (recorded precedent: three
-  WorkspaceHeader retrofit sweeps, MVP-B retro finding #6) or
-  logs-only. Awaiting confirm/pick.
-- **Item 2 surface:** orchestrator recommends script/CLI only, no UI
-  this phase. Awaiting confirm.
-- **Item 4 treatment:** edge-state additions inside existing
-  Overview/Export flows, no new flow doc — flagged low-controversy.
+- **Layers 4–6 fork (the round's live question):** does the
+  observability panel get (a) a light visual pass — a compiled brief
+  + code-first Magic Patterns build + the full review split, which
+  would trigger the provisional design-handoff/visual-parity
+  playbooks — or (b) spec-only from existing approved components
+  (Card, ListRow, status-caption patterns), skipping Layers 4–6
+  entirely per the sizing rule? Orchestrator recommendation pending
+  discussion in chat.
 - Framework-review conversation — separate track, unchanged.
 
 ## Current blocker
-None — awaiting the two surface confirmations, plus the current
-`docs/02-ux/ux-user-flows.md` and
-`docs/03-information-architecture/information-architecture.md`
-contents (needed before in-place revision; orchestrator has never
-seen the filled versions).
+None — awaiting placement-task run and the Layers 4–6 pick.
 
 ## Last completed action
-Layer 1 closed; Layer 2 scoping + surface recommendations issued —
-2026-07-27.
+Flows + IA revised in place (Upgrade additions); placement task
+issued — 2026-07-27.
 
 ## Next valid moves
-1. Person confirms item-2/item-5 surfaces and provides the two
-   current UX/IA files (paste, or a Claude Code read-and-relay task).
-2. Orchestrator revises both docs in place (items 4+5 only) →
-   placement task → Layer 3 check (IA likely needs only the item-5
-   note) → then Layers 4–6 skip entirely for items with no visual
-   change, per the sizing rule ("templates are ceilings").
+1. Run placement task (3 files below).
+2. Decide the Layers 4–6 fork → then software-architect light-pass
+   check (does ADR-004's stack cover benchmark harness + observability
+   counters, or new ADR?) → feature specs (Layer 8) for items 2–7.
 
 ## Files changed last round
+- `docs/02-ux/ux-user-flows.md` (Upgrade additions appended)
+- `docs/03-information-architecture/information-architecture.md`
+  (Upgrade additions appended)
 - `PROJECT-STATE.md` (this file)
