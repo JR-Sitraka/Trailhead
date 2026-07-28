@@ -65,6 +65,22 @@ export function validateManifest(manifest: BenchmarkManifest): void {
     }
     for (const q of entries) {
       validateQueryHasGroundTruth(category, q);
+
+      // Trap-rank amendment (2026-07-28): a filename_trap query without
+      // a trapFile cannot produce the comparison the swap's criterion 2
+      // needs, so it is a validation failure rather than a silent gap.
+      if (category === "filename_trap") {
+        if (!q.trapFile || !q.trapFile.trim()) {
+          throw new ManifestValidationError(
+            `Query "${q.id}" is in filename_trap but has no trapFile — the trap-rank amendment requires one; without it criterion 2 is unevaluable.`
+          );
+        }
+        if (q.groundTruthFiles.includes(q.trapFile)) {
+          throw new ManifestValidationError(
+            `Query "${q.id}" lists its trapFile "${q.trapFile}" as its own ground truth — the comparison would be meaningless.`
+          );
+        }
+      }
     }
     if (manifest.queries.status === "APPROVED" && entries.length === 0) {
       throw new ManifestValidationError(

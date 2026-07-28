@@ -66,11 +66,16 @@ async function main() {
   const symbolRes = await computeSymbolResolutionMetrics(manifest);
   console.log(symbolRes.note);
 
+  const trapCategory = retrieval.byCategory.find((c) => c.category === "filename_trap");
+
   const report = {
     runAt: new Date().toISOString(),
     embeddingModelId: EMBEDDING_MODEL_ID,
     manifestVersion: manifest.manifestVersion,
     manifestQueryStatus: manifest.queries.status,
+    symbolGroundTruthStatus: manifest.symbolGroundTruth.status,
+    rankingRule: manifest.rankingRule ?? null,
+    rankSearchDepth: manifest.rankSearchDepth ?? null,
     environment: {
       node: process.version,
       platform: process.platform
@@ -106,14 +111,31 @@ async function main() {
     ),
     `- Note: ${retrieval.note}`,
     "",
+    "## Trap-rank comparison (filename_trap — swap criterion 2)",
+    ...(trapCategory && trapCategory.queryCount > 0
+      ? [
+          `- Trap outranked correct in **${trapCategory.perQuery.filter((q) => q.trap_outranked_correct).length} of ${trapCategory.queryCount}** queries (rate: ${trapCategory.trapOutrankedRate})`,
+          "",
+          "| Query | Correct rank | Trap rank | Trap outranked? |",
+          "|---|---|---|---|",
+          ...trapCategory.perQuery.map(
+            (q) =>
+              `| ${q.id} | ${q.correctRank ?? `>${report.rankSearchDepth ?? "depth"}`} | ${q.trapRank ?? `>${report.rankSearchDepth ?? "depth"}`} | ${q.trap_outranked_correct ? "**YES**" : "no"} |`
+          )
+        ]
+      : ["- No filename_trap queries in manifest — nothing to compare."]),
+    "",
     "## Framework detection",
     `- Accuracy: ${framework.accuracy ?? "n/a"}`,
     `- Note: ${framework.note}`,
-    ...framework.results.map((r) => `  - ${r.repoName}: known=${r.knownFramework ?? "(none)"} detected=${r.detectedFramework ?? "(none)"} match=${r.match ?? "n/a"}`),
+    ...framework.results.map((r) => `  - ${r.repoName}: known=${r.knownFramework ?? "(null — expected to decline)"} detected=${r.detectedFramework ?? "(null)"} match=${r.match}`),
     "",
     "## Symbol resolution",
     `- Accuracy: ${symbolRes.accuracy ?? "n/a"}`,
     `- Note: ${symbolRes.note}`,
+    ...(symbolRes.reposContributingNoData.length > 0
+      ? [`- Contributing no data (0 extracted symbols — NOT scored as 0%): ${symbolRes.reposContributingNoData.join(", ")}`]
+      : []),
     ""
   ];
   writeFileSync(summaryPath, summaryLines.join("\n"));
