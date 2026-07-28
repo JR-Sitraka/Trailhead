@@ -1,0 +1,52 @@
+{
+  "manifestVersion": "1.0.0-stageA",
+  "createdAt": "2026-07-28T00:00:00.000Z",
+  "corpus": [
+    {
+      "name": "JR-Sitraka/Trailhead",
+      "source": "github",
+      "sourceUrl": "https://github.com/JR-Sitraka/Trailhead",
+      "commitSha": "19221f3d5f5e17f38ed51e05a85966cc7b04e4d5",
+      "knownFramework": null
+    },
+    {
+      "name": "sindresorhus/got",
+      "source": "github",
+      "sourceUrl": "https://github.com/sindresorhus/got",
+      "commitSha": "e3924aa1e53a6ca3eb93a43618ce532442a89b40",
+      "knownFramework": null
+    },
+    {
+      "name": "sindresorhus/escape-string-regexp",
+      "source": "github",
+      "sourceUrl": "https://github.com/sindresorhus/escape-string-regexp",
+      "commitSha": "cbc42403142c96923b482604e1f3d627b1956aff",
+      "knownFramework": null
+    },
+    {
+      "name": "openai/DALL-E",
+      "source": "github",
+      "sourceUrl": "https://github.com/openai/DALL-E",
+      "commitSha": "5be4b236bc3ade6943662354117a0e83752cc322",
+      "knownFramework": null
+    },
+    {
+      "name": "sindresorhus/awesome",
+      "source": "github",
+      "sourceUrl": "https://github.com/sindresorhus/awesome",
+      "commitSha": "7cb5c8371c0fe73e5444a42d5542f6280c38b1a6",
+      "knownFramework": null
+    }
+  ],
+  "queries": {
+    "status": "UNAPPROVED — candidates only",
+    "known_code": [],
+    "filename_trap": [],
+    "semantic": [],
+    "documentation": []
+  },
+  "symbolGroundTruth": {
+    "status": "UNAPPROVED — candidates only",
+    "samples": []
+  }
+}
