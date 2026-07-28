@@ -9,67 +9,89 @@ released. Current phase: **Trailhead Upgrade** (project 2 on Starter
 Kit V4.2, ADR-007, same codebase).
 
 ## Phase
-**Upgrade — IMPLEMENTATION, item 2 stage A, resuming after the
-corpus gate.** Stage A's discovery gate stopped correctly: the
-"5-repo corpus" was never instantiated (best finding of the phase so
-far — a fact asserted into existence across seven doc locations).
-Resolved by ADR-008; resumption packet issued 2026-07-28.
+**Upgrade — item 2 (benchmark) STAGE A COMPLETE; at the ground-truth
+gate.** Harness, bench DB, corpus import, manifest, and unapproved
+candidates all real and verified (branch `upgrade/benchmark-harness`,
+HEAD `db7f43327e701bb64384329b9a60cc675b1aa5fc`; main HEAD
+`600a4bc387ff8a6a43243ba4cc3dcee61f5031ca` = the ADR-008 placement).
 
 ## Approval gates passed
 - 2026-07-27 — observability panel visual approval (all four states).
-- *(Pending: benchmark ground-truth gate, stage B.)*
+- *(OPEN: benchmark ground-truth gate.)*
+
+## Benchmark corpus — REAL, imported and verified (2026-07-28)
+`trailhead_bench` (pgvector 0.8.5), all five pinned and re-verified
+via independent SQL:
+| Repo | files | symbols | chunks |
+|---|---|---|---|
+| JR-Sitraka/Trailhead (`19221f3d…`) | 225 | 1047 | 1471 |
+| sindresorhus/got | 127 | 1666 | 2481 |
+| sindresorhus/escape-string-regexp | 13 | 6 | 15 |
+| openai/DALL-E | 11 | 0 | 22 |
+| sindresorhus/awesome | 23 | 0 | 50 |
+Verified: BENCH-01, BENCH-02 (fail-fast exercised for real),
+BENCH-07. Agent-verified tier; not person-confirmed.
+
+## RESOLVED: the `got` framework question (2026-07-28)
+`framework: null` for `got` is **correct behavior, not
+misdetection** — evidence: got's `package.json` carries no framework
+in `dependencies` (`express` is a devDependency, which
+`detectStackFacts` does not scan). **The "got reported as Express"
+case from the implementation retrospective does NOT reproduce against
+current code.** Consequence: item 4's premise needs re-grounding —
+decision pending with the person (re-scope to verification +
+regression-proofing / hunt for a reproducing case / proceed as
+written). Ground truth for got's `knownFramework` should be
+null/unknown once the item-4 semantics land.
+
+## Ground-truth review — orchestrator's pass on the 24 candidates
+- **Systemic flag:** 9 candidates (KC-04, KC-05, KC-08, SEM-03,
+  DOC-03, DOC-04, DOC-05, DOC-07, DOC-08) had ground truth chosen by
+  **filename inference, not content reading** — contaminated
+  provenance in a benchmark built to detect filename bias. Each needs
+  content verification before approval.
+- SEM-02: ambiguous (two files, vague question) — rewrite or drop.
+- KC-07 / SEM-05: near-duplicates on the same file+concept — keep one.
+- DOC-02: near-tautological (question names the file in all but
+  path) — rewrite or drop.
+- **Manifest-wide rule to adopt:** test files are never valid ground
+  truth; the question is always "where is this implemented."
+- Yield: 15 of 24 usable as-is.
 
 ## Standing project rules / Coding-agent trial
-Unchanged — trial of Claude Code in progress; switch criterion on
-record (satisfied → keep; not → Kilo Code, ADR-005 update). Early
-evidence FOR: the stage-A stop-at-gate behavior and the quality of
-the corpus investigation. Verdict still the person's, at round close.
+Claude Code trial evidence continues strongly positive (stopped at
+the missing-file gate rather than reconstructing PROJECT-STATE.md
+from context; independent SQL verification; honest tier separation
+between "file exists" and "file answers the question"). **Person's
+verdict still owed.**
 
 ## Provisional-items trail (V4.2 — feeds retrospective §8)
-Unchanged from last round (design-handoff used; parity scheduled;
-security-reviewer not triggered; credit-exhaustion nuance;
-session-recovery live-relevant).
+Unchanged; `session-recovery.md` still untriggered.
 
 ## Upgrade scope — status
-1 doc-drift — substantially DONE. **2 benchmark — stage A resuming
-under ADR-008** (corpus: Trailhead / got / escape-string-regexp /
-DALL-E / awesome; dedicated `trailhead_bench` DB). 3 swap — gated on
-BENCH-04; its ADR is now **ADR-009** (renumbered). 4 "Unknown" —
-spec done. 5 observability — handoff frozen. 6 screen-reader — plan
-placed. 7 closeout — now also carries the **boxen zero-files defect**
-and the got-orphaned-state observation (logged in testing.md,
-deliberately not chased now).
-
-## Key decisions
-- **ADR-008 (2026-07-28):** corpus enumerated + `trailhead_bench`
-  dedicated DB + ADR renumbering (model choice → ADR-009). Spec
-  amendments to benchmark.md and embedding-swap.md placed.
-- boxen defect: log-don't-chase, folded into item 7 (ADR-008).
-- All prior decisions unchanged.
+1 doc-drift — substantially DONE. **2 benchmark — stage A DONE, at
+ground-truth gate.** 3 swap — gated on BENCH-04; ADR is ADR-009.
+**4 "Unknown" — premise re-grounding decision pending (see above).**
+5 observability — handoff frozen. 6 screen-reader — plan placed.
+7 closeout — carries boxen zero-files + got orphaned-state.
 
 ## Open questions
-- Framework-review conversation — separate track. (Corpus-never-
-  instantiated finding queued for the phase retrospective.)
+- Item 4 re-scoping decision (a/b/c) — recommendation on record: (a).
+- Framework-review conversation — separate track.
 
 ## Current blocker
-None.
+The human ground-truth gate (by design).
 
 ## Last completed action
-ADR-008 + three spec amendments drafted; stage-A resumption packet
-issued — 2026-07-28.
+Candidate review pass completed; got-detection question resolved;
+trap-authoring worksheet issued — 2026-07-28.
 
 ## Next valid moves
-1. Place this round's files; run the resumption packet on the
-   existing `upgrade/benchmark-harness` branch.
-2. Person drafts trap queries against the now-named corpus (guidance
-   from two rounds ago now has real targets — got and Trailhead are
-   the richest trap sources).
-3. Stage A report → ground-truth review/merge → gate → stage B
-   baseline. Claude Code verdict at round close.
+1. Person: authors 8 trap queries (4 got / 4 Trailhead); decides
+   item 4's re-scoping; verdicts the 9 flagged candidates.
+2. Then: approved set written into `manifest.json` (status flipped),
+   stage B (BENCH-03/04/05/06) → committed baseline.
+3. Then item 3 (swap) research → ADR-009.
 
 ## Files changed last round
-- `docs/10-decisions/adr-008-benchmark-corpus-and-db.md` (new)
-- `docs/08-features/benchmark.md` (amendment APPENDED)
-- `docs/08-features/embedding-swap.md` (amendment APPENDED)
-- `docs/09-testing/testing.md` (boxen gap APPENDED)
 - `PROJECT-STATE.md` (this file)
