@@ -119,3 +119,40 @@ the kit's existing default.
   remains local-only per `architecture.md`, unchanged) — this ADR is
   scoped to the coding-agent tool setup only, not a deployment
   decision.
+
+---
+
+# Amendment (2026-07-28) — mixed coding-agent policy adopted
+
+**Trial outcome:** Claude Code, trialed across the full item-2
+benchmark implementation (stage A discovery gate, ADR-008 corpus/DB
+resolution, ground-truth review, ranking-rule change, symbol
+verification support) — **satisfactory, confirmed by the person.**
+Evidence on record in PROJECT-STATE's history: stopped correctly at
+two distinct gates rather than guessing or inventing; caught the
+orchestrator asserting an unwritten artifact into PROJECT-STATE;
+chose merge-over-rebase for a stated principled reason and verified
+it held across six real branch divergences; declared explicitly what
+it had NOT verified (permalinks never opened).
+
+**Decision — mixed-tool policy, not a full switch:**
+- **Claude Code** for tasks that are context-heavy, require holding
+  multiple stacked amendments/decisions in view, or produce a
+  hard-gated artifact other work depends on.
+- **Kilo Code** for routine, well-specified, single-purpose tasks —
+  adopted starting 2026-07-28, primarily to conserve Claude usage.
+- **The orchestrator states the intended tool at the top of every
+  task packet from this point forward**, with a one-line reason, so
+  the routing decision is a stated fact in the packet, not an
+  implicit default.
+
+**Mechanical note:** no new environment check is required for this
+switch — Kilo Code's persistent-instructions behavior (loads
+`AGENTS.md` every session; only `@file` mentions are genuinely
+selective) is the behavior this kit's task-packet format was already
+designed against (see kernel/README rationale). Packets built for
+Claude Code transfer to Kilo Code without adjustment on that count.
+
+**Consequence:** logged as this decision's home per the kit's own
+switching guidance (evaluate jointly, log as an ADR-005 update, not a
+silent swap) — satisfied here.
