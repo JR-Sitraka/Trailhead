@@ -126,3 +126,30 @@ generation quality remains the existing groundedness metric's job).
         into `trailhead_bench`; each reaches `ready` with non-zero
         files and chunks (real DB evidence); a repo failing this is a
         named setup failure, not a silent benchmark skew.
+
+---
+
+# Amendment (2026-07-28) — trap-rank recording
+
+**Added requirement (the ground-truth gate surfaced it):** for
+`filename_trap` queries, the runner records **the trap file's rank
+alongside the correct file's rank** in every report, plus a derived
+per-query verdict (`trap_outranked_correct: true | false`) and a
+category-level rate.
+
+**Why this is not optional:** the embedding swap's success criterion
+2 — "filename references no longer systematically outrank
+implementation" — is a *comparison*, not an accuracy figure. Top-1/
+Top-3 accuracy alone cannot evaluate it: a run where the correct file
+sits at rank 2 behind its trap and a run where it sits at rank 2
+behind an unrelated file score identically on Top-3 while meaning
+opposite things.
+
+Applies to the baseline run as well as every post-change run — a
+baseline without trap ranks cannot serve as the comparison point
+criterion 2 needs.
+
+**Manifest status note:** the query set is APPROVED (31 queries:
+8 known_code, 7 semantic, 8 documentation, 8 filename_trap);
+`symbolGroundTruth` is curated as stage B's opening step and BENCH-06
+is not valid until the person has verified it.
