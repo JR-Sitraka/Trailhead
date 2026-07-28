@@ -14,6 +14,14 @@
     "For filename_trap queries the runner MUST record the trap file's rank alongside the correct file's rank. Top-3 accuracy alone cannot evaluate the swap's criterion 2 ('filename references no longer systematically outrank implementation') — the comparison is the measurement."
   ],
   "rankingRule": "Ranking is FILE-level, not chunk-level. The runner retrieves the top rankSearchDepth chunks by cosine distance (ORDER BY cosine_distance ASC, id ASC — the documented pgvector pattern, KNOWN-GOOD 2026-07-22), maps each chunk to its file path, then de-duplicates keeping first occurrence. A file's rank is the position of its best-ranked chunk in that de-duplicated list. Top-1 = de-duplicated rank 1 is a ground-truth file; Top-3 = any of de-duplicated ranks 1-3 is. Ties are broken by the id ASC tiebreaker already in the SQL, so the rule is deterministic given fixed row ids (see KNOWN-GOOD 2026-07-23 on cross-invocation embedding jitter, which can still perturb genuinely near-tied candidates).",
+  "lockedComparisonParameters": {
+    "_note": "Locked by benchmark.md's 2026-07-28 ranking amendment, person-approved. Changing ANY of these invalidates comparability with the baseline and requires a new baseline, recorded as such. Adopted before any baseline existed, so nothing became incomparable.",
+    "rankSearchDepth": 50,
+    "rankDefinition": "best chunk position per file",
+    "duplicateCollapse": "first occurrence wins",
+    "tieHandling": "deterministic by retrieval order (ORDER BY cosine_distance ASC, id ASC)",
+    "validatorAdditions": "a filename_trap query is rejected if it has no trapFile, or if its trapFile is also its own ground truth"
+  },
   "rankSearchDepth": 50,
   "corpus": [
     {
@@ -87,7 +95,8 @@
         "repoName": "sindresorhus/got",
         "question": "Where are this library's custom error classes defined?",
         "groundTruthFiles": ["source/core/errors.ts"],
-        "personVerified": "defines request, HTTP, cache, parse, upload, max-redirect, and abort error classes. Question edited per the person's note: the original 'e.g. for timeouts' was removed because TimeoutError lives in timed-out.ts."
+        "personVerified": "defines request, HTTP, cache, parse, upload, max-redirect, and abort error classes.",
+        "rationaleCorrection": "Corrected 2026-07-28. The earlier recorded reason for dropping 'e.g. for timeouts' from the question was that 'TimeoutError lives in timed-out.ts' — true but incomplete. got has TWO distinct classes named TimeoutError: source/core/timed-out.ts:35 (internal, extends Error) and source/core/errors.ts:138 (public, extends RequestError). The PUBLIC one is in errors.ts and IS part of this query's ground truth. The question stands unchanged and remains correct; only the recorded rationale was wrong, and is fixed here so a wrong reason cannot later be reused as the basis for a wrong decision. Both classes are pinned in the proposed symbol sample as a deliberate name-collision case."
       },
       {
         "id": "KC-06",
