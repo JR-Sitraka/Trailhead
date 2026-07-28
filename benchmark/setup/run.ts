@@ -17,7 +17,17 @@ const BENCHMARK_ROOT = resolve(__dirname, "..");
 const MANIFEST_PATH = resolve(BENCHMARK_ROOT, "manifest.json");
 const REPORTS_DIR = resolve(BENCHMARK_ROOT, "reports");
 
+// Recorded in every report so a later comparison can prove both runs
+// used the same model. Dimension is the schema's vector(384), which
+// item 3's swap may change — a change there requires a new baseline.
 const EMBEDDING_MODEL_ID = "Xenova/all-MiniLM-L6-v2";
+const EMBEDDING_DIMENSION = 384;
+
+/** Optional `--label=NAME`; prefixes report filenames so a baseline is unmistakable. */
+function reportLabel(): string | null {
+  const arg = process.argv.find((a) => a.startsWith("--label="));
+  return arg ? arg.slice("--label=".length).trim() || null : null;
+}
 
 function loadManifest(): BenchmarkManifest {
   let raw: string;
@@ -68,17 +78,33 @@ async function main() {
 
   const trapCategory = retrieval.byCategory.find((c) => c.category === "filename_trap");
 
+  const label = reportLabel();
+
   const report = {
+    label,
+    isBaseline: label === "BASELINE",
     runAt: new Date().toISOString(),
     embeddingModelId: EMBEDDING_MODEL_ID,
+    embeddingDimension: EMBEDDING_DIMENSION,
     manifestVersion: manifest.manifestVersion,
     manifestQueryStatus: manifest.queries.status,
     symbolGroundTruthStatus: manifest.symbolGroundTruth.status,
+    // Locked parameters recorded IN the report: the amendment defines
+    // these as what invalidates comparability, so a baseline that does
+    // not state them cannot later prove a post-swap run matched it.
+    lockedComparisonParameters: manifest.lockedComparisonParameters ?? null,
     rankingRule: manifest.rankingRule ?? null,
     rankSearchDepth: manifest.rankSearchDepth ?? null,
+    // Corpus pins: which exact snapshot was measured.
+    corpusPins: manifest.corpus.map((c) => ({
+      name: c.name,
+      commitSha: c.commitSha,
+      knownFramework: c.knownFramework
+    })),
     environment: {
       node: process.version,
-      platform: process.platform
+      platform: process.platform,
+      arch: process.arch
     },
     database: "trailhead_bench",
     llmCallsMade: 0,
@@ -91,18 +117,47 @@ async function main() {
 
   mkdirSync(REPORTS_DIR, { recursive: true });
   const ts = timestamp();
-  const jsonPath = resolve(REPORTS_DIR, `${ts}.json`);
-  const summaryPath = resolve(REPORTS_DIR, `${ts}.summary.md`);
+  const prefix = label ? `${label}-` : "";
+  const jsonPath = resolve(REPORTS_DIR, `${prefix}${ts}.json`);
+  const summaryPath = resolve(REPORTS_DIR, `${prefix}${ts}.summary.md`);
 
   writeFileSync(jsonPath, JSON.stringify(report, null, 2));
 
+  const lp = manifest.lockedComparisonParameters as Record<string, unknown> | undefined;
+
   const summaryLines = [
-    `# Benchmark Report — ${report.runAt}`,
+    `# Benchmark Report${label ? ` — ${label}` : ""} — ${report.runAt}`,
     "",
-    `**Embedding model:** ${EMBEDDING_MODEL_ID}`,
-    `**Manifest version:** ${manifest.manifestVersion} (queries.status: ${manifest.queries.status})`,
+    ...(report.isBaseline
+      ? [
+          "> **THIS IS THE COMMITTED BASELINE (BENCH-04).** Item 3's embedding swap is",
+          "> compared against this run. Valid only for `manifestVersion` " +
+            `\`${manifest.manifestVersion}\` and the locked parameters below; changing`,
+          "> either requires a version bump and a new baseline.",
+          ""
+        ]
+      : []),
+    `**Embedding model:** ${EMBEDDING_MODEL_ID} (dimension ${EMBEDDING_DIMENSION})`,
+    `**Manifest version:** ${manifest.manifestVersion} — queries: ${manifest.queries.status}, symbols: ${manifest.symbolGroundTruth.status}`,
     `**Database:** trailhead_bench`,
     `**LLM calls made:** 0 (retrieval-only, per spec)`,
+    `**Environment:** node ${process.version}, ${process.platform}/${process.arch}`,
+    "",
+    "## Locked comparison parameters",
+    "",
+    ...(lp
+      ? Object.entries(lp)
+          .filter(([k]) => k !== "_note")
+          .map(([k, v]) => `- \`${k}\`: ${String(v)}`)
+      : ["- (not recorded in manifest)"]),
+    "",
+    "## Corpus pins",
+    "",
+    "| Repo | Pinned commit | knownFramework |",
+    "|---|---|---|",
+    ...report.corpusPins.map(
+      (c) => `| ${c.name} | \`${c.commitSha}\` | ${c.knownFramework ?? "null (expected to decline)"} |`
+    ),
     "",
     "## Retrieval",
     `- Overall: ${retrieval.overall.queryCount} queries, Top-1 = ${retrieval.overall.top1Accuracy ?? "n/a"}, Top-3 = ${retrieval.overall.top3Accuracy ?? "n/a"}`,
@@ -136,6 +191,27 @@ async function main() {
     ...(symbolRes.reposContributingNoData.length > 0
       ? [`- Contributing no data (0 extracted symbols — NOT scored as 0%): ${symbolRes.reposContributingNoData.join(", ")}`]
       : []),
+    ...(symbolRes.results.length > 0
+      ? [
+          "",
+          "| Repo | File | Expected | Matched | Symbols in file |",
+          "|---|---|---|---|---|",
+          ...symbolRes.results.map(
+            (r) => `| ${r.repoName} | \`${r.filePath}\` | ${r.expectedCount} | ${r.matchedCount} | ${r.actualCount} |`
+          )
+        ]
+      : []),
+    "",
+    "## Per-query detail (all categories)",
+    "",
+    "| Query | Category | Top-1 | Top-3 | Correct rank |",
+    "|---|---|---|---|---|",
+    ...retrieval.byCategory.flatMap((c) =>
+      c.perQuery.map(
+        (q) =>
+          `| ${q.id} | ${c.category} | ${q.top1Hit ? "hit" : "miss"} | ${q.top3Hit ? "hit" : "miss"} | ${q.correctRank ?? `>${report.rankSearchDepth ?? "depth"}`} |`
+      )
+    ),
     ""
   ];
   writeFileSync(summaryPath, summaryLines.join("\n"));
