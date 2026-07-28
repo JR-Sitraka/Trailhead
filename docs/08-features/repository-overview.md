@@ -117,3 +117,20 @@ first-class requirement, not a hoped-for behavior:
         measured by the benchmark's framework-detection metric).
 - The detection-threshold mechanics live in the analysis layer, not
   this screen; this amendment fixes what the screen may claim.
+
+---
+
+# Amendment (2026-07-28, ADR-010) — item 4 re-scoped
+
+The framework misdetection this amendment was written against **does
+not reproduce** (see ADR-010 for the evidence). The "Unknown" display
+semantics above stand unchanged — a null detection still has to
+render honestly. What changes is the nature of the work:
+
+- **OVERVIEW-U1 is now a verification criterion:** across the
+  benchmark corpus, detection either reports a well-evidenced
+  framework or declines to guess — verified by the benchmark's
+  framework-detection metric, not by shipping a threshold change.
+- **OVERVIEW-U2 stands unchanged** (no over-correction).
+- No detection-logic change ships unless corpus verification surfaces
+  an actual confident wrong answer.
