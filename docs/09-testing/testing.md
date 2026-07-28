@@ -251,3 +251,17 @@ place when done.)*
 | Budget (from architecture.md, Upgrade section) | Measured value | Status |
 |---|---|---|
 | Groq free tier: 1,000 req/day AND 100K tokens/day shared across Chat + Export (supersedes the stale Gemini/1,500 row above — provider corrected 2026-07-27) | — | Not yet tested — now MEASURABLE via OBS counters once implemented; measure under real combined load |
+
+## Known coverage gaps (addition, 2026-07-28)
+
+- **`boxen` zero-files defect (found incidentally by benchmark stage
+  A's corpus investigation, Agent-verified via real SQL):**
+  `sindresorhus/boxen` sits at repository `ready` + job `completed`
+  with **zero files, symbols, and chunks** — a "successful" analysis
+  that produced nothing, which should be impossible. Root cause not
+  yet diagnosed (deliberate scope call, ADR-008). **Folded into
+  Upgrade item 7's closeout**: diagnose, fix or explain, and add a
+  regression criterion when touched. Related open observation: `got`
+  orphaned at `analyzing` with no job row (KNOWN-GOOD 2026-07-25) —
+  possibly the same reanalysis-lifecycle neighborhood; check both
+  together.

@@ -116,3 +116,13 @@ architecture full pass for the dimension change.
 (chunking redesign, reranking, hybrid search — none of that this
 phase); paid or hosted embedding APIs (constraint violation);
 query-side changes to Chat/Export.
+
+---
+
+# Amendment (2026-07-28) — ADR renumbering
+
+The model-choice ADR referenced above as "ADR-008" is now **ADR-009**
+— ADR-008 was taken by the benchmark corpus/DB decision, which landed
+first (see docs/10-decisions/adr-008-benchmark-corpus-and-db.md).
+Every "ADR-008" reference in this spec (including SWAP-01) should be
+read as ADR-009. No other content changes.

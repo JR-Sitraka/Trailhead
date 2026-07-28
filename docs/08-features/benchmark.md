@@ -101,3 +101,28 @@ ship before it, scoring detection against known frameworks).
 runtime, memory — deferred to V1, carried in PRD); auto-gating/CI
 enforcement; LLM answer-quality scoring (retrieval quality only —
 generation quality remains the existing groundedness metric's job).
+
+---
+
+# Amendment (2026-07-28, ADR-008) — corpus instantiated, bench DB
+
+- **Corpus enumerated** (supersedes "the existing 5-repository
+  corpus" phrasing above, which stage A proved was never
+  instantiated): Trailhead (pinned SHA), `sindresorhus/got`,
+  `sindresorhus/escape-string-regexp`, `openai/DALL-E`,
+  `sindresorhus/awesome`. Rationale per slot: ADR-008.
+- **Database:** the runner uses a dedicated **`trailhead_bench`**
+  database (`BENCH_DATABASE_URL`), NOT `trailhead_test` — the test
+  DB's documented vitest fixture churn is incompatible with a fixed
+  baseline (ADR-008 supersedes the "test database" line above).
+  Setup: `CREATE DATABASE trailhead_bench; CREATE EXTENSION vector;`
+- **Setup step added to Functional Requirements:** a corpus-import
+  step (`npm run benchmark:setup`) imports the five pinned repos into
+  `trailhead_bench` through the real import pipeline, verifying each
+  lands `ready` with non-zero files/chunks before the manifest is
+  considered valid — no repo is pinned on assumption.
+- Additional criterion:
+  - [ ] BENCH-07: `benchmark:setup` imports all five pinned repos
+        into `trailhead_bench`; each reaches `ready` with non-zero
+        files and chunks (real DB evidence); a repo failing this is a
+        named setup failure, not a silent benchmark skew.
