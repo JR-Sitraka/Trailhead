@@ -1,0 +1,139 @@
+{
+  "status": "PROPOSED — agent candidates, NOT ground truth. Person must verify before BENCH-06 is treated as valid. Deliberately NOT written into manifest.json's symbolGroundTruth section.",
+  "verification": "Every entry below was checked twice: (1) a matching row exists in trailhead_bench's symbols table with the exact kind/name/startLine/endLine, AND (2) the symbol's name actually appears in the real file content sliced at that line range from the pinned SHA. Agent-verified; not person-verified.",
+  "selectionRationale": {
+    "principle": "Selected for REPRESENTATIVENESS across symbol kinds, file types, and known extractor edge cases — explicitly not the first N database rows. The point is to make a regression visible, which means covering the paths most likely to break, not the most numerous ones.",
+    "sindresorhus/escape-string-regexp": "All 6 extracted symbols, exhaustively — the repo is small enough that a complete census is the strongest possible sample. Covers function, export, and import across 3 files.",
+    "JR-Sitraka/Trailhead": "10 chosen to cover: the repo's ONLY class (SecurityError — rarest kind, a single regression would erase the whole kind); interfaces; non-exported private helpers (fixedWindowChunks, findFtsLineNumber — these test that extraction is not export-gated); the function/export duplicate pair on one symbol (detectStackFacts appears as BOTH kinds at identical line ranges — a real extractor behavior worth pinning); a type-only import (ExtractedSymbol); and a const/enum export that is neither function nor class (repositoryStatusEnum).",
+    "sindresorhus/got": "10 chosen to cover: the repo's ONLY interface (RequestPromiseShape); class inheritance (RequestError as base, TimeoutError as subclass); a genuine NAME COLLISION across files (two distinct classes both named TimeoutError, in errors.ts and timed-out.ts — this pins that symbol resolution is file-scoped, not name-global, which no other sample in the corpus tests); a function/export pair with DIFFERENT line ranges (calculateRetryDelay is declared at L5-40 and separately default-exported at L42 — the inverse of the Trailhead identical-range case); non-exported helpers (splitHeaderValue); and a type-alias export (ErrorCode).",
+    "openai/DALL-E": "EXCLUDED — 0 extracted symbols (Python; the extractor is TS/JS-only). Contributes no data. Must never be scored as 0% accuracy.",
+    "sindresorhus/awesome": "EXCLUDED — 0 extracted symbols (Markdown-only repo). Same treatment."
+  },
+  "reposContributingNoData": ["openai/DALL-E", "sindresorhus/awesome"],
+  "samples": [
+    {
+      "repoName": "sindresorhus/escape-string-regexp",
+      "filePath": "index.js",
+      "expectedSymbols": [
+        { "kind": "function", "name": "escapeStringRegexp", "startLine": 1, "endLine": 11, "rationale": "the package's entire public surface" },
+        { "kind": "export", "name": "escapeStringRegexp", "startLine": 1, "endLine": 11, "rationale": "same symbol also extracted as an export — identical range" }
+      ]
+    },
+    {
+      "repoName": "sindresorhus/escape-string-regexp",
+      "filePath": "index.test-d.ts",
+      "expectedSymbols": [
+        { "kind": "import", "name": "expectType", "startLine": 1, "endLine": 1, "rationale": "named import from a type-testing package" },
+        { "kind": "import", "name": "escapeStringRegexp", "startLine": 2, "endLine": 2, "rationale": "default import of the package under test" }
+      ]
+    },
+    {
+      "repoName": "sindresorhus/escape-string-regexp",
+      "filePath": "test.js",
+      "expectedSymbols": [
+        { "kind": "import", "name": "test", "startLine": 1, "endLine": 1, "rationale": "AVA test-runner import" },
+        { "kind": "import", "name": "escapeStringRegexp", "startLine": 2, "endLine": 2, "rationale": "completes the exhaustive 6-symbol census" }
+      ]
+    },
+    {
+      "repoName": "JR-Sitraka/Trailhead",
+      "filePath": "src/server/services/preprocessing.ts",
+      "expectedSymbols": [
+        { "kind": "class", "name": "SecurityError", "startLine": 175, "endLine": 180, "rationale": "the ONLY class in the entire repository — if class extraction regressed, this single row is the only thing that would catch it" }
+      ]
+    },
+    {
+      "repoName": "JR-Sitraka/Trailhead",
+      "filePath": "src/server/services/stackFacts.ts",
+      "expectedSymbols": [
+        { "kind": "interface", "name": "StackFacts", "startLine": 3, "endLine": 9, "rationale": "exported interface" },
+        { "kind": "function", "name": "detectStackFacts", "startLine": 113, "endLine": 187, "rationale": "main exported function; pairs with the export row below at an IDENTICAL range" },
+        { "kind": "export", "name": "detectStackFacts", "startLine": 113, "endLine": 187, "rationale": "same symbol, different kind, same range — pins the dual-extraction behavior" }
+      ]
+    },
+    {
+      "repoName": "JR-Sitraka/Trailhead",
+      "filePath": "src/server/services/embeddingChunker.ts",
+      "expectedSymbols": [
+        { "kind": "function", "name": "fixedWindowChunks", "startLine": 54, "endLine": 63, "rationale": "NON-exported private helper — proves extraction is not export-gated" }
+      ]
+    },
+    {
+      "repoName": "JR-Sitraka/Trailhead",
+      "filePath": "src/server/services/search.ts",
+      "expectedSymbols": [
+        { "kind": "interface", "name": "SearchResult", "startLine": 4, "endLine": 9, "rationale": "second interface, different file" },
+        { "kind": "function", "name": "findFtsLineNumber", "startLine": 113, "endLine": 125, "rationale": "second non-exported private helper, different file" }
+      ]
+    },
+    {
+      "repoName": "JR-Sitraka/Trailhead",
+      "filePath": "src/server/db/schema.ts",
+      "expectedSymbols": [
+        { "kind": "import", "name": "pgTable", "startLine": 1, "endLine": 1, "rationale": "named import among nine on one line — tests multi-specifier import extraction" },
+        { "kind": "export", "name": "repositoryStatusEnum", "startLine": 4, "endLine": 4, "rationale": "export of a const/enum — neither function nor class, a distinct code path" }
+      ]
+    },
+    {
+      "repoName": "JR-Sitraka/Trailhead",
+      "filePath": "src/server/poller.ts",
+      "expectedSymbols": [
+        { "kind": "import", "name": "ExtractedSymbol", "startLine": 4, "endLine": 4, "rationale": "TYPE-only import (`import { extractSymbols, type ExtractedSymbol }`) — extracted as a plain import; pins that behavior" }
+      ]
+    },
+    {
+      "repoName": "sindresorhus/got",
+      "filePath": "source/as-promise/types.ts",
+      "expectedSymbols": [
+        { "kind": "interface", "name": "RequestPromiseShape", "startLine": 5, "endLine": 26, "rationale": "the ONLY interface in the entire got repository — same single-point-of-failure logic as Trailhead's lone class" }
+      ]
+    },
+    {
+      "repoName": "sindresorhus/got",
+      "filePath": "source/core/errors.ts",
+      "expectedSymbols": [
+        { "kind": "class", "name": "RequestError", "startLine": 20, "endLine": 72, "rationale": "base error class that the others extend" },
+        { "kind": "class", "name": "TimeoutError", "startLine": 138, "endLine": 149, "rationale": "NAME COLLISION case, half 1 of 2: the PUBLIC TimeoutError, a subclass of RequestError" }
+      ]
+    },
+    {
+      "repoName": "sindresorhus/got",
+      "filePath": "source/core/timed-out.ts",
+      "expectedSymbols": [
+        { "kind": "class", "name": "TimeoutError", "startLine": 35, "endLine": 44, "rationale": "NAME COLLISION case, half 2 of 2: a DIFFERENT class, same name, extends Error not RequestError. Together these two pin that symbol resolution is file-scoped, not name-global — nothing else in the corpus tests this" },
+        { "kind": "export", "name": "ErrorCode", "startLine": 25, "endLine": 33, "rationale": "type-alias export — a distinct export code path from function/class exports" }
+      ]
+    },
+    {
+      "repoName": "sindresorhus/got",
+      "filePath": "source/core/calculate-retry-delay.ts",
+      "expectedSymbols": [
+        { "kind": "function", "name": "calculateRetryDelay", "startLine": 5, "endLine": 40, "rationale": "declaration site; pairs with the export below at a DIFFERENT range" },
+        { "kind": "export", "name": "calculateRetryDelay", "startLine": 42, "endLine": 42, "rationale": "separate `export default` statement on its own line — the inverse of Trailhead's identical-range pair, so both shapes are pinned" }
+      ]
+    },
+    {
+      "repoName": "sindresorhus/got",
+      "filePath": "source/core/utils/get-body-size.ts",
+      "expectedSymbols": [
+        { "kind": "function", "name": "getBodySize", "startLine": 5, "endLine": 27, "rationale": "TRAP-04's ground-truth implementation — cross-links the symbol sample to a trap query" }
+      ]
+    },
+    {
+      "repoName": "sindresorhus/got",
+      "filePath": "source/core/parse-link-header.ts",
+      "expectedSymbols": [
+        { "kind": "function", "name": "splitHeaderValue", "startLine": 1, "endLine": 56, "rationale": "non-exported helper starting at line 1 — boundary case for range extraction" },
+        { "kind": "function", "name": "parseLinkHeader", "startLine": 58, "endLine": 105, "rationale": "TRAP-01's ground-truth implementation — second cross-link to a trap query" }
+      ]
+    }
+  ],
+  "counts": {
+    "sindresorhus/escape-string-regexp": 6,
+    "JR-Sitraka/Trailhead": 10,
+    "sindresorhus/got": 10,
+    "openai/DALL-E": 0,
+    "sindresorhus/awesome": 0,
+    "total": 26
+  }
+}
