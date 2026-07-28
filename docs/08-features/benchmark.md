@@ -153,3 +153,34 @@ criterion 2 needs.
 8 known_code, 7 semantic, 8 documentation, 8 filename_trap);
 `symbolGroundTruth` is curated as stage B's opening step and BENCH-06
 is not valid until the person has verified it.
+
+---
+
+# Amendment (2026-07-28) — ranking rule and locked comparison parameters
+
+**Ranking is file-level, not chunk-level.** Retrieval returns the top
+**50 chunks**; chunks map to file paths; duplicates collapse keeping
+first occurrence. **A file's rank is its best chunk's position.**
+
+**Why this replaces stage A's chunk-level top-3:** ground truth is
+expressed as files, and the trap-rank comparison the swap's criterion
+2 depends on is meaningless when the correct file sits outside a
+3-item window. The smoke run proved it concretely — TRAP-06's correct
+file (`src/server/services/export.ts`) does not appear within 50
+results while its trap ranks 1. A rule that could not represent that
+gap could not measure the defect the swap exists to fix.
+
+**Locked comparison parameters** (changing any of these invalidates
+comparability with the baseline and requires a new baseline, recorded
+as such):
+- Rank-search depth: **50 chunks**
+- Rank definition: **best chunk position per file**
+- Duplicate collapse: **first occurrence wins**
+- Tie handling: deterministic by retrieval order (satisfies this
+  spec's Edge Case requiring a documented tie rule)
+
+**Validator additions:** a `filename_trap` query is rejected if it
+has no `trapFile`, or if its trap file is also its own ground truth.
+
+**Timing note:** adopted before any baseline existed, so nothing
+became incomparable. Approved by the person 2026-07-28.
