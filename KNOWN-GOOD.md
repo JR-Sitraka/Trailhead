@@ -499,3 +499,14 @@ corrected, not silently deleted.
 
 (none yet — entries above are environment facts, not incident-derived
 hard rules; nothing has risen to that bar yet)
+
+- [2026-07-28] `src/app/repositories/[id]/overview/page.tsx` (and
+  `scripts/check-got.ts`) carry a pre-existing `skip-worktree` (`H`)
+  flag — confirmed via `git ls-files -v`. Normal edits/`git add`
+  silently do NOT track changes to a skip-worktree file; this is
+  what nearly cost item 4's fix (worked around via `git add -f`,
+  which stages the change but does NOT clear the flag). **Before
+  editing either file again, run
+  `git update-index --no-skip-worktree <path>` first** to clear the
+  flag properly — don't rely on `-f` a second time. Root cause of why
+  the flag was set in the first place is unknown/not investigated.
