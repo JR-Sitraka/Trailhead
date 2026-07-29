@@ -126,3 +126,24 @@ The model-choice ADR referenced above as "ADR-008" is now **ADR-009**
 first (see docs/10-decisions/adr-008-benchmark-corpus-and-db.md).
 Every "ADR-008" reference in this spec (including SWAP-01) should be
 read as ADR-009. No other content changes.
+
+---
+
+# Amendment (2026-07-28, ADR-009) — candidate selected, migration scoped
+
+**Model selected: `jinaai/jina-embeddings-v2-base-code`, quantized
+(q8), dimension 768.** Environment probe and throughput measurement
+both real (ADR-009 has full evidence). Tokenizer/truncation Edge Case
+above is CLOSED: `model_max_length` 8192 vs. observed max 1,098
+tokens across 148 real chunks — 7.5× headroom, zero truncation.
+
+**Throughput is an accepted tradeoff, not a blocker:** measured 6.3×
+slower than current per-chunk (like-for-like, same machine, corrected
+methodology — see ADR-009 for the discarded invalid v1 run). Real
+extrapolated re-embed time is machine-dependent; the ratio, not the
+hours, is what's recorded as durable.
+
+**Next required step per the Functional Requirements above:
+BENCH-04's post-swap benchmark comparison** — this amendment
+establishes the candidate is viable to implement, not that it wins on
+retrieval quality. That verdict is SWAP-04, still pending.
