@@ -1,0 +1,106 @@
+{
+  "runAt": "2026-07-28T01:54:23.640Z",
+  "embeddingModelId": "Xenova/all-MiniLM-L6-v2",
+  "manifestVersion": "1.0.0-stageA",
+  "manifestQueryStatus": "UNAPPROVED — candidates only",
+  "environment": {
+    "node": "v20.13.0",
+    "platform": "win32"
+  },
+  "database": "trailhead_bench",
+  "llmCallsMade": 0,
+  "metrics": {
+    "retrieval": {
+      "overall": {
+        "queryCount": 0,
+        "top1Accuracy": null,
+        "top3Accuracy": null
+      },
+      "byCategory": [
+        {
+          "category": "known_code",
+          "queryCount": 0,
+          "top1Hits": 0,
+          "top3Hits": 0,
+          "top1Accuracy": null,
+          "top3Accuracy": null,
+          "perQuery": []
+        },
+        {
+          "category": "filename_trap",
+          "queryCount": 0,
+          "top1Hits": 0,
+          "top3Hits": 0,
+          "top1Accuracy": null,
+          "top3Accuracy": null,
+          "perQuery": []
+        },
+        {
+          "category": "semantic",
+          "queryCount": 0,
+          "top1Hits": 0,
+          "top3Hits": 0,
+          "top1Accuracy": null,
+          "top3Accuracy": null,
+          "perQuery": []
+        },
+        {
+          "category": "documentation",
+          "queryCount": 0,
+          "top1Hits": 0,
+          "top3Hits": 0,
+          "top1Accuracy": null,
+          "top3Accuracy": null,
+          "perQuery": []
+        }
+      ],
+      "note": "no queries in manifest (expected for an UNAPPROVED stage-A manifest) — retrieval metrics not computed, not a failure"
+    },
+    "framework": {
+      "results": [
+        {
+          "repoName": "JR-Sitraka/Trailhead",
+          "knownFramework": null,
+          "detectedFramework": "Next.js",
+          "match": null,
+          "note": "no ground truth curated yet — skipped, not guessed"
+        },
+        {
+          "repoName": "sindresorhus/got",
+          "knownFramework": null,
+          "detectedFramework": null,
+          "match": null,
+          "note": "no ground truth curated yet — skipped, not guessed"
+        },
+        {
+          "repoName": "sindresorhus/escape-string-regexp",
+          "knownFramework": null,
+          "detectedFramework": null,
+          "match": null,
+          "note": "no ground truth curated yet — skipped, not guessed"
+        },
+        {
+          "repoName": "openai/DALL-E",
+          "knownFramework": null,
+          "detectedFramework": null,
+          "match": null,
+          "note": "no ground truth curated yet — skipped, not guessed"
+        },
+        {
+          "repoName": "sindresorhus/awesome",
+          "knownFramework": null,
+          "detectedFramework": null,
+          "match": null,
+          "note": "no ground truth curated yet — skipped, not guessed"
+        }
+      ],
+      "accuracy": null,
+      "note": "no repos have curated knownFramework ground truth yet — accuracy not computed, not a failure"
+    },
+    "symbolResolution": {
+      "results": [],
+      "accuracy": null,
+      "note": "no symbol ground-truth samples in manifest (expected for an UNAPPROVED stage-A manifest) — not computed, not a failure"
+    }
+  }
+}

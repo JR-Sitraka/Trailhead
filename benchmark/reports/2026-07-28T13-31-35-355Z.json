@@ -1,0 +1,700 @@
+{
+  "runAt": "2026-07-28T13:31:35.354Z",
+  "embeddingModelId": "Xenova/all-MiniLM-L6-v2",
+  "manifestVersion": "1.0.0",
+  "manifestQueryStatus": "APPROVED",
+  "symbolGroundTruthStatus": "PENDING",
+  "rankingRule": "Ranking is FILE-level, not chunk-level. The runner retrieves the top rankSearchDepth chunks by cosine distance (ORDER BY cosine_distance ASC, id ASC — the documented pgvector pattern, KNOWN-GOOD 2026-07-22), maps each chunk to its file path, then de-duplicates keeping first occurrence. A file's rank is the position of its best-ranked chunk in that de-duplicated list. Top-1 = de-duplicated rank 1 is a ground-truth file; Top-3 = any of de-duplicated ranks 1-3 is. Ties are broken by the id ASC tiebreaker already in the SQL, so the rule is deterministic given fixed row ids (see KNOWN-GOOD 2026-07-23 on cross-invocation embedding jitter, which can still perturb genuinely near-tied candidates).",
+  "rankSearchDepth": 50,
+  "environment": {
+    "node": "v20.13.0",
+    "platform": "win32"
+  },
+  "database": "trailhead_bench",
+  "llmCallsMade": 0,
+  "metrics": {
+    "retrieval": {
+      "overall": {
+        "queryCount": 31,
+        "top1Accuracy": 0.25806451612903225,
+        "top3Accuracy": 0.5806451612903226
+      },
+      "byCategory": [
+        {
+          "category": "known_code",
+          "queryCount": 8,
+          "top1Hits": 2,
+          "top3Hits": 4,
+          "top1Accuracy": 0.25,
+          "top3Accuracy": 0.5,
+          "trapOutrankedRate": null,
+          "perQuery": [
+            {
+              "id": "KC-01",
+              "top1Hit": false,
+              "top3Hit": false,
+              "rankedFiles": [
+                "docs/06-components/briefs/overview-brief.md",
+                "docs/07-architecture/architecture.md",
+                "docs/06-components/briefs/dashboard-brief.md",
+                "docs/08-features/repository-dashboard.md",
+                "docs/08-features/repository-overview.md",
+                "docs/08-features/export.md",
+                "docs/08-features/symbols.md",
+                "docs/08-features/repository-import.md",
+                "README.md",
+                "docs/09-testing/testing.md"
+              ],
+              "correctRank": null
+            },
+            {
+              "id": "KC-02",
+              "top1Hit": false,
+              "top3Hit": false,
+              "rankedFiles": [
+                "docs/08-features/safe-preprocessing.md",
+                "docs/09-testing/testing.md",
+                "docs/08-features/repository-import.md",
+                "KNOWN-GOOD.md",
+                "tests/repositories.route.test.ts",
+                "tests/preprocessing.test.ts",
+                "docs/06-components/briefs/dashboard-arena-fix-prompt.md",
+                "docs/08-features/file-explorer.md",
+                "docs/08-features/ask.md",
+                "src/app/api/repositories/route.ts"
+              ],
+              "correctRank": 13
+            },
+            {
+              "id": "KC-03",
+              "top1Hit": false,
+              "top3Hit": true,
+              "rankedFiles": [
+                "tests/chat.test.ts",
+                "docs/07-architecture/architecture.md",
+                "src/server/services/chat.ts",
+                "tests/embedding.test.ts",
+                "scripts/query-pre-state.mjs",
+                "scripts/query-pre-state.ts",
+                "scripts/query-post-state.cjs",
+                "scripts/query-pre-state.cjs",
+                "src/server/services/export.ts",
+                "tests/embedding-pipeline.test.ts"
+              ],
+              "correctRank": 3
+            },
+            {
+              "id": "KC-04",
+              "top1Hit": false,
+              "top3Hit": false,
+              "rankedFiles": [
+                "test/timeout.ts",
+                "source/core/options.ts",
+                "test/hooks.ts",
+                "documentation/7-retry.md",
+                "test/early-307-redirects.ts",
+                "test/retry.ts",
+                "source/core/response.ts",
+                "source/core/utils/timer.ts",
+                "source/core/index.ts",
+                "documentation/quick-start.md"
+              ],
+              "correctRank": null
+            },
+            {
+              "id": "KC-05",
+              "top1Hit": true,
+              "top3Hit": true,
+              "rankedFiles": [
+                "source/core/errors.ts",
+                "documentation/9-hooks.md",
+                "test/hooks.ts",
+                "source/core/index.ts",
+                "documentation/8-errors.md",
+                "source/core/options.ts",
+                "test/retry.ts",
+                "source/core/diagnostics-channel.ts",
+                "test/stream.ts",
+                "source/core/timed-out.ts"
+              ],
+              "correctRank": 1
+            },
+            {
+              "id": "KC-06",
+              "top1Hit": false,
+              "top3Hit": true,
+              "rankedFiles": [
+                "test.js",
+                "index.d.ts",
+                "index.js",
+                "readme.md",
+                "package.json",
+                "index.test-d.ts",
+                ".gitattributes",
+                ".npmrc",
+                ".gitignore",
+                "license"
+              ],
+              "correctRank": 3
+            },
+            {
+              "id": "KC-07",
+              "top1Hit": false,
+              "top3Hit": false,
+              "rankedFiles": [
+                "model_card.md",
+                "README.md",
+                "dall_e/encoder.py",
+                "dall_e/decoder.py",
+                "dall_e/utils.py",
+                "requirements.txt",
+                "dall_e/__init__.py",
+                "notebooks/usage.ipynb",
+                "setup.py",
+                "LICENSE"
+              ],
+              "correctRank": 5
+            },
+            {
+              "id": "KC-08",
+              "top1Hit": true,
+              "top3Hit": true,
+              "rankedFiles": [
+                ".github/workflows/repo_linter.sh",
+                ".github/workflows/main.yml",
+                "readme.md",
+                "contributing.md",
+                "awesome.md",
+                "pull_request_template.md",
+                ".gitattributes",
+                "code-of-conduct.md",
+                "create-list.md",
+                "license"
+              ],
+              "correctRank": 1
+            }
+          ]
+        },
+        {
+          "category": "filename_trap",
+          "queryCount": 8,
+          "top1Hits": 3,
+          "top3Hits": 6,
+          "top1Accuracy": 0.375,
+          "top3Accuracy": 0.75,
+          "trapOutrankedRate": 0.25,
+          "perQuery": [
+            {
+              "id": "TRAP-01",
+              "top1Hit": false,
+              "top3Hit": true,
+              "rankedFiles": [
+                "test/parse-link-header.ts",
+                "source/core/parse-link-header.ts",
+                "test/error.ts",
+                "test/headers.ts",
+                "source/core/options.ts",
+                "source/core/utils/http2-client.ts",
+                "documentation/2-options.md",
+                "source/core/errors.ts",
+                "test/redirects.ts",
+                "test/unix-socket.ts"
+              ],
+              "correctRank": 2,
+              "trapFile": "documentation/4-pagination.md",
+              "trapRank": 28,
+              "trap_outranked_correct": false
+            },
+            {
+              "id": "TRAP-02",
+              "top1Hit": false,
+              "top3Hit": true,
+              "rankedFiles": [
+                "documentation/2-options.md",
+                "source/core/utils/http2-client.ts",
+                "source/core/utils/timer.ts",
+                "documentation/3-streams.md",
+                "test/timings.ts",
+                "documentation/migration-guides/request.md",
+                "documentation/6-timeout.md",
+                "documentation/tips.md",
+                "readme.md",
+                "test/https.ts"
+              ],
+              "correctRank": 2,
+              "trapFile": "package.json",
+              "trapRank": null,
+              "trap_outranked_correct": false
+            },
+            {
+              "id": "TRAP-03",
+              "top1Hit": false,
+              "top3Hit": true,
+              "rankedFiles": [
+                "source/core/utils/http2-client.ts",
+                "source/core/options.ts",
+                "documentation/2-options.md",
+                "source/types.ts",
+                "documentation/quick-start.md",
+                "documentation/10-instances.md",
+                "documentation/3-streams.md",
+                "documentation/9-hooks.md",
+                "test/http.ts",
+                "source/as-promise/types.ts"
+              ],
+              "correctRank": 2,
+              "trapFile": "documentation/2-options.md",
+              "trapRank": 3,
+              "trap_outranked_correct": false
+            },
+            {
+              "id": "TRAP-04",
+              "top1Hit": true,
+              "top3Hit": true,
+              "rankedFiles": [
+                "source/core/utils/get-body-size.ts",
+                "test/stream.ts",
+                "documentation/8-errors.md",
+                "test/redirects.ts",
+                "documentation/2-options.md",
+                "source/core/index.ts",
+                "test/headers.ts",
+                "test/hooks.ts",
+                "test/post.ts",
+                "test/gzip.ts"
+              ],
+              "correctRank": 1,
+              "trapFile": "documentation/3-streams.md",
+              "trapRank": null,
+              "trap_outranked_correct": false
+            },
+            {
+              "id": "TRAP-05",
+              "top1Hit": true,
+              "top3Hit": true,
+              "rankedFiles": [
+                "src/server/services/search.ts",
+                "docs/07-architecture/architecture.md",
+                "docs/08-features/symbols.md",
+                "docs/08-features/search.md",
+                "docs/06-components/briefs/dashboard-review.md",
+                "docs/06-components/briefs/search-brief.md",
+                "src/server/services/stackFacts.ts",
+                "docs/06-components/briefs/ask-review.md",
+                "src/lib/chat.ts",
+                "src/server/services/chat.ts"
+              ],
+              "correctRank": 1,
+              "trapFile": "docs/08-features/search.md",
+              "trapRank": 4,
+              "trap_outranked_correct": false
+            },
+            {
+              "id": "TRAP-06",
+              "top1Hit": false,
+              "top3Hit": false,
+              "rankedFiles": [
+                "docs/08-features/export.md",
+                "README.md",
+                "docs/08-features/repository-overview.md",
+                "docs/06-components/briefs/overview-brief.md",
+                "docs/08-features/ask.md",
+                "docs/06-components/briefs/export.md",
+                "docs/01-product/product-prd.md",
+                "playbooks/existing-codebase-mapping.md",
+                "PROJECT-STATE.md",
+                "docs/02-ux/ux-user-flows.md"
+              ],
+              "correctRank": null,
+              "trapFile": "docs/08-features/export.md",
+              "trapRank": 1,
+              "trap_outranked_correct": true
+            },
+            {
+              "id": "TRAP-07",
+              "top1Hit": true,
+              "top3Hit": true,
+              "rankedFiles": [
+                "src/server/services/symbols.ts",
+                "docs/08-features/symbols.md",
+                "KNOWN-GOOD.md",
+                "tests/web-tree-sitter.test.ts",
+                "src/lib/chat.ts",
+                "src/server/services/chat.ts",
+                "src/server/poller.ts",
+                "src/app/repositories/[id]/symbols/SymbolsClient.tsx",
+                "tsconfig.json",
+                "src/server/services/export.ts"
+              ],
+              "correctRank": 1,
+              "trapFile": "tests/symbols.test.ts",
+              "trapRank": 17,
+              "trap_outranked_correct": false
+            },
+            {
+              "id": "TRAP-08",
+              "top1Hit": false,
+              "top3Hit": false,
+              "rankedFiles": [
+                "docs/08-features/repository-overview.md",
+                "roles/repo-mapper.md",
+                "docs/10-decisions/adr-001-adopt-starter-kit-v4.1.md",
+                "AGENTS.md",
+                "kernel/AGENTS-KERNEL.md.template",
+                "roles/qa-engineer.md",
+                "src/server/services/stackFacts.ts",
+                "README.md",
+                "src/server/services/preprocessing.ts",
+                "docs/08-features/repository-dashboard.md"
+              ],
+              "correctRank": 7,
+              "trapFile": "docs/08-features/repository-overview.md",
+              "trapRank": 1,
+              "trap_outranked_correct": true
+            }
+          ]
+        },
+        {
+          "category": "semantic",
+          "queryCount": 7,
+          "top1Hits": 0,
+          "top3Hits": 2,
+          "top1Accuracy": 0,
+          "top3Accuracy": 0.2857142857142857,
+          "trapOutrankedRate": null,
+          "perQuery": [
+            {
+              "id": "SEM-01",
+              "top1Hit": false,
+              "top3Hit": false,
+              "rankedFiles": [
+                "KNOWN-GOOD.md",
+                "docs/08-features/ask.md",
+                "docs/07-architecture/architecture.md",
+                "docs/08-features/export.md",
+                "tests/chat.test.ts",
+                "docs/06-components/briefs/ask.md",
+                "tests/groq-proof.test.ts",
+                "docs/08-features/chat.md",
+                "tests/export-page.test.ts",
+                "docs/02-ux/ux-user-flows.md"
+              ],
+              "correctRank": 17
+            },
+            {
+              "id": "SEM-02",
+              "top1Hit": false,
+              "top3Hit": false,
+              "rankedFiles": [
+                "docs/08-features/ask.md",
+                "docs/08-features/chat.md",
+                "docs/06-components/briefs/dashboard-brief.md",
+                "docs/07-architecture/architecture.md",
+                "docs/08-features/safe-preprocessing.md",
+                "docs/08-features/repository-dashboard.md",
+                "PROJECT-STATE.md",
+                "kernel/AGENTS-KERNEL.md.template",
+                "docs/08-features/export.md",
+                "docs/08-features/repository-import.md"
+              ],
+              "correctRank": null
+            },
+            {
+              "id": "SEM-03",
+              "top1Hit": false,
+              "top3Hit": false,
+              "rankedFiles": [
+                "documentation/2-options.md",
+                "test/dns-cache-regressions.ts",
+                "test/dns-cache.ts",
+                "test/timings.ts",
+                "test/dns-cache-fallback.ts",
+                "source/core/utils/timer.ts",
+                "source/core/utils/dns-cache.ts",
+                "test/dns-cache-integration.ts",
+                "test/timeout.ts",
+                "documentation/3-streams.md"
+              ],
+              "correctRank": 7
+            },
+            {
+              "id": "SEM-04",
+              "top1Hit": false,
+              "top3Hit": true,
+              "rankedFiles": [
+                "index.d.ts",
+                "index.js",
+                "readme.md",
+                "test.js",
+                "index.test-d.ts",
+                "package.json",
+                ".gitattributes",
+                ".editorconfig",
+                ".npmrc",
+                ".gitignore"
+              ],
+              "correctRank": 2
+            },
+            {
+              "id": "SEM-06",
+              "top1Hit": false,
+              "top3Hit": true,
+              "rankedFiles": [
+                "create-list.md",
+                "pull_request_template.md",
+                "awesome.md",
+                "license",
+                "readme.md",
+                "code-of-conduct.md",
+                "media/readme.md",
+                "contributing.md",
+                ".gitattributes",
+                ".github/workflows/main.yml"
+              ],
+              "correctRank": 3
+            },
+            {
+              "id": "SEM-07",
+              "top1Hit": false,
+              "top3Hit": false,
+              "rankedFiles": [
+                "documentation/8-errors.md",
+                "test/timeout.ts",
+                "source/core/utils/timer.ts",
+                "source/core/errors.ts",
+                "documentation/6-timeout.md",
+                "test/timings.ts",
+                "documentation/quick-start.md",
+                "documentation/async-stack-traces.md",
+                "source/core/response.ts",
+                "source/core/index.ts"
+              ],
+              "correctRank": null
+            },
+            {
+              "id": "SEM-08",
+              "top1Hit": false,
+              "top3Hit": false,
+              "rankedFiles": [
+                "docs/07-architecture/architecture.md",
+                "docs/10-decisions/adr-004-mvp-b-slice1-stack.md",
+                "STARTER-KIT.md",
+                "docs/08-features/file-explorer.md",
+                "playbooks/existing-codebase-mapping.md",
+                "principles.md",
+                "KNOWN-GOOD.md",
+                "tests/embedding-pipeline.test.ts",
+                "src/server/poller.ts",
+                "tests/stack-facts.test.ts"
+              ],
+              "correctRank": 13
+            }
+          ]
+        },
+        {
+          "category": "documentation",
+          "queryCount": 8,
+          "top1Hits": 3,
+          "top3Hits": 6,
+          "top1Accuracy": 0.375,
+          "top3Accuracy": 0.75,
+          "trapOutrankedRate": null,
+          "perQuery": [
+            {
+              "id": "DOC-01",
+              "top1Hit": false,
+              "top3Hit": true,
+              "rankedFiles": [
+                "kernel/AGENTS-KERNEL.md.template",
+                "AGENTS.md",
+                "playbooks/existing-codebase-mapping.md",
+                "roles/repo-mapper.md",
+                "principles.md",
+                "STARTER-KIT.md",
+                "docs/08-features/export.md",
+                "docs/08-features/repository-dashboard.md",
+                "PROJECT-STATE.md",
+                "README.md"
+              ],
+              "correctRank": 2
+            },
+            {
+              "id": "DOC-02",
+              "top1Hit": false,
+              "top3Hit": false,
+              "rankedFiles": [
+                "docs/06-components/component-specs.md",
+                "docs/02-ux/ux-user-flows.md",
+                "RETROSPECTIVE.md",
+                "docs/01-product/product-prd.md",
+                "PROJECT-STATE.md",
+                "docs/10-decisions/adr-002-mvp-a-stack.md",
+                "docs/03-information-architecture/information-architecture.md",
+                "docs/08-features/file-explorer.md",
+                "docs/08-features/repository-overview.md",
+                "roles/product-manager.md"
+              ],
+              "correctRank": 4
+            },
+            {
+              "id": "DOC-03",
+              "top1Hit": false,
+              "top3Hit": true,
+              "rankedFiles": [
+                "source/core/options.ts",
+                "documentation/5-https.md",
+                "test/https.ts",
+                "source/core/utils/http2-client.ts",
+                "test/helpers/create-https-test-server.ts",
+                "test/types/pem.ts",
+                "benchmark/index.ts",
+                "test/timeout.ts",
+                "benchmark/server.ts",
+                "documentation/9-hooks.md"
+              ],
+              "correctRank": 2
+            },
+            {
+              "id": "DOC-04",
+              "top1Hit": true,
+              "top3Hit": true,
+              "rankedFiles": [
+                "documentation/4-pagination.md",
+                "test/pagination.ts",
+                "test/unix-socket.ts",
+                "source/types.ts",
+                "source/core/options.ts",
+                "documentation/examples/pagination.js",
+                "documentation/tips.md"
+              ],
+              "correctRank": 1
+            },
+            {
+              "id": "DOC-05",
+              "top1Hit": true,
+              "top3Hit": true,
+              "rankedFiles": [
+                "documentation/migration-guides/axios.md",
+                "benchmark/index.ts",
+                ".github/workflows/main.yml",
+                "package.json",
+                "documentation/lets-make-a-plugin.md",
+                "readme.md",
+                "documentation/migration-guides/request.md",
+                "tsconfig.json",
+                "documentation/migration-guides/nodejs.md",
+                "source/core/options.ts"
+              ],
+              "correctRank": 1
+            },
+            {
+              "id": "DOC-06",
+              "top1Hit": false,
+              "top3Hit": false,
+              "rankedFiles": [
+                ".npmrc",
+                "license",
+                "package.json",
+                "index.js",
+                ".github/workflows/main.yml",
+                ".gitignore",
+                ".github/security.md",
+                "index.d.ts",
+                ".gitattributes",
+                "index.test-d.ts"
+              ],
+              "correctRank": 13
+            },
+            {
+              "id": "DOC-07",
+              "top1Hit": true,
+              "top3Hit": true,
+              "rankedFiles": [
+                "model_card.md",
+                "LICENSE",
+                "README.md",
+                "dall_e/encoder.py",
+                "dall_e/decoder.py",
+                "dall_e/utils.py",
+                "dall_e/__init__.py",
+                "notebooks/usage.ipynb",
+                "setup.py",
+                "requirements.txt"
+              ],
+              "correctRank": 1
+            },
+            {
+              "id": "DOC-08",
+              "top1Hit": false,
+              "top3Hit": true,
+              "rankedFiles": [
+                "create-list.md",
+                "awesome.md",
+                "contributing.md",
+                "pull_request_template.md",
+                "readme.md",
+                "code-of-conduct.md",
+                "media/readme.md",
+                ".github/workflows/main.yml",
+                "license",
+                ".gitattributes"
+              ],
+              "correctRank": 3
+            }
+          ]
+        }
+      ],
+      "note": "31 queries evaluated at rank-search depth 50"
+    },
+    "framework": {
+      "results": [
+        {
+          "repoName": "JR-Sitraka/Trailhead",
+          "knownFramework": "Next.js",
+          "detectedFramework": "Next.js",
+          "match": true,
+          "note": "positive framework case"
+        },
+        {
+          "repoName": "sindresorhus/got",
+          "knownFramework": null,
+          "detectedFramework": null,
+          "match": true,
+          "note": "expected to decline (ADR-010)"
+        },
+        {
+          "repoName": "sindresorhus/escape-string-regexp",
+          "knownFramework": null,
+          "detectedFramework": null,
+          "match": true,
+          "note": "expected to decline (ADR-010)"
+        },
+        {
+          "repoName": "openai/DALL-E",
+          "knownFramework": null,
+          "detectedFramework": null,
+          "match": true,
+          "note": "expected to decline (ADR-010)"
+        },
+        {
+          "repoName": "sindresorhus/awesome",
+          "knownFramework": null,
+          "detectedFramework": null,
+          "match": true,
+          "note": "expected to decline (ADR-010)"
+        }
+      ],
+      "accuracy": 1,
+      "note": "5 repos scored; 1 positive case(s), the rest scored as correct-declining (ADR-010 re-scope)"
+    },
+    "symbolResolution": {
+      "results": [],
+      "accuracy": null,
+      "reposContributingNoData": [
+        "openai/DALL-E",
+        "sindresorhus/awesome"
+      ],
+      "note": "symbolGroundTruth.samples is empty (status PENDING) — not computed, not a failure. BENCH-06 is not valid until curated and person-verified."
+    }
+  }
+}

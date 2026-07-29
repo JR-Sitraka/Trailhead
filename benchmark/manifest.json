@@ -1,0 +1,667 @@
+{
+  "manifestVersion": "1.0.0",
+  "createdAt": "2026-07-28T00:00:00.000Z",
+  "approval": {
+    "queriesApprovedBy": "Sitraka",
+    "queriesApprovedDate": "2026-07-28",
+    "note": "All four open calls resolved by the person: SEM-02 rewrite approved; SEM-05 dropped in favour of KC-07; DOC-02 rewrite approved; TRAP-04 and TRAP-07 trap files swapped (see those entries)."
+  },
+  "groundTruthRules": [
+    "Test files are NEVER valid ground truth. The question is always 'where is this implemented'.",
+    "A file may be ground truth for one query and a trap for another (e.g. documentation/4-pagination.md is ground truth for DOC-04 and the trap for TRAP-01). This is deliberate and valuable: it tests discrimination by question, not by file.",
+    "Ground truth for known_code, semantic, and filename_trap is implementation code. Documentation files are ground truth only in the documentation category.",
+    "Every ground-truth path was confirmed to exist in trailhead_bench at the pinned SHA.",
+    "For filename_trap queries the runner MUST record the trap file's rank alongside the correct file's rank. Top-3 accuracy alone cannot evaluate the swap's criterion 2 ('filename references no longer systematically outrank implementation') — the comparison is the measurement."
+  ],
+  "rankingRule": "Ranking is FILE-level, not chunk-level. The runner retrieves the top rankSearchDepth chunks by cosine distance (ORDER BY cosine_distance ASC, id ASC — the documented pgvector pattern, KNOWN-GOOD 2026-07-22), maps each chunk to its file path, then de-duplicates keeping first occurrence. A file's rank is the position of its best-ranked chunk in that de-duplicated list. Top-1 = de-duplicated rank 1 is a ground-truth file; Top-3 = any of de-duplicated ranks 1-3 is. Ties are broken by the id ASC tiebreaker already in the SQL, so the rule is deterministic given fixed row ids (see KNOWN-GOOD 2026-07-23 on cross-invocation embedding jitter, which can still perturb genuinely near-tied candidates).",
+  "lockedComparisonParameters": {
+    "_note": "Locked by benchmark.md's 2026-07-28 ranking amendment, person-approved. Changing ANY of these invalidates comparability with the baseline and requires a new baseline, recorded as such. Adopted before any baseline existed, so nothing became incomparable.",
+    "rankSearchDepth": 50,
+    "rankDefinition": "best chunk position per file",
+    "duplicateCollapse": "first occurrence wins",
+    "tieHandling": "deterministic by retrieval order (ORDER BY cosine_distance ASC, id ASC)",
+    "validatorAdditions": "a filename_trap query is rejected if it has no trapFile, or if its trapFile is also its own ground truth"
+  },
+  "rankSearchDepth": 50,
+  "corpus": [
+    {
+      "name": "JR-Sitraka/Trailhead",
+      "source": "github",
+      "sourceUrl": "https://github.com/JR-Sitraka/Trailhead",
+      "commitSha": "19221f3d5f5e17f38ed51e05a85966cc7b04e4d5",
+      "knownFramework": "Next.js"
+    },
+    {
+      "name": "sindresorhus/got",
+      "source": "github",
+      "sourceUrl": "https://github.com/sindresorhus/got",
+      "commitSha": "e3924aa1e53a6ca3eb93a43618ce532442a89b40",
+      "knownFramework": null
+    },
+    {
+      "name": "sindresorhus/escape-string-regexp",
+      "source": "github",
+      "sourceUrl": "https://github.com/sindresorhus/escape-string-regexp",
+      "commitSha": "cbc42403142c96923b482604e1f3d627b1956aff",
+      "knownFramework": null
+    },
+    {
+      "name": "openai/DALL-E",
+      "source": "github",
+      "sourceUrl": "https://github.com/openai/DALL-E",
+      "commitSha": "5be4b236bc3ade6943662354117a0e83752cc322",
+      "knownFramework": null
+    },
+    {
+      "name": "sindresorhus/awesome",
+      "source": "github",
+      "sourceUrl": "https://github.com/sindresorhus/awesome",
+      "commitSha": "7cb5c8371c0fe73e5444a42d5542f6280c38b1a6",
+      "knownFramework": null
+    }
+  ],
+  "knownFrameworkLimitation": "Only 1 of 5 repos has a positive framework case, so this metric largely measures correct declining-to-guess. Defensible under ADR-010's re-scope (that IS what item 4 now guards), but thin. Adding a repo with a different real framework (Express, Vue) would strengthen it — recorded as a candidate corpus addition, not a blocker.",
+  "queries": {
+    "status": "APPROVED",
+    "approvalNote": "Person-approved 2026-07-28. symbolGroundTruth remains PENDING curation (stage B opening step); BENCH-06 is not valid until that section is curated and person-verified.",
+    "known_code": [
+      {
+        "id": "KC-01",
+        "repoName": "JR-Sitraka/Trailhead",
+        "question": "What columns and relationships define the Repository, File, and AnalysisJob database tables?",
+        "groundTruthFiles": [
+          "src/server/db/schema.ts"
+        ]
+      },
+      {
+        "id": "KC-02",
+        "repoName": "JR-Sitraka/Trailhead",
+        "question": "How does the import pipeline detect and reject a ZIP archive containing a path-traversal attack?",
+        "groundTruthFiles": [
+          "src/server/services/preprocessing.ts"
+        ]
+      },
+      {
+        "id": "KC-03",
+        "repoName": "JR-Sitraka/Trailhead",
+        "question": "Where is the SQL query that retrieves the nearest embedding chunks by cosine distance?",
+        "groundTruthFiles": [
+          "src/server/services/chat.ts"
+        ]
+      },
+      {
+        "id": "KC-04",
+        "repoName": "sindresorhus/got",
+        "question": "How is the delay before a retried HTTP request calculated?",
+        "groundTruthFiles": [
+          "source/core/calculate-retry-delay.ts"
+        ],
+        "personVerified": "calculates retry delay from retry limits, error state, server hints, backoff, and noise"
+      },
+      {
+        "id": "KC-05",
+        "repoName": "sindresorhus/got",
+        "question": "Where are this library's custom error classes defined?",
+        "groundTruthFiles": [
+          "source/core/errors.ts"
+        ],
+        "personVerified": "defines request, HTTP, cache, parse, upload, max-redirect, and abort error classes.",
+        "rationaleCorrection": "Corrected 2026-07-28. The earlier recorded reason for dropping 'e.g. for timeouts' from the question was that 'TimeoutError lives in timed-out.ts' — true but incomplete. got has TWO distinct classes named TimeoutError: source/core/timed-out.ts:35 (internal, extends Error) and source/core/errors.ts:138 (public, extends RequestError). The PUBLIC one is in errors.ts and IS part of this query's ground truth. The question stands unchanged and remains correct; only the recorded rationale was wrong, and is fixed here so a wrong reason cannot later be reused as the basis for a wrong decision. Both classes are pinned in the proposed symbol sample as a deliberate name-collision case."
+      },
+      {
+        "id": "KC-06",
+        "repoName": "sindresorhus/escape-string-regexp",
+        "question": "What function escapes special regex characters in an input string, and which characters does it treat specially?",
+        "groundTruthFiles": [
+          "index.js"
+        ]
+      },
+      {
+        "id": "KC-07",
+        "repoName": "openai/DALL-E",
+        "question": "How does the Conv2d class initialize its convolution weights?",
+        "groundTruthFiles": [
+          "dall_e/utils.py"
+        ]
+      },
+      {
+        "id": "KC-08",
+        "repoName": "sindresorhus/awesome",
+        "question": "What script is responsible for linting the repository's list files in CI?",
+        "groundTruthFiles": [
+          ".github/workflows/repo_linter.sh"
+        ],
+        "personVerified": "finds the newly added repository, clones it, and runs awesome-lint"
+      }
+    ],
+    "semantic": [
+      {
+        "id": "SEM-01",
+        "repoName": "JR-Sitraka/Trailhead",
+        "question": "What happens if the language model returns a citation that doesn't match anything actually retrieved?",
+        "groundTruthFiles": [
+          "src/server/services/chat.ts"
+        ]
+      },
+      {
+        "id": "SEM-02",
+        "repoName": "JR-Sitraka/Trailhead",
+        "question": "What has to finish before a repository can be asked questions?",
+        "groundTruthFiles": [
+          "src/server/poller.ts"
+        ],
+        "personApproved": "Rewrite approved 2026-07-28. Single ground-truth file: the pinned implementation marks a repository ready only after parsing AND embedding both complete."
+      },
+      {
+        "id": "SEM-03",
+        "repoName": "sindresorhus/got",
+        "question": "How does this library avoid making a fresh DNS lookup for every request to the same host?",
+        "groundTruthFiles": [
+          "source/core/utils/dns-cache.ts"
+        ],
+        "personVerified": "implements cached DNS resolution, TTL expiry, pending-query deduplication, fallback, cache clearing. The four test/dns-cache*.ts files are explicitly NOT ground truth, per the manifest rule."
+      },
+      {
+        "id": "SEM-04",
+        "repoName": "sindresorhus/escape-string-regexp",
+        "question": "Why might a simple backslash not be enough to escape every special character safely?",
+        "groundTruthFiles": [
+          "index.js"
+        ]
+      },
+      {
+        "id": "SEM-06",
+        "repoName": "sindresorhus/awesome",
+        "question": "What's the philosophy this project uses to decide whether something deserves inclusion on a list?",
+        "groundTruthFiles": [
+          "awesome.md"
+        ]
+      },
+      {
+        "id": "SEM-07",
+        "repoName": "sindresorhus/got",
+        "question": "What kinds of connection failures does this library distinguish between when a request times out?",
+        "groundTruthFiles": [
+          "source/core/timed-out.ts"
+        ]
+      },
+      {
+        "id": "SEM-08",
+        "repoName": "JR-Sitraka/Trailhead",
+        "question": "How does the system decide where to split a file into pieces for embedding, when the file has functions in it?",
+        "groundTruthFiles": [
+          "src/server/services/embeddingChunker.ts"
+        ]
+      }
+    ],
+    "documentation": [
+      {
+        "id": "DOC-01",
+        "repoName": "JR-Sitraka/Trailhead",
+        "question": "What must an agent read before doing any work in this repository?",
+        "groundTruthFiles": [
+          "AGENTS.md"
+        ]
+      },
+      {
+        "id": "DOC-02",
+        "repoName": "JR-Sitraka/Trailhead",
+        "question": "What is explicitly out of scope for this project's MVP?",
+        "groundTruthFiles": [
+          "docs/01-product/product-prd.md"
+        ],
+        "personApproved": "Rewrite approved 2026-07-28 — avoids naming its own ground-truth file."
+      },
+      {
+        "id": "DOC-03",
+        "repoName": "sindresorhus/got",
+        "question": "How do I set a custom HTTPS certificate authority for requests?",
+        "groundTruthFiles": [
+          "documentation/5-https.md"
+        ],
+        "personVerified": "documents https.certificateAuthority with a custom-CA example"
+      },
+      {
+        "id": "DOC-04",
+        "repoName": "sindresorhus/got",
+        "question": "How do I paginate through multiple pages of results from an API using this library?",
+        "groundTruthFiles": [
+          "documentation/4-pagination.md"
+        ],
+        "personVerified": "explains got.paginate, iterators, page limits, custom pagination"
+      },
+      {
+        "id": "DOC-05",
+        "repoName": "sindresorhus/got",
+        "question": "What changes are needed to migrate a project from axios to this library?",
+        "groundTruthFiles": [
+          "documentation/migration-guides/axios.md"
+        ],
+        "personVerified": "maps Axios options, behavior, responses, errors, cancellation, convenience methods to Got"
+      },
+      {
+        "id": "DOC-06",
+        "repoName": "sindresorhus/escape-string-regexp",
+        "question": "What does the README say this package is for, and how do you install it?",
+        "groundTruthFiles": [
+          "readme.md"
+        ]
+      },
+      {
+        "id": "DOC-07",
+        "repoName": "openai/DALL-E",
+        "question": "What does the model card say about the intended use and limitations of this model?",
+        "groundTruthFiles": [
+          "model_card.md"
+        ],
+        "personVerified": "states intended use, out-of-scope uses, training data, performance, limitations"
+      },
+      {
+        "id": "DOC-08",
+        "repoName": "sindresorhus/awesome",
+        "question": "Where does the project direct contributors who want to add or create an awesome list?",
+        "groundTruthFiles": [
+          "contributing.md"
+        ],
+        "personVerified": "REWRITTEN by the person: contributing.md does not contain the guidelines themselves, it directs readers to pull_request_template.md. The rewritten question matches what the file actually does. The alternative (keep original question, move ground truth to pull_request_template.md) was declined to avoid depending on a file not yet verified present in the pinned snapshot."
+      }
+    ],
+    "filename_trap": [
+      {
+        "id": "TRAP-01",
+        "repoName": "sindresorhus/got",
+        "question": "How are complex Link response headers parsed without breaking commas or semicolons inside quoted values and URLs?",
+        "groundTruthFiles": [
+          "source/core/parse-link-header.ts"
+        ],
+        "trapFile": "documentation/4-pagination.md",
+        "trapReason": "prominently explains Link-header pagination and even shows parsing logic, but is documentation rather than the parser implementation"
+      },
+      {
+        "id": "TRAP-02",
+        "repoName": "sindresorhus/got",
+        "question": "How does the library negotiate, create, pool, and reuse HTTP/2 connections?",
+        "groundTruthFiles": [
+          "source/core/utils/http2-client.ts"
+        ],
+        "trapFile": "package.json",
+        "trapReason": "lists 'http2' as a package keyword — a strong metadata match containing no connection implementation"
+      },
+      {
+        "id": "TRAP-03",
+        "repoName": "sindresorhus/got",
+        "question": "How are user-supplied request settings normalized into the values used when making a request?",
+        "groundTruthFiles": [
+          "source/core/options.ts"
+        ],
+        "trapFile": "documentation/2-options.md",
+        "trapReason": "repeatedly names and explains request options but does not perform their runtime normalization"
+      },
+      {
+        "id": "TRAP-04",
+        "repoName": "sindresorhus/got",
+        "question": "How does the library determine the byte length of an outgoing request body?",
+        "groundTruthFiles": [
+          "source/core/utils/get-body-size.ts"
+        ],
+        "trapFile": "documentation/3-streams.md",
+        "trapReason": "discusses streamed request bodies, content-length, and upload sizing in detail, but does not implement the body-size calculation",
+        "personNote": "Swapped 2026-07-28. The original fixture (test/fixtures/stream-content-length) contains only the word 'Unicorns' — its attraction would rest entirely on its filename, making it a nominal rather than material trap."
+      },
+      {
+        "id": "TRAP-05",
+        "repoName": "JR-Sitraka/Trailhead",
+        "question": "How are exact text matches and full-text matches combined, filtered, and assigned source line numbers?",
+        "groundTruthFiles": [
+          "src/server/services/search.ts"
+        ],
+        "trapFile": "docs/08-features/search.md",
+        "trapReason": "describes exact and full-text search behavior and its filters in detail without executing the database searches"
+      },
+      {
+        "id": "TRAP-06",
+        "repoName": "JR-Sitraka/Trailhead",
+        "question": "How are the structured repository facts, generated summary, and task-specific evidence packet assembled?",
+        "groundTruthFiles": [
+          "src/server/services/export.ts"
+        ],
+        "trapFile": "docs/08-features/export.md",
+        "trapReason": "names and specifies all three export formats extensively but contains no export implementation"
+      },
+      {
+        "id": "TRAP-07",
+        "repoName": "JR-Sitraka/Trailhead",
+        "question": "How are functions, classes, interfaces, imports, and exports extracted from TypeScript and JavaScript source?",
+        "groundTruthFiles": [
+          "src/server/services/symbols.ts"
+        ],
+        "trapFile": "tests/symbols.test.ts",
+        "trapReason": "contains realistic source examples and extensive assertions for every extracted symbol kind, but only verifies the extraction implementation",
+        "personNote": "Diversified 2026-07-28 away from the docs/08-features/*.md pattern used by TRAP-05/06/08 — more tempting than the client component while remaining clearly distinct from the implementation."
+      },
+      {
+        "id": "TRAP-08",
+        "repoName": "JR-Sitraka/Trailhead",
+        "question": "How are a repository's primary language, framework, package manager, build tool, and test frameworks detected?",
+        "groundTruthFiles": [
+          "src/server/services/stackFacts.ts"
+        ],
+        "trapFile": "docs/08-features/repository-overview.md",
+        "trapReason": "describes every displayed stack fact and the detection state, but does not calculate those facts"
+      }
+    ]
+  },
+  "semanticDropped": [
+    {
+      "id": "SEM-05",
+      "orchestratorResolution": "DROPPED — near-duplicate of KC-07 (same file, same concept: dall_e/utils.py weight initialization). Keeping both would weaken the category separation the benchmark exists to measure. Categories need not have equal counts.",
+      "personApproved": "Drop confirmed 2026-07-28: avoiding the duplicate weight-initialization question matters more than equal category counts."
+    }
+  ],
+  "symbolGroundTruth": {
+    "status": "APPROVED",
+    "approvedBy": "Sitraka",
+    "approvedDate": "2026-07-28",
+    "approvalNote": "26/26 person-verified against source at the pinned commits via benchmark/candidates/proposed-symbols-review.md. Focused confirmations recorded in PROJECT-STATE: the two TimeoutError classes are genuinely distinct and file-scoped; detectStackFacts' dual function/export extraction at an identical range is valid, not duplication; calculateRetryDelay's declaration (5-40) and export statement (42) are correctly separate ranges; the non-exported helpers confirm extraction is not export-gated.",
+    "selectionRationale": {
+      "principle": "Selected for REPRESENTATIVENESS across symbol kinds, file types, and known extractor edge cases — explicitly not the first N database rows. The point is to make a regression visible, which means covering the paths most likely to break, not the most numerous ones.",
+      "sindresorhus/escape-string-regexp": "All 6 extracted symbols, exhaustively — the repo is small enough that a complete census is the strongest possible sample. Covers function, export, and import across 3 files.",
+      "JR-Sitraka/Trailhead": "10 chosen to cover: the repo's ONLY class (SecurityError — rarest kind, a single regression would erase the whole kind); interfaces; non-exported private helpers (fixedWindowChunks, findFtsLineNumber — these test that extraction is not export-gated); the function/export duplicate pair on one symbol (detectStackFacts appears as BOTH kinds at identical line ranges — a real extractor behavior worth pinning); a type-only import (ExtractedSymbol); and a const/enum export that is neither function nor class (repositoryStatusEnum).",
+      "sindresorhus/got": "10 chosen to cover: the repo's ONLY interface (RequestPromiseShape); class inheritance (RequestError as base, TimeoutError as subclass); a genuine NAME COLLISION across files (two distinct classes both named TimeoutError, in errors.ts and timed-out.ts — this pins that symbol resolution is file-scoped, not name-global, which no other sample in the corpus tests); a function/export pair with DIFFERENT line ranges (calculateRetryDelay is declared at L5-40 and separately default-exported at L42 — the inverse of the Trailhead identical-range case); non-exported helpers (splitHeaderValue); and a type-alias export (ErrorCode).",
+      "openai/DALL-E": "EXCLUDED — 0 extracted symbols (Python; the extractor is TS/JS-only). Contributes no data. Must never be scored as 0% accuracy.",
+      "sindresorhus/awesome": "EXCLUDED — 0 extracted symbols (Markdown-only repo). Same treatment."
+    },
+    "reposContributingNoData": [
+      "openai/DALL-E",
+      "sindresorhus/awesome"
+    ],
+    "reposContributingNoDataNote": "0 extracted symbols (the extractor is TS/JS-only). These contribute no data to BENCH-06 and must never be scored as 0% accuracy.",
+    "totalSymbols": 26,
+    "samples": [
+      {
+        "repoName": "sindresorhus/escape-string-regexp",
+        "filePath": "index.js",
+        "expectedSymbols": [
+          {
+            "kind": "function",
+            "name": "escapeStringRegexp",
+            "startLine": 1,
+            "endLine": 11,
+            "rationale": "the package's entire public surface"
+          },
+          {
+            "kind": "export",
+            "name": "escapeStringRegexp",
+            "startLine": 1,
+            "endLine": 11,
+            "rationale": "same symbol also extracted as an export — identical range"
+          }
+        ]
+      },
+      {
+        "repoName": "sindresorhus/escape-string-regexp",
+        "filePath": "index.test-d.ts",
+        "expectedSymbols": [
+          {
+            "kind": "import",
+            "name": "expectType",
+            "startLine": 1,
+            "endLine": 1,
+            "rationale": "named import from a type-testing package"
+          },
+          {
+            "kind": "import",
+            "name": "escapeStringRegexp",
+            "startLine": 2,
+            "endLine": 2,
+            "rationale": "default import of the package under test"
+          }
+        ]
+      },
+      {
+        "repoName": "sindresorhus/escape-string-regexp",
+        "filePath": "test.js",
+        "expectedSymbols": [
+          {
+            "kind": "import",
+            "name": "test",
+            "startLine": 1,
+            "endLine": 1,
+            "rationale": "AVA test-runner import"
+          },
+          {
+            "kind": "import",
+            "name": "escapeStringRegexp",
+            "startLine": 2,
+            "endLine": 2,
+            "rationale": "completes the exhaustive 6-symbol census"
+          }
+        ]
+      },
+      {
+        "repoName": "JR-Sitraka/Trailhead",
+        "filePath": "src/server/services/preprocessing.ts",
+        "expectedSymbols": [
+          {
+            "kind": "class",
+            "name": "SecurityError",
+            "startLine": 175,
+            "endLine": 180,
+            "rationale": "the ONLY class in the entire repository — if class extraction regressed, this single row is the only thing that would catch it"
+          }
+        ]
+      },
+      {
+        "repoName": "JR-Sitraka/Trailhead",
+        "filePath": "src/server/services/stackFacts.ts",
+        "expectedSymbols": [
+          {
+            "kind": "interface",
+            "name": "StackFacts",
+            "startLine": 3,
+            "endLine": 9,
+            "rationale": "exported interface"
+          },
+          {
+            "kind": "function",
+            "name": "detectStackFacts",
+            "startLine": 113,
+            "endLine": 187,
+            "rationale": "main exported function; pairs with the export row below at an IDENTICAL range"
+          },
+          {
+            "kind": "export",
+            "name": "detectStackFacts",
+            "startLine": 113,
+            "endLine": 187,
+            "rationale": "same symbol, different kind, same range — pins the dual-extraction behavior"
+          }
+        ]
+      },
+      {
+        "repoName": "JR-Sitraka/Trailhead",
+        "filePath": "src/server/services/embeddingChunker.ts",
+        "expectedSymbols": [
+          {
+            "kind": "function",
+            "name": "fixedWindowChunks",
+            "startLine": 54,
+            "endLine": 63,
+            "rationale": "NON-exported private helper — proves extraction is not export-gated"
+          }
+        ]
+      },
+      {
+        "repoName": "JR-Sitraka/Trailhead",
+        "filePath": "src/server/services/search.ts",
+        "expectedSymbols": [
+          {
+            "kind": "interface",
+            "name": "SearchResult",
+            "startLine": 4,
+            "endLine": 9,
+            "rationale": "second interface, different file"
+          },
+          {
+            "kind": "function",
+            "name": "findFtsLineNumber",
+            "startLine": 113,
+            "endLine": 125,
+            "rationale": "second non-exported private helper, different file"
+          }
+        ]
+      },
+      {
+        "repoName": "JR-Sitraka/Trailhead",
+        "filePath": "src/server/db/schema.ts",
+        "expectedSymbols": [
+          {
+            "kind": "import",
+            "name": "pgTable",
+            "startLine": 1,
+            "endLine": 1,
+            "rationale": "named import among nine on one line — tests multi-specifier import extraction"
+          },
+          {
+            "kind": "export",
+            "name": "repositoryStatusEnum",
+            "startLine": 4,
+            "endLine": 4,
+            "rationale": "export of a const/enum — neither function nor class, a distinct code path"
+          }
+        ]
+      },
+      {
+        "repoName": "JR-Sitraka/Trailhead",
+        "filePath": "src/server/poller.ts",
+        "expectedSymbols": [
+          {
+            "kind": "import",
+            "name": "ExtractedSymbol",
+            "startLine": 4,
+            "endLine": 4,
+            "rationale": "TYPE-only import (`import { extractSymbols, type ExtractedSymbol }`) — extracted as a plain import; pins that behavior"
+          }
+        ]
+      },
+      {
+        "repoName": "sindresorhus/got",
+        "filePath": "source/as-promise/types.ts",
+        "expectedSymbols": [
+          {
+            "kind": "interface",
+            "name": "RequestPromiseShape",
+            "startLine": 5,
+            "endLine": 26,
+            "rationale": "the ONLY interface in the entire got repository — same single-point-of-failure logic as Trailhead's lone class"
+          }
+        ]
+      },
+      {
+        "repoName": "sindresorhus/got",
+        "filePath": "source/core/errors.ts",
+        "expectedSymbols": [
+          {
+            "kind": "class",
+            "name": "RequestError",
+            "startLine": 20,
+            "endLine": 72,
+            "rationale": "base error class that the others extend"
+          },
+          {
+            "kind": "class",
+            "name": "TimeoutError",
+            "startLine": 138,
+            "endLine": 149,
+            "rationale": "NAME COLLISION case, half 1 of 2: the PUBLIC TimeoutError, a subclass of RequestError"
+          }
+        ]
+      },
+      {
+        "repoName": "sindresorhus/got",
+        "filePath": "source/core/timed-out.ts",
+        "expectedSymbols": [
+          {
+            "kind": "class",
+            "name": "TimeoutError",
+            "startLine": 35,
+            "endLine": 44,
+            "rationale": "NAME COLLISION case, half 2 of 2: a DIFFERENT class, same name, extends Error not RequestError. Together these two pin that symbol resolution is file-scoped, not name-global — nothing else in the corpus tests this"
+          },
+          {
+            "kind": "export",
+            "name": "ErrorCode",
+            "startLine": 25,
+            "endLine": 33,
+            "rationale": "type-alias export — a distinct export code path from function/class exports"
+          }
+        ]
+      },
+      {
+        "repoName": "sindresorhus/got",
+        "filePath": "source/core/calculate-retry-delay.ts",
+        "expectedSymbols": [
+          {
+            "kind": "function",
+            "name": "calculateRetryDelay",
+            "startLine": 5,
+            "endLine": 40,
+            "rationale": "declaration site; pairs with the export below at a DIFFERENT range"
+          },
+          {
+            "kind": "export",
+            "name": "calculateRetryDelay",
+            "startLine": 42,
+            "endLine": 42,
+            "rationale": "separate `export default` statement on its own line — the inverse of Trailhead's identical-range pair, so both shapes are pinned"
+          }
+        ]
+      },
+      {
+        "repoName": "sindresorhus/got",
+        "filePath": "source/core/utils/get-body-size.ts",
+        "expectedSymbols": [
+          {
+            "kind": "function",
+            "name": "getBodySize",
+            "startLine": 5,
+            "endLine": 27,
+            "rationale": "TRAP-04's ground-truth implementation — cross-links the symbol sample to a trap query"
+          }
+        ]
+      },
+      {
+        "repoName": "sindresorhus/got",
+        "filePath": "source/core/parse-link-header.ts",
+        "expectedSymbols": [
+          {
+            "kind": "function",
+            "name": "splitHeaderValue",
+            "startLine": 1,
+            "endLine": 56,
+            "rationale": "non-exported helper starting at line 1 — boundary case for range extraction"
+          },
+          {
+            "kind": "function",
+            "name": "parseLinkHeader",
+            "startLine": 58,
+            "endLine": 105,
+            "rationale": "TRAP-01's ground-truth implementation — second cross-link to a trap query"
+          }
+        ]
+      }
+    ]
+  },
+  "counts": {
+    "known_code": 8,
+    "semantic": 7,
+    "documentation": 8,
+    "filename_trap": 8,
+    "total": 31
+  },
+  "versioningRule": {
+    "frozenAt": "1.0.0",
+    "frozenDate": "2026-07-28",
+    "rule": "manifestVersion 1.0.0 is FROZEN as of the committed baseline. Any change to the query set, the symbol ground truth, the corpus pins, or the locked comparison parameters requires BOTH a manifestVersion bump AND a new baseline run — results are only ever comparable within one manifestVersion. A post-change benchmark run compared against a baseline from a different manifestVersion is not a valid comparison and must not be reported as one."
+  }
+}

@@ -1,0 +1,178 @@
+{
+  "status": "PROPOSED — agent candidates, unreviewed by the person. Not ground truth. Categories (a) known_code, (c) semantic, (d) documentation only — category (b) filename_trap is deliberately excluded per the task's own instruction (the person authors those).",
+  "note": "Every groundTruthFiles path below was confirmed to exist as a real, non-skipped file in trailhead_bench via direct SQL query against the actual imported repository — not guessed from GitHub browsing. The person must still verify each question's answer is actually contained in the cited file(s) before approving; existence of the file is confirmed, correctness of the file as the answer is not.",
+  "known_code": [
+    {
+      "id": "KC-01",
+      "repoName": "JR-Sitraka/Trailhead",
+      "question": "What columns and relationships define the Repository, File, and AnalysisJob database tables?",
+      "groundTruthFiles": ["src/server/db/schema.ts"],
+      "justification": "This file is the Drizzle schema definition for exactly these three tables (and others) — confirmed via direct read during this task."
+    },
+    {
+      "id": "KC-02",
+      "repoName": "JR-Sitraka/Trailhead",
+      "question": "How does the import pipeline detect and reject a ZIP archive containing a path-traversal attack?",
+      "groundTruthFiles": ["src/server/services/preprocessing.ts"],
+      "justification": "validatePathTraversal() and validateZipSafety() in this file implement exactly this check — confirmed via direct read."
+    },
+    {
+      "id": "KC-03",
+      "repoName": "JR-Sitraka/Trailhead",
+      "question": "Where is the SQL query that retrieves the nearest embedding chunks by cosine distance?",
+      "groundTruthFiles": ["src/server/services/chat.ts"],
+      "justification": "retrieveChunks() in this file runs the cosine_distance ORDER BY query — confirmed via direct read."
+    },
+    {
+      "id": "KC-04",
+      "repoName": "sindresorhus/got",
+      "question": "How is the delay before a retried HTTP request calculated?",
+      "groundTruthFiles": ["source/core/calculate-retry-delay.ts"],
+      "justification": "File name and path directly indicate this responsibility; confirmed present in the real imported file list."
+    },
+    {
+      "id": "KC-05",
+      "repoName": "sindresorhus/got",
+      "question": "Where are this library's custom error classes (e.g. for timeouts, HTTP errors) defined?",
+      "groundTruthFiles": ["source/core/errors.ts"],
+      "justification": "Confirmed present in the real imported file list; standard location for a core/errors.ts file in this library's structure."
+    },
+    {
+      "id": "KC-06",
+      "repoName": "sindresorhus/escape-string-regexp",
+      "question": "What function escapes special regex characters in an input string, and which characters does it treat specially?",
+      "groundTruthFiles": ["index.js"],
+      "justification": "Read directly during this task: escapeStringRegexp() replaces [|\\\\{}()[\\]^$+*?.] and hyphens with distinct escape strategies."
+    },
+    {
+      "id": "KC-07",
+      "repoName": "openai/DALL-E",
+      "question": "How does the Conv2d class initialize its convolution weights?",
+      "groundTruthFiles": ["dall_e/utils.py"],
+      "justification": "Read directly during this task: Conv2d.__attrs_post_init__ initializes weights via w.normal_(std=1/math.sqrt(...))."
+    },
+    {
+      "id": "KC-08",
+      "repoName": "sindresorhus/awesome",
+      "question": "What script is responsible for linting the repository's list files in CI?",
+      "groundTruthFiles": [".github/workflows/repo_linter.sh"],
+      "justification": "Confirmed present in the real imported file list; the only shell script in the repo, referenced by the workflow."
+    }
+  ],
+  "semantic": [
+    {
+      "id": "SEM-01",
+      "repoName": "JR-Sitraka/Trailhead",
+      "question": "What happens if the language model returns a citation that doesn't match anything actually retrieved?",
+      "groundTruthFiles": ["src/server/services/chat.ts"],
+      "justification": "This file implements post-generation citation validation, discarding the whole answer on a mismatch — a semantic question with no literal keyword overlap to the concept of 'discard the answer'."
+    },
+    {
+      "id": "SEM-02",
+      "repoName": "JR-Sitraka/Trailhead",
+      "question": "How does the system know when a repository is safe to query for Chat and Search?",
+      "groundTruthFiles": ["src/server/db/schema.ts", "src/server/poller.ts"],
+      "justification": "The repository status enum ('ready' only after both parsing and embedding complete) and the poller logic that sets it — tests whether retrieval finds the readiness gate concept without the word 'safe' appearing literally."
+    },
+    {
+      "id": "SEM-03",
+      "repoName": "sindresorhus/got",
+      "question": "How does this library avoid making a fresh DNS lookup for every request to the same host?",
+      "groundTruthFiles": ["source/core/utils/dns-cache.ts"],
+      "justification": "Confirmed present in the real imported file list; a caching concern phrased without naming the file or 'cache' as the primary verb."
+    },
+    {
+      "id": "SEM-04",
+      "repoName": "sindresorhus/escape-string-regexp",
+      "question": "Why might a simple backslash not be enough to escape every special character safely?",
+      "groundTruthFiles": ["index.js"],
+      "justification": "Read directly: the file's own comment explains hyphens get a \\\\x2d escape specifically because a plain backslash form would be disallowed by Unicode patterns' stricter grammar — a reasoning question, not a lookup question."
+    },
+    {
+      "id": "SEM-05",
+      "repoName": "openai/DALL-E",
+      "question": "How is randomness controlled when a new convolution layer's weights are created?",
+      "groundTruthFiles": ["dall_e/utils.py"],
+      "justification": "Read directly: w.normal_(std=1/math.sqrt(n_in*kw**2)) — a semantic question about weight initialization strategy, not naming 'Conv2d' or 'normal_' directly."
+    },
+    {
+      "id": "SEM-06",
+      "repoName": "sindresorhus/awesome",
+      "question": "What's the philosophy this project uses to decide whether something deserves inclusion on a list?",
+      "groundTruthFiles": ["awesome.md"],
+      "justification": "Read directly: awesome.md's manifesto ('Only awesome is awesome... it's a curation, not a collection') — directly answers this without the question using the file's own key phrasing."
+    },
+    {
+      "id": "SEM-07",
+      "repoName": "sindresorhus/got",
+      "question": "What kinds of connection failures does this library distinguish between when a request times out?",
+      "groundTruthFiles": ["source/core/timed-out.ts"],
+      "justification": "Read directly: this file's ErrorCode union distinguishes ETIMEDOUT/ECONNRESET/EADDRINUSE/ECONNREFUSED/EPIPE/ENOTFOUND — a conceptual question about failure taxonomy, not naming the type or file."
+    },
+    {
+      "id": "SEM-08",
+      "repoName": "JR-Sitraka/Trailhead",
+      "question": "How does the system decide where to split a file into pieces for embedding, when the file has functions in it?",
+      "groundTruthFiles": ["src/server/services/embeddingChunker.ts"],
+      "justification": "Read directly: computeChunkRanges() aligns chunk boundaries to extracted symbol (function/class/interface) ranges, falling back to a fixed 30-line window elsewhere — a semantic question about the chunking strategy, not naming the function."
+    }
+  ],
+  "documentation": [
+    {
+      "id": "DOC-01",
+      "repoName": "JR-Sitraka/Trailhead",
+      "question": "What must an agent read before doing any work in this repository?",
+      "groundTruthFiles": ["AGENTS.md"],
+      "justification": "Confirmed present in the real imported file list; AGENTS.md is this project's own stated entry-point instruction file per its established convention."
+    },
+    {
+      "id": "DOC-02",
+      "repoName": "JR-Sitraka/Trailhead",
+      "question": "What is the product scope described in the product requirements document?",
+      "groundTruthFiles": ["docs/01-product/product-prd.md"],
+      "justification": "Confirmed present in the real imported file list; this is the project's own PRD, whose content is well-established from this session's own earlier work."
+    },
+    {
+      "id": "DOC-03",
+      "repoName": "sindresorhus/got",
+      "question": "How do I set a custom HTTPS certificate authority for requests?",
+      "groundTruthFiles": ["documentation/5-https.md"],
+      "justification": "Confirmed present in the real imported file list; the documentation directory's own numbering places HTTPS options here."
+    },
+    {
+      "id": "DOC-04",
+      "repoName": "sindresorhus/got",
+      "question": "How do I paginate through multiple pages of results from an API using this library?",
+      "groundTruthFiles": ["documentation/4-pagination.md"],
+      "justification": "Confirmed present in the real imported file list; a dedicated pagination doc."
+    },
+    {
+      "id": "DOC-05",
+      "repoName": "sindresorhus/got",
+      "question": "What changes are needed to migrate a project from axios to this library?",
+      "groundTruthFiles": ["documentation/migration-guides/axios.md"],
+      "justification": "Confirmed present in the real imported file list; a dedicated axios migration guide."
+    },
+    {
+      "id": "DOC-06",
+      "repoName": "sindresorhus/escape-string-regexp",
+      "question": "What does the README say this package is for, and how do you install it?",
+      "groundTruthFiles": ["readme.md"],
+      "justification": "Confirmed present in the real imported file list; standard README location for a small single-purpose package."
+    },
+    {
+      "id": "DOC-07",
+      "repoName": "openai/DALL-E",
+      "question": "What does the model card say about the intended use and limitations of this model?",
+      "groundTruthFiles": ["model_card.md"],
+      "justification": "Confirmed present in the real imported file list; a dedicated model card, the standard place for intended-use/limitations documentation."
+    },
+    {
+      "id": "DOC-08",
+      "repoName": "sindresorhus/awesome",
+      "question": "What are the guidelines for contributing a new awesome list?",
+      "groundTruthFiles": ["contributing.md"],
+      "justification": "Confirmed present in the real imported file list; a dedicated contributing guide."
+    }
+  ]
+}

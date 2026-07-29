@@ -12,7 +12,9 @@
     "db:migrate": "tsx src/server/db/migrate.ts",
     "db:push": "tsx scripts/push-all.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "benchmark:setup": "tsx benchmark/setup/import-corpus.ts",
+    "benchmark": "tsx benchmark/setup/run.ts"
   },
   "dependencies": {
     "@google/genai": "^2.13.0",
