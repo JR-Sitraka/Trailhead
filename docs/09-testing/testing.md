@@ -265,3 +265,38 @@ place when done.)*
   orphaned at `analyzing` with no job row (KNOWN-GOOD 2026-07-25) —
   possibly the same reanalysis-lifecycle neighborhood; check both
   together.
+
+---
+
+# Baseline results recorded (2026-07-28) — supersedes "Not yet tested" rows
+
+BENCH-01/02/07: unchanged from stage A (all passed real execution/
+failure-path tests). **BENCH-03/04/05/06 now COMPLETE**, committed
+baseline `benchmark/reports/BASELINE-2026-07-28T18-02-00-408Z.json`
+(manifestVersion 1.0.0, Xenova/all-MiniLM-L6-v2, 384-dim):
+
+| Criterion | Status | Result |
+|---|---|---|
+| BENCH-03 (ground truth verified) | ✅ Person-verified | 31 queries + 26 symbols, both approved 2026-07-28 |
+| BENCH-04 (baseline committed) | ✅ Agent-verified | Overall Top-1 0.258 / Top-3 0.581 — see category table below |
+| BENCH-05 (jitter characterized) | ✅ Agent-verified | Zero movement across 2 runs (31/31 identical) — stated as practical stability for this set, NOT a determinism proof (KNOWN-GOOD 2026-07-23: query-embedding drift is real, only visible on near-ties) |
+| BENCH-06 (detection + symbols) | ✅ Agent-verified | Framework 1.000 (5/5, nulls scored under ADR-010); Symbols 1.000 (26/26); DALL-E/awesome report as no-data, not 0% |
+
+**Baseline category table** (the comparison point for item 3):
+| Category | Top-1 | Top-3 |
+|---|---|---|
+| known_code | 0.250 | 0.500 |
+| filename_trap | 0.375 | 0.750 |
+| semantic | **0.000** | 0.286 |
+| documentation | 0.375 | 0.750 |
+
+**What item 3 has to beat, in priority order:**
+1. Semantic Top-1 = 0.000 (sharpest evidence of the MiniLM limitation)
+2. known_code Top-1 = 0.250 (direct lookup questions still fail 3/4)
+3. TRAP-06 total displacement (`export.md` rank 1, `export.ts`
+   outside top 50) — criterion 2's exact target
+
+**Noise floor for post-swap comparison:** treat ±1 rank differences
+on near-tied candidates as possible embedding noise, not signal —
+rest verdicts on category-level movement, per BENCH-05's honest
+N=2 caveat.

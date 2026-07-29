@@ -9,105 +9,110 @@ released. Current phase: **Trailhead Upgrade** (project 2 on Starter
 Kit V4.2, ADR-007, same codebase).
 
 ## Phase
-**Upgrade — item 2 (benchmark) stage B: both ground-truth gates
-passed; BASELINE RUN is the next and final step.** Awaiting the
-person's confirm on which agent runs it (see Coding-agent policy).
+**Upgrade — ITEM 2 (BENCHMARK) COMPLETE.** Committed baseline exists
+and is the locked comparison point for item 3. Item 4's display check
+(Kilo Code's first task) and the branch-merge decision are next.
 
-**Hash convention:** hashes are stamped "as of" a date; treat an
-undated hash as possibly stale. As of 2026-07-28: `main` HEAD
-`1f7cbe3`; branch `upgrade/benchmark-harness` HEAD `68b7267`.
+**Hash convention:** hashes are stamped "as of" a date. As of
+2026-07-28: `main` HEAD `9b6584a`; branch
+`upgrade/benchmark-harness` HEAD `530365a`.
 
 ## Approval gates passed
 - 2026-07-27 — observability panel visual approval (all four states).
 - 2026-07-28 — benchmark QUERY ground truth approved (31 queries).
-- 2026-07-28 — benchmark SYMBOL ground truth approved (26/26,
-  person-verified against pinned-commit source). BENCH-06 unblocked.
+- 2026-07-28 — benchmark SYMBOL ground truth approved (26/26).
+- **2026-07-28 — BASELINE COMMITTED**
+  (`benchmark/reports/BASELINE-2026-07-28T18-02-00-408Z.json`,
+  manifestVersion 1.0.0, Xenova/all-MiniLM-L6-v2 384-dim).
 
-## Coding-agent policy — MIXED, adopted 2026-07-28 (ADR-005 amendment)
-Claude Code trial **satisfactory, person-confirmed**, after a full
-implementation arc (stage A gate, ADR-008 resolution, ground-truth
-review, ranking-rule change, symbol verification support) —
-real evidence: stopped correctly at two gates, caught the
-orchestrator's own error, chose and verified merge-over-rebase across
-six branch divergences, declared what it had not verified.
-**Policy going forward: Claude Code for context-heavy/hard-gated-
-artifact tasks; Kilo Code for routine/well-specified tasks**, to
-conserve Claude usage. Every task packet states its intended agent
-and a one-line reason from now on. No environment check needed for
-Kilo — its confirmed persistent-file behavior is what this kit's
-packet format was already built against.
-**This round's live routing question:** the baseline run (BENCH-03/
-04/05/06) is, by the policy's own criterion, context-heavy and
-produces a hard-gated artifact — orchestrator recommends it stay on
-Claude Code, with Kilo Code starting instead on the next task (item
-4's display check, genuinely light). Awaiting the person's confirm or
-override.
+## Baseline results — THE comparison point for item 3
+| Category | Top-1 | Top-3 |
+|---|---|---|
+| known_code | 0.250 | 0.500 |
+| filename_trap | 0.375 | 0.750 |
+| semantic | **0.000** | 0.286 |
+| documentation | 0.375 | 0.750 |
+| **Overall** | **0.258** | **0.581** |
+Trap-rank: 2/8 outranked (0.25) — TRAP-06 (total displacement:
+`export.md` rank 1, `export.ts` outside top 50) and TRAP-08.
+Framework detection 1.000 (5/5, nulls scored per ADR-010). Symbol
+resolution 1.000 (26/26; DALL-E/awesome report as no-data, not 0%).
+**Jitter (BENCH-05): zero movement across 2 runs — stated honestly as
+practical stability for this set, NOT a determinism proof** (KNOWN-
+GOOD 2026-07-23: query-embedding drift is real, visible only on
+near-ties). **Noise floor for post-swap comparison: ±1 rank on
+near-tied candidates is possible noise; rest verdicts on
+category-level movement.**
 
-## Smoke-run results — INDICATIVE ONLY, superseded by the baseline
-Retrieval overall Top-1 **0.258**, Top-3 **0.581**; **semantic Top-1
-0.000**; trap outranked correct in **2 of 8**; **TRAP-06** = total
-displacement; framework detection **1.0 (5/5)**.
+**What item 3 must beat, priority order:** (1) semantic Top-1 = 0.000,
+(2) known_code Top-1 = 0.250, (3) TRAP-06's total displacement.
 
-## Item 4 observation (open check)
-Framework detection already scores 5/5 at smoke. Remaining: confirm
-Overview's null-framework render and whether JSON emits
-`framework: null`. This is the proposed first Kilo Code task.
+## Coding-agent policy — MIXED (ADR-005 amendment, 2026-07-28)
+Baseline ran on Claude Code per its own context-heavy/hard-gated-
+artifact criterion — confirmed the right call in hindsight (four
+stacked amendments held correctly, promotion round-trip-verified
+rather than hand-edited, jitter honestly qualified rather than
+oversold). **Kilo Code's first real assignment is next: item 4's
+display check** — light, well-specified, a fair first test.
 
-## Measurement rules — LOCKED (benchmark.md, 2026-07-28)
-File-level ranking; depth 50; rank = best chunk position per file;
-first-occurrence collapse; deterministic ties. Recorded as structured
-fields in `manifest.lockedComparisonParameters`.
+## Item 4 observation (open, next task)
+Framework detection scores 5/5 at the real baseline (not just smoke).
+Remaining: confirm Overview's null-framework render and whether JSON
+already emits `framework: null`.
 
-## Process lesson (retained for retrospective)
-A prior state file asserted an unwritten artifact into existence —
-caught by the coding agent, not the orchestrator. Corrective rules in
-force: "Files changed last round" lists only what's placed; hashes
-carry date qualifiers.
+## Measurement rules — LOCKED, now proven in a real run
+File-level ranking, depth 50, best-chunk rank, first-occurrence
+collapse, deterministic ties. `manifestVersion` frozen at 1.0.0;
+`manifest.versioningRule` states any change to queries/symbols/
+corpus pins/locked parameters requires a version bump AND a new
+baseline — a cross-version comparison is explicitly "not a valid
+comparison and must not be reported as one."
 
-## Ground-truth corrections on record
-KC-05: got has two `TimeoutError` classes; the public one
-(`errors.ts:138`) is ground truth; question unchanged, rationale
-corrected as a separate field.
+## Process notes
+- `docs/09-testing/testing.md` BENCH-01…07 rows still read "Not yet
+  tested" — flagged by the agent as out of this round's scope,
+  corrected via this round's append (below), not left dangling.
+- Prior round's stale "not yet placed" wording (self-caught by the
+  agent, not fixed then) — corrected: this file's "Files changed"
+  section below reflects actual placement status only.
 
 ## Key decisions
-- ADR-010 (item 4 re-scope), ADR-008 (corpus + bench DB), ADR-007
-  (kit V4.2), **ADR-005 amended (mixed coding-agent policy,
-  2026-07-28)**. ADR-009 reserved for the model choice.
-- Merge, never rebase, for branch updates — verified across six
-  divergences, all prior hashes preserved.
+ADR-010 (item 4 re-scope), ADR-008 (corpus + bench DB), ADR-007 (kit
+V4.2), ADR-005 amended (mixed agent policy). ADR-009 reserved for the
+model choice, now with concrete numbers to beat. Merge-never-rebase
+verified across seven branch divergences.
 
 ## Provisional-items trail (V4.2 — feeds retrospective §8)
-Unchanged; `session-recovery.md` still untriggered across the whole
-implementation phase.
+Unchanged; `session-recovery.md` still untriggered across the entire
+implementation phase — worth noting in §8 as either good luck or a
+sign the checkpoint discipline is working.
 
 ## Upgrade scope — status
-1 doc-drift — substantially DONE. **2 benchmark — baseline is the
-last step; agent routing pending confirm.** 3 swap — unblocks on
-baseline commit; ADR-009 reserved; hard targets identified (TRAP-06,
-semantic Top-1=0). 4 "Unknown" — display check queued as first Kilo
-task. 5 observability — handoff frozen. 6 screen-reader — plan
-placed. 7 closeout — boxen zero-files + got orphaned-state.
+1 doc-drift — substantially DONE. **2 benchmark — COMPLETE.** 3 swap
+— UNBLOCKED, ADR-009 reserved, three ranked targets identified. 4
+"Unknown" — display check queued (Kilo Code). 5 observability —
+handoff frozen. 6 screen-reader — plan placed. 7 closeout — boxen
+zero-files + got orphaned-state.
 
 ## Open questions
-- **Baseline agent routing** — Claude Code (recommended) vs. Kilo.
-- Whether to merge `upgrade/benchmark-harness` into `main` once the
-  baseline commits.
+- Branch-merge timing: merge `upgrade/benchmark-harness` into `main`
+  now that item 2 is complete, or hold until item 3 also lands there?
 - Framework-review conversation — separate track.
 
 ## Current blocker
-None — awaiting the routing confirm to issue task 2.
+None.
 
 ## Last completed action
-Mixed coding-agent policy adopted and logged (ADR-005 amendment);
-routing question raised for the baseline — 2026-07-28.
+Baseline committed and reviewed; testing.md append drafted —
+2026-07-28.
 
 ## Next valid moves
-1. Person confirms baseline routing.
-2. Baseline runs (BENCH-03/04/05/06) → committed.
-3. Kilo Code's first task: item 4's display check.
-4. Then item 3 (swap) research → ADR-009.
+1. Place this round's 2 files (testing.md append + this file).
+2. Kilo Code: item 4's display check.
+3. Branch-merge decision.
+4. Item 3: model research begins → ADR-009.
 
 ## Files changed last round
-- `docs/10-decisions/adr-005-tool-setup.md` (amendment, this round —
-  not yet placed)
-- `PROJECT-STATE.md` (this file, not yet placed)
+- `benchmark/manifest.json` (symbols promoted, version frozen),
+  `benchmark/reports/BASELINE-*` + `BASELINE-README.md` (branch,
+  `c94aaa2` + `530365a`)
