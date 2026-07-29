@@ -9,82 +9,78 @@ released. Current phase: **Trailhead Upgrade** (project 2 on Starter
 Kit V4.2, ADR-007, same codebase).
 
 ## Phase
-**Upgrade — item 2 CLOSED on main. Item 4: verification complete, one
-scoped fix in flight (Kilo Code).** Item 3 (swap research) opens the
-moment item 4's fix lands.
+**Upgrade — item 4: verification recorded, placement pending under
+the refined policy, fix in flight next.**
 
-**Hash convention:** as of 2026-07-28, `main` HEAD `780c851`
-(item-2-into-main merge; 30 files, additive only, all under
-`benchmark/` + two pre-authorized config lines — confirmed via diff).
-`upgrade/benchmark-harness` retained, not deleted, per instruction.
+**Hash convention:** as of 2026-07-28, `main` HEAD `13430e9`.
 
-## Item 2 — CLOSED
-Ten merge-chain hashes confirmed as ancestors of `780c851`, verified
-individually: `db7f433`, `0ded4e5`, `8495460`, `47313dd`, `57544d1`,
-`68b7267`, `df9237b`, `c94aaa2`, `530365a`, `da9f073`. Zero rebases
-across the entire item's branch life. Baseline results (the
-comparison point for item 3) live permanently in `testing.md` and
-this file's prior rounds — not restated here to avoid drift between
-copies; see `benchmark/reports/BASELINE-2026-07-28T18-02-00-408Z.json`
-for the canonical artifact.
+## Coding-agent policy — REFINED (ADR-005, second amendment, 2026-07-28)
+**Simplified from context-heavy/light to a type-based split:**
+- **File placement / git handling: ALWAYS Claude Code**, regardless
+  of content complexity — the stakes (hash-chain integrity, append
+  discipline, merge-not-rebase, prohibited-scope diffs) live in the
+  mechanism, not the material.
+- **Implementation work: split by complexity** — simple/mechanical/
+  scoped fixes to Kilo Code; research-heavy or artifact-producing work
+  to Claude Code.
+This replaces the original weight-based rule, which required a
+per-task judgment call and was the exact seam where the earlier
+misrouting happened (person sent a placement task to Claude Code by
+"misread" — under the new rule, that's simply always correct, no
+judgment needed).
 
-## Item 4 — verification complete, ADR-010 mostly validated
-**JSON export: VERIFIED as spec-compliant** — `framework: null`
-(and siblings) pass through untouched, no fix needed.
-**Overview: GAP found and scoped** — renders `"Not detected"` instead
-of `"Unknown"` for null stack facts
-(`src/app/repositories/[id]/overview/page.tsx:115`). Fix: change the
-`displayValue` fallback string for all five stack fields; underlying
-`null` data flow unchanged. No regression risk (no test asserts the
-old string). **Fix issued to Kilo Code this round** — one-line,
-mechanical, low-risk, the exact shape of task its category exists
-for.
+## Stray finding — uncommitted deletion, still parked
+`scripts/check-got.ts` deleted on disk, never committed, traced to
+`9c21b5f` (2026-07-25), predates this phase. Left untouched again
+this round. Folded into item 7's closeout.
 
-## Coding-agent policy — MIXED, first real Kilo data point positive
-Kilo Code's debut (item 4 verification): precise, bounded, real
-server evidence for both checks, no scope creep, explicitly declined
-to fix without confirming scope first. Policy holding as designed —
-Claude Code closed the multi-round item-2 branch cleanly; Kilo Code
-handled the light, well-specified verification correctly.
+## Item 4 — verification recorded, fix still pending
+JSON export verified spec-compliant. Overview gap recorded:
+`"Not detected"` → `"Unknown"` for all five null stack fields
+(`src/app/repositories/[id]/overview/page.tsx:115`). **Placement of
+this round's file goes to Claude Code** (per the refined policy); the
+**actual fix still goes to Kilo Code** once placement lands.
+
+## Item 2 — CLOSED (unchanged; ten-hash merge chain, baseline results
+recorded in prior rounds and testing.md).
 
 ## Baseline results — unchanged, still the comparison point for item 3
 Semantic Top-1 = 0.000 → known_code Top-1 = 0.250 → TRAP-06 total
-displacement, in priority order. Full table: `testing.md`'s baseline
-append and the committed report.
+displacement, in priority order.
 
 ## Key decisions
-ADR-010 (item 4 re-scope, now substantially validated), ADR-008,
-ADR-007, ADR-005 amended. ADR-009 reserved for the model choice.
+ADR-010 (item 4 re-scope), ADR-008, ADR-007, **ADR-005 amended twice**
+(mixed policy, then refined to type-based split). ADR-009 reserved.
 
 ## Provisional-items trail (V4.2 — feeds retrospective §8)
-Unchanged; `session-recovery.md` still untriggered across the entire
-implementation phase so far — worth a §8 note either way.
+Unchanged. §8 candidates now include: the checkpoint-discipline
+success on the stray deletion, AND the policy self-correction from a
+judgment-based rule to a judgment-free one after exactly one
+misroute — a real, fast process-improvement loop worth citing.
 
 ## Upgrade scope — status
-1 doc-drift — substantially DONE. 2 benchmark — **COMPLETE, merged,
-closed.** 3 swap — **unblocks once item 4's fix lands**; ADR-009
-reserved. **4 "Unknown" — verification done, one scoped fix in
-flight.** 5 observability — handoff frozen. 6 screen-reader — plan
-placed. 7 closeout — boxen zero-files + got orphaned-state.
+1 doc-drift — substantially DONE. 2 benchmark — COMPLETE, closed.
+3 swap — unblocks once item 4's fix lands; ADR-009 reserved.
+4 "Unknown" — verification recorded, placement pending, fix pending.
+5 observability — handoff frozen. 6 screen-reader — plan placed.
+7 closeout — boxen zero-files + got orphaned-state + check-got.ts.
 
 ## Open questions
-- Framework-review conversation — separate track. (Item 2's clean
-  merge-chain discipline and Kilo's clean debut are both real §8
-  candidates.)
+- `scripts/check-got.ts` disposition (item 7).
+- Framework-review conversation — separate track.
 
 ## Current blocker
 None.
 
 ## Last completed action
-Item 2 formally closed on main; item 4 gap scoped and fix issued —
-2026-07-28.
+Coding-agent policy refined to a type-based split; task 1 re-addressed
+to Claude Code accordingly — 2026-07-28.
 
 ## Next valid moves
-1. Place this round's 2 files.
-2. Kilo Code implements the Overview display fix + the new test.
-3. Item 3 (swap) research opens on Claude Code, armed with three
-   ranked baseline targets → ADR-009.
+1. Claude Code places this round's 2 files.
+2. Kilo Code runs the Overview fix + test (unchanged packet).
+3. Item 3 (swap) research opens on Claude Code.
 
 ## Files changed last round
-- `PROJECT-STATE.md`, `docs/08-features/repository-overview.md`
-  (verification-result append) — not yet placed
+- (prior round's `13430e9` unchanged; this round's files pending
+  placement below)

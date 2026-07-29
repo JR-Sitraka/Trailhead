@@ -156,3 +156,32 @@ Claude Code transfer to Kilo Code without adjustment on that count.
 **Consequence:** logged as this decision's home per the kit's own
 switching guidance (evaluate jointly, log as an ADR-005 update, not a
 silent swap) — satisfied here.
+
+---
+
+# Refinement (2026-07-28) — policy simplified: split by task TYPE, not weight
+
+**Supersedes** the 2026-07-28 mixed-agent policy's original
+context-heavy/light criterion, which required judging each task's
+weight individually — a real source of the routing mistake made
+earlier this same day (task 1 initially misaddressed to the wrong
+agent). Replaced with a simpler, type-based split that needs no
+per-task judgment call:
+
+- **File placement / git handling — ALWAYS Claude Code**, regardless
+  of how routine or mechanical the content is. Placement work carries
+  commit-integrity stakes (hash-chain verification, append-vs-replace
+  discipline, prohibited-scope diffs, merge-not-rebase enforcement)
+  independent of content complexity — the stakes are in the mechanism,
+  not the material.
+- **Implementation work (code changes) — split by complexity:**
+  simple, mechanical, low-risk, already-scoped fixes go to **Kilo
+  Code**; anything requiring research, multi-file reasoning, or
+  producing an artifact other work depends on goes to **Claude Code**.
+
+**Why this is more reliable than the original rule:** a type-based
+split ("is this a placement task or an implementation task?") is a
+near-zero-judgment classification. The original weight-based split
+("is this task heavy or light?") required a real call every time and
+was the exact seam where a misroute happened. Removing the judgment
+call removes the failure mode.
