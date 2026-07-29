@@ -9,91 +9,94 @@ released. Current phase: **Trailhead Upgrade** (project 2 on Starter
 Kit V4.2, ADR-007, same codebase).
 
 ## Phase
-**Upgrade — ITEM 4 CLOSED. Item 3 (embedding swap) opens next.**
+**Upgrade — item 3 (embedding swap): environment check PASSED,
+throughput needs a real measurement before ADR-009 is drafted.**
 
-**Hash convention:** as of 2026-07-28, `main` HEAD `670a723`
-(includes the real, committed Overview fix + corrected test).
+**Hash convention:** as of 2026-07-28, `main` HEAD `2564ad6`
+(unchanged by the probe — scratch-only, nothing tracked/committed).
 
-## Item 4 — CLOSED (2026-07-28)
-`displayValue` exported and used directly by both the component and
-its test — no more tautological local-copy testing. Fallback changed
-from `"Not detected"` to `"Unknown"` for all five stack fields. Real
-commit `670a723`. Full suite: 28 passed / 4 failed, identical to
-baseline failure set, zero new failures. JSON export was already
-spec-compliant (no change needed, verified prior round). ADR-010's
-re-scope (verify + regression-proof, not fix) is now fully executed —
-framework detection scored 1.000 in the baseline, and the one real
-display gap found is closed with evidence.
+## Item 3 — candidate research, real evidence so far
+**Candidate: `jinaai/jina-embeddings-v2-base-code`** (161M params,
+JinaBERT, trained on GitHub code + 150M code/docstring QA pairs, 30
+languages).
 
-## KNOWN-GOOD entry added (2026-07-28)
-`page.tsx` and `check-got.ts` both carry a pre-existing skip-worktree
-flag that silently blocks normal git tracking of edits to them. This
-round's fix nearly missed being committed because of it. Flag is
-NOT cleared (only worked around via `git add -f`) — **future edits to
-either file must run `git update-index --no-skip-worktree <path>`
-first.** Root cause unknown.
+**Environment probe (2026-07-28) — PASSES, real evidence:**
+- Loads and runs under this project's exact
+  `@huggingface/transformers@4.2.0` — no `trust_remote_code` error on
+  the ONNX path (the main Jina-family compatibility risk, confirmed
+  not applicable here).
+- Output dimension: **768, confirmed** — matches documented value.
+  **Real pgvector migration required** (384 → 768), as
+  `embedding-swap.md` anticipated.
+- **Correctness sanity check — strong, clean separation:** related
+  pairs scored 0.4230–0.5570, unrelated pairs 0.0551–0.1144. Notably,
+  `retrieveChunks` (Drizzle SQL) and `generateEmbeddings`
+  (transformers.js loop) scored 0.5570 despite almost no shared
+  surface tokens — exactly the semantic discrimination the baseline's
+  MiniLM lacks (semantic Top-1 = 0.000).
 
-## Process lesson — orchestrator gap, corrected
-A prior implementation packet omitted an explicit commit step and
-commit-hash reporting requirement, which is very likely why the
-skip-worktree issue surfaced as ambiguity instead of a hard stop.
-**Every implementation task packet now requires an explicit commit
-step and hash in the report, no exceptions** — this round's follow-up
-packet included it and produced a clean, verifiable result.
+**Throughput — NOT YET TRUSTWORTHY, real gap flagged:**
+Single cold run: 12.2s for 4 batched snippets, vs. current model's
+~386ms for 30 chunks (KNOWN-GOOD 2026-07-22) — roughly two orders of
+magnitude slower per item. **This number is confounded** (JIT/
+first-inference warmup + unquantized fp32 + single sample) and must
+NOT be treated as the real comparison. **A proper steady-state,
+warm-cache, batch throughput measurement is required before ADR-009
+drafts anything** — measured, not estimated, per
+`software-architect.md`'s own quality standard.
 
-## Coding-agent policy — REFINED (unchanged)
-File placement/git handling: always Claude Code. Implementation:
-complexity-split (simple → Kilo Code, research/artifact-producing →
-Claude Code). Kilo Code commits its own scoped implementation work as
-part of the task — confirmed working this round.
+**Also still open (real gaps, not blockers for the environment check
+itself):** whether a quantized ONNX variant (q8/q4) exists and its
+speed/quality tradeoff; tokenizer max-length vs. this project's
+30-line chunk windows (embedding-swap.md's own flagged Edge Case,
+untested).
 
-## Stray finding — still parked
-`scripts/check-got.ts`, uncommitted deletion, `9c21b5f`, item 7. Also
-now flagged as skip-worktree-affected (see KNOWN-GOOD entry above) —
-relevant context for whoever resolves it.
+## Coding-agent policy — unchanged (type-based split)
+Placement always Claude Code; implementation split by complexity.
+This round's probe and the next throughput task are both
+decision-gating research → Claude Code.
 
-## Item 2 — CLOSED (unchanged).
-
-## Baseline results — unchanged, still the comparison point for item 3
+## Baseline results — unchanged, still the comparison point
 Semantic Top-1 = 0.000 → known_code Top-1 = 0.250 → TRAP-06 total
 displacement, in priority order.
 
 ## Key decisions
-ADR-010 (fully executed), ADR-008, ADR-007, ADR-005 amended twice.
-ADR-009 reserved for the model choice — next up.
+ADR-010, ADR-008, ADR-007, ADR-005 amended twice. **ADR-009 still
+NOT drafted** — deliberately, until throughput is measured properly.
 
 ## Provisional-items trail (V4.2 — feeds retrospective §8)
-Unchanged. New candidate: the orchestrator's own review catching an
-unverified/possibly-uncommitted claim before it propagated downstream
-— real evidence the review loop functions in both directions
-(agent-catches-orchestrator and orchestrator-catches-agent both now
-on record this phase).
+Unchanged; `session-recovery.md` still untriggered across the entire
+implementation phase.
 
 ## Upgrade scope — status
-1 doc-drift — substantially DONE. 2 benchmark — COMPLETE, closed.
-**3 swap — OPENING.** ADR-009 reserved; hard targets: semantic Top-1
-= 0.000, known_code Top-1 = 0.250, TRAP-06 total displacement.
-**4 "Unknown" — CLOSED.** 5 observability — handoff frozen. 6
-screen-reader — plan placed. 7 closeout — boxen + got orphaned-state
-+ check-got.ts (now with a known skip-worktree complication).
+1 doc-drift — substantially DONE. 2 benchmark — COMPLETE. **3 swap —
+candidate cleared on correctness; throughput measurement in flight;
+ADR-009 pending.** 4 "Unknown" — CLOSED. 5 observability — handoff
+frozen. 6 screen-reader — plan placed. 7 closeout — boxen + got
+orphaned-state + check-got.ts.
 
 ## Open questions
+- Throughput at real batch scale (next task).
+- Quantized variant availability/tradeoff.
+- Tokenizer max-length vs. chunk window size.
 - `scripts/check-got.ts` disposition (item 7).
 - Framework-review conversation — separate track.
 
 ## Current blocker
-None.
+None — throughput measurement is the next concrete step.
 
 ## Last completed action
-Item 4 verified closed with real evidence; KNOWN-GOOD entry added for
-the skip-worktree condition — 2026-07-28.
+Environment probe passed with real correctness evidence; throughput
+number correctly flagged as unreliable pending a real measurement —
+2026-07-28.
 
 ## Next valid moves
-1. Place this round's 2 files.
-2. Open item 3: orchestrator does real candidate research (zero-spend,
-   local, transformers.js-compatible code-aware embedding models) via
-   web search before compiling the research/comparison task — per
-   `software-architect.md`'s targeted-search-before-committing rule.
+1. Place this file.
+2. Claude Code: proper steady-state throughput benchmark (warm cache,
+   quantized-variant check, real batch size, tokenizer/chunk-length
+   check) — same candidate, cleaner measurement.
+3. Only then: draft ADR-009 with real numbers on both axes
+   (correctness AND throughput).
 
 ## Files changed last round
-- (none placed yet this round — pending)
+- (none — probe was scratch-only, nothing tracked)
