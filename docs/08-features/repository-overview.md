@@ -134,3 +134,24 @@ render honestly. What changes is the nature of the work:
 - **OVERVIEW-U2 stands unchanged** (no over-correction).
 - No detection-logic change ships unless corpus verification surfaces
   an actual confident wrong answer.
+
+---
+
+# Verification result (2026-07-28) — gap found and scoped
+
+Kilo Code's real-server verification (`GET /repositories/.../overview`,
+`GET .../export/json`, `got` repository, framework `null`):
+
+- **Overview: GAP.** `src/app/repositories/[id]/overview/page.tsx:115`
+  renders `"Not detected"` for every null stack fact — the amendment
+  requires `"Unknown"` in the ordinary muted register. **Fix scoped:
+  display-label change only** (`displayValue` fallback string), across
+  all five stack fields, not just framework. Underlying `null` data
+  flow must NOT change.
+- **JSON export: VERIFIED.** `src/server/services/export.ts:118-124`
+  correctly passes `null` through untouched — no guessed value, no
+  "Unknown" string. No change needed.
+- No existing test asserts the literal "Not detected" string
+  (grep-confirmed) — the fix carries no regression risk to current
+  tests; a new test asserting "Unknown" for a null-framework repo is
+  the one addition needed.
