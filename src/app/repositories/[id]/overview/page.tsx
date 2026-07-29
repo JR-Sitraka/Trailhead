@@ -64,6 +64,8 @@ function EmptyState({ message }: { message: string }) {
   );
 }
 
+export const displayValue = (value: string | null, fallback: string) => (value ? value : fallback);
+
 export default async function OverviewPage({ params }: { params: { id: string } }) {
   const repo = await db
     .select()
@@ -112,8 +114,6 @@ export default async function OverviewPage({ params }: { params: { id: string } 
 
   const notReady = repo.status !== "ready";
 
-  const displayValue = (value: string | null, fallback: string) => (value ? value : fallback);
-
   return (
     <div className="space-y-6">
       {notReady && (
@@ -132,7 +132,7 @@ export default async function OverviewPage({ params }: { params: { id: string } 
           <FactRow
             key={field}
             label={labelMap[field]}
-            value={displayValue(stack[field], "Not detected")}
+            value={displayValue(stack[field], "Unknown")}
           />
         ))}
       </Section>

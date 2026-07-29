@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { detectStackFacts, type FileRow } from "../src/server/services/stackFacts";
+import { displayValue } from "../src/app/repositories/[id]/overview/page";
 
 describe("Overview page data logic — detectStackFacts with category/skipReason", () => {
   it("returns nulls and empty categorization for a repo with no package.json", () => {
@@ -50,5 +51,11 @@ describe("Overview page data logic — detectStackFacts with category/skipReason
     ];
     const result = detectStackFacts(files);
     expect(result.framework).toBeNull();
+  });
+
+  it("displays 'Unknown' for null stack facts (Overview display contract)", () => {
+    expect(displayValue(null, "Unknown")).toBe("Unknown");
+    expect(displayValue("Next.js", "Unknown")).toBe("Next.js");
+    expect(displayValue(null, "Unknown")).toBe("Unknown");
   });
 });
