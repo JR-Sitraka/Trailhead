@@ -492,13 +492,8 @@ corrected, not silently deleted.
   research pass (must still fit zero-spend/local/transformers.js
   constraints) — deliberately deferred to a dedicated future session,
   not attempted here. This reopens part of ADR-004 (embedding model),
-  same as tonight's Gemini→Groq swap reopened its generation-model
-  half.
-
-## Project hard rules
-
-(none yet — entries above are environment facts, not incident-derived
-hard rules; nothing has risen to that bar yet)
+same as tonight's Gemini→Groq swap reopened its generation-model
+half.
 
 - [2026-07-28] `src/app/repositories/[id]/overview/page.tsx` (and
   `scripts/check-got.ts`) carry a pre-existing `skip-worktree` (`H`)
@@ -510,3 +505,8 @@ hard rules; nothing has risen to that bar yet)
   `git update-index --no-skip-worktree <path>` first** to clear the
   flag properly — don't rely on `-f` a second time. Root cause of why
   the flag was set in the first place is unknown/not investigated.
+
+## Project hard rules
+
+(none yet — entries above are environment facts, not incident-derived
+hard rules; nothing has risen to that bar yet)
