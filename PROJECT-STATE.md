@@ -9,114 +9,108 @@ released. Current phase: **Trailhead Upgrade** (project 2 on Starter
 Kit V4.2, ADR-007, same codebase).
 
 ## Phase
-**Upgrade — item 3 dry run COMPLETE on trailhead_bench. Adoption
-decision pending the person.** Branch `upgrade/embedding-swap-bench`
-holds 10 real commits (4924119 through c76b463) — not yet merged.
+**Upgrade — item 3: adoption framework decided by the person,
+CONTINGENT on one read-only review.** Branch
+`upgrade/embedding-swap-bench` at `c76b463`, not yet merged.
 
-**Hash convention:** as of 2026-07-30, `main` HEAD `5626a4b`
-(unchanged — dry run is entirely on the feature branch).
+**Hash convention:** as of 2026-07-30, `main` HEAD `e28dfd6`.
 
-## Item 3 — dry-run results (real evidence, 2026-07-30)
-**3 of 4 PRD criteria MET decisively:** known_code Top-3 50.0%→87.5%;
-trap-outranked-rate 25.0%→12.5%; semantic Top-1/Top-3
-0.0%/28.6%→14.3%/42.9% (the headline defect — semantic Top-1 left
-zero for the first time; TRAP-06's total displacement is now rank 2).
-**Criterion 4 (documentation, no regression) NOT MET, −25.0pp** — but
-entirely two queries (DOC-03, DOC-08) crossing the Top-3 cutoff by
-one rank each in an 8-query category; Top-1 held steady; reproduced
-byte-identical on a second run. n=8 cannot distinguish real
-regression from boundary noise.
+## Item 3 — adoption decision (person, 2026-07-30), pending confirmation
+**Path (a): adopt q8 now, with an explicit accepted-exception for
+criterion 4** — contingent on a real-evidence review of DOC-03/DOC-08
+confirming genuine cutoff-boundary movement (not a systematic
+documentation-retrieval failure, not ambiguous ground truth).
 
-**PENDING PERSON DECISION:** adopt now (criterion 4 recorded as
-inconclusive-at-n=8, widening deferred as a tracked follow-up,
-orchestrator's recommendation) vs. widen the documentation category
-and re-run before deciding (costs another multi-hour-to-day re-embed,
-per the corrected timing finding below).
+**Correction to prior round's framing (person's, adopted):** criterion
+4 is recorded as **NOT MET** — the −25pp is a real, observed result on
+the approved 8-query benchmark, not "statistically inconclusive." What
+is uncertain is generalizability (n=8, Top-1 unchanged), not the
+observed result itself. These are different claims and must not be
+merged.
 
-## Session-recovery validation (2026-07-30)
-The interrupted background process from the prior round was correctly
-diagnosed before resuming (per `playbooks/session-recovery.md`) —
-real DB state verified rather than trusting the log file's own
-claims. The interruption became reinforcing SWAP-05 evidence: three
-independent real failures (deliberate kill, real OOM, session
-interruption) all left the affected repo non-corrupt, others
-unaffected — stronger evidence than the single induced case the
-original packet required. **First real trigger of this playbook in
-the entire implementation phase — worked as designed.**
+**Target adoption record, once the review confirms (exact language,
+person's):**
+- q8 adopted because three of four criteria were met.
+- The two principal product failures were materially improved.
+- Criterion 4 was not met on the current benchmark.
+- The result's general significance is uncertain because the
+  documentation category contains only eight queries and Top-1 was
+  unchanged.
+- The product owner explicitly accepts this bounded regression risk.
+- Widening documentation ground truth is a tracked follow-up required
+  before the next embedding-model decision, not a prerequisite for
+  this adoption.
 
-## Settled corrections (ADR-009 amended, not re-litigated)
-- **Batch=1 is now a REQUIREMENT, not a performance default** — q8
-  is not batch-invariant (Δ up to 3.45e-2; MiniLM and fp32 are both
-  ~1e-7). A batch>1 corpus run would not be comparable to
-  singly-embedded queries. Every future run of this model must use
-  batch=1.
-- **Extrapolated hours were wrong; the 6.3× ratio was not.** Real:
-  got alone took 9h24m (not ~3.1h predicted). One file ran faster
-  unbatched than batched — padding cost can exceed batching benefit
-  for this model.
-- **Rollback is whole-database, not per-repository** — one pgvector
-  column, one dimension, for the whole DB. Rollback itself proven
-  real (3/3 ranks reproduced exactly); the spec's implied granularity
-  was overstated, now corrected.
-- `EMBEDDING_BATCH_SIZE` added as config (default 32 unchanged) after
-  a real OOM (13-chunk batch, 6.5GB request, 1h23m before abort) —
-  ADR-009's flagged latent risk was no longer latent. Length-aware
-  batching fix remains item 7's unchanged scope.
-- Two tooling gaps found: `metrics.ts` has no status filter (verified
-  its own gate correctly refuses a half-embedded repo — safe, no fix
-  needed); `compare-runs.ts` hardcoded its output filename, silently
-  overwriting the committed baseline on rerun — fixed via required
-  `--out=` flag.
+**If the review finds more than boundary movement, or a common
+systematic failure: STOP, use path (b) instead** (widen the
+documentation category before deciding) — not an automatic fallback,
+an explicit re-open.
+
+## Review in flight (this round's task)
+Read-only inspection of DOC-03 and DOC-08: confirm each correct file
+moved Top-3→rank 4 only (not further); record exact before/after rank
+and distance; inspect what actually occupies the new Top-3; confirm
+no ambiguous ground truth or shared systematic cause. Issued to
+Claude Code (decision-gating).
+
+## Cloud-embedding question — raised, deliberately held separate
+Person asked whether cloud embedding is viable given hardware limits.
+**Answer given: yes, it's a real departure from a standing, recorded
+commitment** (README's "runs locally... zero ongoing cost" claim;
+ADR-002/003/004; embedding-swap.md's own "constraints unchanged").
+Also real: the throughput problem is a UX/wait-time issue, not a
+correctness blocker (background, resumable; a single new import would
+take proportionally less than the 5-repo corpus). **Held as a
+separate, not-yet-scoped, standing-principle-level question** — not
+folded into ADR-009, not decided here. Would need its own scoping
+interview if pursued (acceptable wait time, real free-tier limits,
+whether the README's zero-cost claim changes).
+
+## Settled corrections (retained language, person's exact requirements)
+- q8 valid ONLY at batch=1 (not batch-invariant; MiniLM/fp32 are).
+- Wrong wall-clock extrapolation REMOVED; the 6.3× ratio RETAINED as
+  the durable finding.
+- Rollback described as whole-database, not per-repository.
+- Repository-completeness status gate (metrics.ts) RETAINED as-is —
+  already safe, verified refusing correctly.
+- compare-runs.ts's required --out= protection RETAINED.
 
 ## Coding-agent policy — unchanged
-Placement always Claude Code; implementation split by complexity.
-This dry run and its follow-on (promotion to dev, or a widened
-re-run) both stay Claude Code — hard-gated, complex.
-
-## Baseline — unchanged, now has a real comparison against it
-`BASELINE-2026-07-28T18-02-00-408Z.json` vs.
-`AFTER-SWAP-2026-07-30T01-57-15-380Z.json`, both on identical
-manifestVersion 1.0.0 and locked parameters.
-
-## Key decisions
-ADR-010, ADR-008, ADR-007, ADR-005 amended twice, **ADR-009 amended
-with real dry-run results and three methodology/scope corrections.**
+Placement always Claude Code; implementation/research split by
+complexity. This review: Claude Code (decision-gating, becomes
+permanent ADR record).
 
 ## Provisional-items trail (V4.2 — feeds retrospective §8)
-- 2026-07-30 — **session-recovery.md TRIGGERED for real, first time
-  this phase.** Worked as designed — diagnosis-before-resume turned
-  an interruption into reinforcing evidence rather than lost work or
-  a false completion claim.
-- Prior entries unchanged.
+Unchanged; session-recovery.md validation from last round stands as
+recorded.
 
 ## Upgrade scope — status
 1 doc-drift — substantially DONE. 2 benchmark — COMPLETE. **3 swap —
-dry run complete, real 3-of-4 result, adoption decision pending.**
-4 "Unknown" — CLOSED. 5 observability — handoff frozen. 6
+adoption framework set by the person, contingent on this round's
+review.** 4 "Unknown" — CLOSED. 5 observability — handoff frozen. 6
 screen-reader — plan placed. 7 closeout — boxen + got orphaned-state
-+ check-got.ts + BATCH_SIZE length-awareness fix (now confirmed
-non-latent, not just theoretical).
++ check-got.ts + BATCH_SIZE length-awareness.
 
 ## Open questions
-- **Criterion 4 adoption decision** (this round's live question).
+- This round's review outcome (gates path a vs. b).
+- Cloud-embedding scoping — deliberately deferred, not scheduled.
 - `scripts/check-got.ts` disposition (item 7).
-- Framework-review conversation — separate track. Strong candidates
-  now: session-recovery validation, the batch-invariance catch, the
-  two tooling-gap finds, the corrected extrapolation.
+- Framework-review conversation — separate track.
 
 ## Current blocker
-The adoption decision.
+The review, by design.
 
 ## Last completed action
-Dry-run results recorded; three ADR-009 corrections logged; session-
-recovery validated — 2026-07-30.
+Adoption framework and correction language recorded from the person's
+explicit decision; review task issued; cloud-embedding question
+answered and deliberately held separate — 2026-07-30.
 
 ## Next valid moves
-1. Place ADR-009 amendment + testing.md append + this file.
-2. Person decides: adopt (criterion 4 inconclusive-at-n=8) or widen
-   documentation category first.
-3. On adopt: promote from trailhead_bench to trailhead_dev for real.
+1. Place this file.
+2. Claude Code runs the DOC-03/DOC-08 review.
+3. On confirm: finalize ADR-009's adoption record in the exact
+   language above; promote from trailhead_bench to trailhead_dev.
+4. On disconfirm: reopen path (b) — widen documentation ground truth.
 
 ## Files changed last round
-- (branch `upgrade/embedding-swap-bench`, 10 commits — not yet
-  reflected in docs/ until this round's placement)
+- (main HEAD e28dfd6 unchanged by this round; this file pending)
