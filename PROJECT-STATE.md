@@ -9,103 +9,87 @@ released. Current phase: **Trailhead Upgrade** (project 2 on Starter
 Kit V4.2, ADR-007, same codebase).
 
 ## Phase
-**Upgrade — item 3: widening APPROVED (gate 2 passed). v1.1.0
-execution in flight.**
+**Upgrade — item 3: v1.1.0 widened comparison COMPLETE. Reopen's
+diagnosis CORRECTED. Adoption decision pending — three real paths
+presented, none decided.**
 
-**Hash convention:** as of 2026-07-30, `main` HEAD `4e6745a` (the
-prior round's placement commit; this round's commit lands on top of
-it). Branch `upgrade/embedding-swap-bench` at `c76b463`.
+**Hash convention:** as of 2026-07-30, `main` HEAD pending this
+round's placement. Branch `upgrade/embedding-swap-bench`: `4eb0a42`
+(manifest v1.1.0), `a26686e` (Jina run), `3fc9bd2` (MiniLM run +
+comparison). `trailhead_bench` currently MiniLM@384, Jina snapshot
+verified restorable without re-embedding.
 
-## Widening — APPROVED by the person (2026-07-30)
-**DOC-08 final wording (person's, supersedes both prior versions):**
-*"Where does the project direct me for both adding an awesome list
-and creating one of my own?"* → `contributing.md`. Preserves the
-verified uniqueness (only file pointing to both destinations) while
-phrasing it as a plausible contributor task. **The person explicitly
-accepts the small remaining naturalness tradeoff required to make the
-ground truth unambiguous.**
+## v1.1.0 results — the diagnosis changed, not just the numbers
+3 of 4 criteria still MET (known_code +37.5pp, trap-rate −12.5pp,
+semantic both +14.3pp). **Criterion 4 NOT MET, −17.6pp — and Overall
+Top-1 is now NET NEGATIVE (32.5%→27.5%), which v1.0.0 did not show.**
+Overall Top-3 still positive (60.0%→65.0%).
 
-**DOC-09 through DOC-17 APPROVED**, with diagnostic classifications
-recorded explicitly (person's, to be written into the manifest — not
-left implicit):
-- **Matched code/documentation intent pairs** (test intent
-  separation, not just topic): DOC-09 ↔ SEM-07 (timeout docs vs.
-  implementation); DOC-10 ↔ KC-04 (retry docs vs. calculation);
-  DOC-11 ↔ KC-05 (error meaning vs. error-class implementation);
-  DOC-15 ↔ KC-02 (preprocessing policy vs. path-traversal/security
-  implementation).
-- **Documentation controls, no meaningful in-repo code counterpart:**
-  DOC-12 (caching substantially implemented by the external
-  `cacheable-request` dependency — control, not mixed competition),
-  DOC-16 (`KNOWN-GOOD.md`), DOC-17 (`README.md`).
-- **Other mixed code/documentation:** DOC-13 (hooks/extension
-  points), DOC-14 (TypeScript client and progress typing).
-- **DOC-15 caveat retained:** `testing.md` is a legitimate secondary
-  competitor; does not invalidate the query as long as
-  `safe-preprocessing.md` remains the best answer to the approved
-  reject-vs-skip wording.
+**Mechanism correction (falsified, not confirmed, by the widening —
+real scientific value):** controls with NO code competitor degraded
+worst (DOC-16 1→5, DOC-17 23→>50, both displaced entirely by other
+docs). Matched pairs, where code competes hardest, IMPROVED
+(75%→100% Top-3). This is the opposite of "code outranks
+documentation." **Real mechanism: Jina q8 discriminates less well
+among dense documentation generally** — code displacement in `got` is
+a symptom, not the cause. DOC-08's person-rewritten, unambiguous
+question still regressed (3→5) — confirms real behavior, not a
+ground-truth artifact.
 
-**Measurement interpretation — APPROVED language (person's):** the
-widened run is **more resistant to individual cutoff movements, NOT
-statistically powerful.** The existing 1.0.0 reports remain valid for
-their original manifest, must not be overwritten, and are not
-directly interchangeable with the widened run.
+## Adoption decision — PENDING, three paths presented (2026-07-30)
+(a) Adopt, documentation regression now correctly diagnosed and
+accepted; elevate intent-aware/hybrid retrieval from speculative to
+required near-term follow-up. (b) Hold — net-negative Top-1 across
+the whole benchmark is a real regression, not bounded noise. (c)
+Scope a documentation-routing mitigation (MiniLM or blended, for
+doc-heavy queries) now, before adopting. **Orchestrator did not lean**
+— this crosses into product-priorities territory (Top-1 vs. broader
+relevance), reserved for the person.
 
-## CRITICAL SEQUENCING — avoids a ~9h re-embed
-One pgvector column holds one dimension for the whole database (the
-constraint the SWAP-06 review established). `trailhead_bench`
-currently holds Jina@768. Migrating back to 384 for MiniLM
-**destroys** the Jina embeddings. Therefore:
-1. **Run Jina under v1.1.0 FIRST** — corpus intact, benchmark re-run
-   only, no re-embedding, fast.
-2. **Snapshot Jina@768 to side tables** (tooling already built for
-   SWAP-06) so it can be restored without re-embedding.
-3. Then migrate to 384, re-embed MiniLM (~30 min), run MiniLM under
-   v1.1.0.
-4. On adoption, **restore Jina from snapshot** rather than
-   re-embedding (~9h saved).
-Doing MiniLM first would force a full Jina re-embed later — the
-expensive path, avoided.
-
-## Item 3 — REOPENED, unchanged reasoning (ADR-009)
-q8's three wins stand (known_code +37.5pp, trap-rate −12.5pp,
-semantic Top-1/Top-3 both +14.3pp). Criterion 4 needs confident
-measurement under v1.1.0 before a final adoption call.
+## Item 3 — full evidence chain (for the eventual ADR-009 close)
+Environment probe → throughput (corrected methodology) → ADR-009
+drafted → dry run (v1.0.0, 3/4 met) → reopen (path b, systematic
+concern) → widening approved → v1.1.0 (3/4 met, mechanism corrected,
+Top-1 now negative). Every step real, agent-verified, several
+self-corrected mid-stream (invalid v1 throughput discarded; wrong
+extrapolated hours corrected; wrong mechanism now corrected).
 
 ## Coding-agent policy — unchanged
-Placement always Claude Code; this execution task is complex/
-hard-gated → Claude Code.
+Placement always Claude Code.
 
 ## Provisional-items trail (V4.2 — feeds retrospective §8)
-Unchanged.
+Unchanged. Strong new candidate: a hypothesis-driven widening that
+falsified its own premise, with the person then reframing the
+decision rather than forcing the original conclusion — real evidence
+the framework's evenhandedness and decision-habits sections hold
+under a genuinely inconvenient result, not just a comfortable one.
 
 ## Upgrade scope — status
-1 doc-drift — substantially DONE. 2 benchmark — v1.0.0 COMPLETE;
-**v1.1.0 in progress.** **3 swap — REOPENED; widened comparison in
-flight.** 4 "Unknown" — CLOSED. 5 observability — handoff frozen.
-6 screen-reader — plan placed. 7 closeout — boxen + got orphaned-
-state + check-got.ts + BATCH_SIZE length-awareness.
+1 doc-drift — substantially DONE. 2 benchmark — COMPLETE (v1.0.0);
+v1.1.0 widening COMPLETE. **3 swap — evidence complete; adoption
+decision (a/b/c) pending.** 4 "Unknown" — CLOSED. 5 observability —
+handoff frozen. 6 screen-reader — plan placed. 7 closeout — boxen +
+got orphaned-state + check-got.ts + BATCH_SIZE length-awareness.
 
 ## Open questions
-- The v1.1.0 comparison result (in flight) → final adoption call.
+- **The adoption decision (a/b/c)** — this round's live question.
 - Cloud-embedding scoping — deferred.
-- Intent-aware ranking / dual embedding strategies — future scoping.
 - `scripts/check-got.ts` disposition (item 7).
-- Framework-review conversation — separate track.
+- Framework-review conversation — separate track. Item 3's full arc
+  (hypothesis, falsification, reframe) is now a top candidate.
 
 ## Current blocker
-None.
+The adoption decision.
 
 ## Last completed action
-Widening approved with the person's final DOC-08 wording and explicit
-diagnostic classifications; critical sequencing identified (Jina
-first, snapshot, then MiniLM) — 2026-07-30.
+v1.1.0 comparison complete; reopen's mechanism diagnosis corrected by
+real evidence; three paths presented without a lean — 2026-07-30.
 
 ## Next valid moves
-1. Place this file.
-2. Claude Code: v1.1.0 manifest write → Jina run → snapshot →
-   migrate → MiniLM re-embed → MiniLM run → four-criteria comparison.
-3. Person makes the final adoption call on real widened evidence.
+1. Place ADR-009 append + this file.
+2. Person decides: (a) adopt-with-corrected-exception, (b) hold, or
+   (c) scope a documentation-routing mitigation now.
+3. Path-dependent next task compiled once the person decides.
 
 ## Files changed last round
 - (pending this round's placement)

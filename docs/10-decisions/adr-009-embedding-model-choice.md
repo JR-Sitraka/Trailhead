@@ -232,3 +232,77 @@ because criterion 4's true shape isn't yet measured with confidence.
 all retrieval intents, or Trailhead eventually needs intent-aware
 ranking or separate code/documentation embedding strategies. A real
 question; needs its own evidence before its own architecture.
+
+---
+
+# v1.1.0 widened comparison (2026-07-30) — reopen's diagnosis CORRECTED
+
+Real evidence from both models re-run under the widened, approved
+manifest (documentation 8→17, 40 total queries).
+
+## Four PRD criteria, v1.1.0
+| # | Criterion | MiniLM | Jina q8 | Verdict |
+|---|---|---|---|---|
+| 1 | known_code Top-3 | 50.0% | 87.5% | **MET** (+37.5pp) |
+| 2 | trap-outranked rate | 25.0% | 12.5% | **MET** (−12.5pp) |
+| 3 | semantic Top-1/Top-3 | 0.0%/28.6% | 14.3%/42.9% | **MET** (both +14.3pp) |
+| 4 | documentation Top-3 | 70.6% | 52.9% | **NOT MET** (−17.6pp) |
+
+Overall Top-3: 60.0%→65.0%. **Overall Top-1: 32.5%→27.5% (−5.0pp) —
+net negative once documentation is realistically weighted (17 of 40
+queries).** This is a materially different picture than v1.0.0's
+Top-1-held-steady read.
+
+## The reopen's diagnosis was WRONG — corrected here, not repeated
+Classification breakdown (person-approved categories):
+
+| Role | n | Top-3 shift | Top-1 shift |
+|---|---|---|---|
+| matched_pair (code competes hardest) | 4 | 75.0%→100.0% (+25.0) | 75.0%→50.0% (−25.0) |
+| control (no code competitor) | 3 | 66.7%→33.3% (−33.3) | 66.7%→0.0% (−66.7) |
+| mixed | 10 | 70.0%→40.0% (−30.0) | 30.0%→30.0% (±0) |
+
+**Controls degraded worst, with zero code in their post-swap Top-3**
+(DOC-16 rank 1→5, all-.md Top-3; DOC-17 rank 23→>50, all-.md Top-3).
+**Matched pairs — where code competes hardest by design — improved.**
+This is the opposite of what "code outranks documentation" predicts.
+**Corrected mechanism: Jina q8 discriminates less well among similar,
+dense documentation content generally. Code displacement in `got`
+(DOC-03, DOC-04, both reproduced exactly at n=17) is a real symptom
+of this broader weakness, not its cause.** The intent-separation
+finding stands (3 of 4 matched pairs show clean separation — DOC-10↔
+KC-04 is the exception, code side misses Top-3) and is unaffected by
+this correction.
+
+DOC-08's person-rewritten, unambiguous wording still regressed
+(3→5, displaced by the files it correctly points to) — confirming
+this is a real retrieval behavior, not a ground-truth artifact.
+
+## What this changes and doesn't
+- **Not changed:** the three MET criteria — known_code, trap-rate,
+  semantic — remain real and are the swap's demonstrated core value.
+- **Changed:** the documentation regression is no longer read as
+  boundary noise or a code-specific tradeoff — it is a real,
+  reproducible, generalizing weakness. Widening did not narrow
+  uncertainty toward "it's fine"; it sharpened toward "it's real and
+  broader than first diagnosed."
+- **Elevated, not deferred:** intent-aware ranking / dual embedding
+  or hybrid retrieval strategy — previously logged as speculative
+  future scoping — is now a real near-term question given controls
+  evidence, not a someday-idea.
+
+## Adoption decision — STILL PENDING, three paths presented to the
+person (2026-07-30): (a) adopt with the corrected, accepted
+regression; (b) hold, do not adopt a straight swap; (c) scope a
+documentation-routing mitigation now, before adopting. Not resolved
+here — this section records evidence, not a verdict.
+
+## Verification notes
+v1.1.0 is NOT comparable to v1.0.0 (different manifestVersion); all
+v1.0.0 artifacts remain valid for what they measured, unmodified
+(SWAP-04-baseline-comparison.md md5 confirmed unchanged). Widening
+makes the result more resistant to individual cutoff movements, not
+statistically powerful — the control group (n=3) is directionally
+clear but thin. `trailhead_bench` left at MiniLM@384 with the Jina
+snapshot verified restorable (4,039/4,039 byte-identical) without
+re-embedding.
