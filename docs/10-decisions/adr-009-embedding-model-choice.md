@@ -306,3 +306,93 @@ statistically powerful — the control group (n=3) is directionally
 clear but thin. `trailhead_bench` left at MiniLM@384 with the Jina
 snapshot verified restorable (4,039/4,039 byte-identical) without
 re-embedding.
+
+---
+
+# FINAL DECISION (2026-07-30) — HOLD. q8 not adopted for production.
+
+**Status update:** this ADR's outcome is **HELD, not adopted** —
+recorded here rather than silently changing the header. Research,
+evaluation, and evidence-gathering are complete and stand as real
+work; the production decision is explicitly negative.
+
+## Decision
+**MiniLM (`Xenova/all-MiniLM-L6-v2`, 384-dim) remains the active
+production embedding model.** No database migration, no restore, no
+promotion — `trailhead_dev` was never touched at any point in this
+item's entire evaluation arc (probe → throughput → dry run → reopen
+→ widening), so this requires no action, not a rollback.
+`trailhead_bench` remains at MiniLM@384 with the Jina snapshot
+verified restorable (4,039/4,039 byte-identical) without re-embedding
+— left as-is; no upcoming work needs it changed.
+
+**q8 (`jinaai/jina-embeddings-v2-base-code`) is NOT rejected.** It is
+recorded as the **leading code-retrieval candidate**, with decisive,
+real wins:
+- known_code Top-3: 50.0%→87.5% (both manifest versions)
+- filename-trap outranked-rate: 25.0%→12.5%
+- semantic Top-1/Top-3: 0.0%/28.6% → 14.3%/42.9%
+- overall Top-3: 58.1%→67.7% (v1.0.0), 60.0%→65.0% (v1.1.0)
+
+**Against a repeatable, broader documentation weakness, not a
+bounded cutoff anomaly:**
+- documentation Top-3 regressed under BOTH manifest versions
+  (75.0%→50.0% at n=8; 70.6%→52.9% at n=17)
+- documentation Top-1 also regressed at the widened n=17 (not visible
+  at n=8)
+- the weakness occurs even where NO code competes (controls: DOC-16,
+  DOC-17 — both displaced entirely by other documentation)
+- overall Top-1 across the full 40-query manifest is net negative
+  (32.5%→27.5%)
+- the original no-documentation-regression criterion (PRD criterion
+  4) remains unmet under both manifests
+
+**Qualification for the record, stated precisely (not overclaimed):**
+Chat retrieves multiple chunks before synthesizing one answer, so
+file-level Top-1 is not a direct measurement of Chat answer quality.
+Top-3/Top-K remains the more relevant metric for that surface.
+**This does not rescue the decision** — criterion 4 (Top-3) failed
+independently of Top-1, and the overall Top-1 decline is corroborating
+evidence, not the sole basis, for holding rather than waiving.
+
+## Mechanism, corrected and final
+Jina q8 discriminates less well among dense, similar documentation
+content generally. Code displacement in mixed repositories (`got`)
+is one real symptom of this broader weakness, not its cause — proven
+by the widened control group (no-code-competitor documents degrading
+worse than code-competing ones).
+
+## What is preserved, not discarded
+All real artifacts remain in the repository: environment probe
+results, both throughput measurements (including the discarded-and-
+corrected v1 methodology, kept as a documented lesson), the dry-run
+report, the reopen's evidence, the widening proposal and approval,
+both v1.1.0 comparison reports, the Jina@768 snapshot, and all
+implementation work on branch `upgrade/embedding-swap-bench`. Nothing
+is deleted — this is a held decision with a complete evidence trail,
+not a failed experiment to be erased.
+
+## Follow-up opened — NOT scheduled, blocked on mitigation design
+A bounded investigation into documentation-retrieval mitigation is a
+real, tracked future item — separate from and not blocking the
+Upgrade phase's remaining scope (items 5-7). **Path (c) — "scope a
+mitigation now" — is explicitly deferred, not chosen:** the mitigation
+itself has not been designed or benchmarked, and the current control
+sample (n=3) is sufficient to reject a straight swap but not
+sufficient to prescribe a specific solution.
+
+**Candidate strategies for that future investigation** (none selected,
+none benchmarked):
+1. Lexical/documentation-aware reranking
+2. Reciprocal-rank fusion or another hybrid strategy
+3. Intent-aware query routing (code-intent vs. documentation-intent)
+4. Separate or versioned embedding indexes
+
+**Any future mitigation proposal must clear, at minimum, before
+reconsideration** (person's exact bar, recorded verbatim):
+- All four existing PRD criteria, under manifest v1.1.0, against
+  BOTH existing models.
+- No overall Top-1 regression relative to MiniLM.
+- Preserved q8 improvements on known-code, semantic, and trap cases.
+- Deterministic, documented ranking and rollback behavior.
+- Acceptable local runtime and storage cost.

@@ -9,87 +9,88 @@ released. Current phase: **Trailhead Upgrade** (project 2 on Starter
 Kit V4.2, ADR-007, same codebase).
 
 ## Phase
-**Upgrade — item 3: v1.1.0 widened comparison COMPLETE. Reopen's
-diagnosis CORRECTED. Adoption decision pending — three real paths
-presented, none decided.**
+**Upgrade — ITEM 3 CLOSED: HELD (not adopted). Item 5 (observability
+implementation) is next per priority order.**
 
-**Hash convention:** as of 2026-07-30, `main` HEAD pending this
-round's placement. Branch `upgrade/embedding-swap-bench`: `4eb0a42`
-(manifest v1.1.0), `a26686e` (Jina run), `3fc9bd2` (MiniLM run +
-comparison). `trailhead_bench` currently MiniLM@384, Jina snapshot
-verified restorable without re-embedding.
+**Hash convention:** as of 2026-07-30, `main` HEAD `a38b881`.
 
-## v1.1.0 results — the diagnosis changed, not just the numbers
-3 of 4 criteria still MET (known_code +37.5pp, trap-rate −12.5pp,
-semantic both +14.3pp). **Criterion 4 NOT MET, −17.6pp — and Overall
-Top-1 is now NET NEGATIVE (32.5%→27.5%), which v1.0.0 did not show.**
-Overall Top-3 still positive (60.0%→65.0%).
+## Item 3 — FINAL: HOLD (person's decision, 2026-07-30)
+**MiniLM remains production** (no action needed — `trailhead_dev` was
+never touched throughout this entire item's evaluation).
+**q8 preserved as the leading code-retrieval candidate**, all
+artifacts kept (probes, both throughput measurements, dry run,
+reopen, widening, v1.1.0 comparison, Jina@768 snapshot, all
+implementation work on `upgrade/embedding-swap-bench` — nothing
+deleted). Full evidence and reasoning: ADR-009's "FINAL DECISION"
+section.
 
-**Mechanism correction (falsified, not confirmed, by the widening —
-real scientific value):** controls with NO code competitor degraded
-worst (DOC-16 1→5, DOC-17 23→>50, both displaced entirely by other
-docs). Matched pairs, where code competes hardest, IMPROVED
-(75%→100% Top-3). This is the opposite of "code outranks
-documentation." **Real mechanism: Jina q8 discriminates less well
-among dense documentation generally** — code displacement in `got` is
-a symptom, not the cause. DOC-08's person-rewritten, unambiguous
-question still regressed (3→5) — confirms real behavior, not a
-ground-truth artifact.
+**Wins retained on record:** known_code Top-3 50.0%→87.5%; trap-rate
+25.0%→12.5%; semantic Top-1/Top-3 0.0%/28.6%→14.3%/42.9%; overall
+Top-3 improved both manifests. **Held because:** documentation Top-3
+regressed under both manifests; documentation Top-1 also regressed at
+n=17; the weakness occurs with zero code competing (controls); overall
+Top-1 across the full 40-query set went net negative (32.5%→27.5%).
+**Mechanism, final:** q8 discriminates less well among dense,
+similar documentation generally — code displacement was a symptom,
+not the cause (falsified by the widening's own control group).
 
-## Adoption decision — PENDING, three paths presented (2026-07-30)
-(a) Adopt, documentation regression now correctly diagnosed and
-accepted; elevate intent-aware/hybrid retrieval from speculative to
-required near-term follow-up. (b) Hold — net-negative Top-1 across
-the whole benchmark is a real regression, not bounded noise. (c)
-Scope a documentation-routing mitigation (MiniLM or blended, for
-doc-heavy queries) now, before adopting. **Orchestrator did not lean**
-— this crosses into product-priorities territory (Top-1 vs. broader
-relevance), reserved for the person.
+**Chat-retrieval qualification on record:** file-level Top-1 isn't a
+direct measure of Chat's multi-chunk answer quality — noted, but does
+not rescue the decision, since criterion 4 (Top-3) failed
+independently and Top-1's decline is corroborating, not sole, evidence.
 
-## Item 3 — full evidence chain (for the eventual ADR-009 close)
-Environment probe → throughput (corrected methodology) → ADR-009
-drafted → dry run (v1.0.0, 3/4 met) → reopen (path b, systematic
-concern) → widening approved → v1.1.0 (3/4 met, mechanism corrected,
-Top-1 now negative). Every step real, agent-verified, several
-self-corrected mid-stream (invalid v1 throughput discarded; wrong
-extrapolated hours corrected; wrong mechanism now corrected).
+## Follow-up opened — NOT scheduled, separate from Upgrade's 7-item scope
+A documentation-retrieval mitigation study is real future work, not
+chosen now (path c explicitly deferred — mitigation undesigned,
+unbenchmarked). Candidates: lexical/doc-aware reranking, RRF/hybrid,
+intent-aware routing, separate/versioned indexes. **Any future
+proposal must clear:** all four PRD criteria under v1.1.0 vs. both
+models; no Top-1 regression vs. MiniLM; preserved q8 code/semantic/
+trap wins; deterministic ranking + rollback; acceptable local
+cost. Tracked as a distinct future item, alongside cloud-embedding
+scoping and V1 blueprint items — not part of this phase's checklist.
 
 ## Coding-agent policy — unchanged
 Placement always Claude Code.
 
 ## Provisional-items trail (V4.2 — feeds retrospective §8)
-Unchanged. Strong new candidate: a hypothesis-driven widening that
-falsified its own premise, with the person then reframing the
-decision rather than forcing the original conclusion — real evidence
-the framework's evenhandedness and decision-habits sections hold
-under a genuinely inconvenient result, not just a comfortable one.
+Unchanged. Item 3's full arc (hypothesis → falsification → honest
+reframe → held decision with a genuinely nuanced qualification, not a
+simple yes/no) is now the phase's strongest single candidate for
+demonstrating the decision-habits and evenhandedness sections working
+under real, inconvenient evidence — flagging explicitly for that
+conversation.
 
 ## Upgrade scope — status
-1 doc-drift — substantially DONE. 2 benchmark — COMPLETE (v1.0.0);
-v1.1.0 widening COMPLETE. **3 swap — evidence complete; adoption
-decision (a/b/c) pending.** 4 "Unknown" — CLOSED. 5 observability —
-handoff frozen. 6 screen-reader — plan placed. 7 closeout — boxen +
-got orphaned-state + check-got.ts + BATCH_SIZE length-awareness.
+1 doc-drift — substantially DONE. 2 benchmark — COMPLETE. **3 swap —
+CLOSED: HELD.** 4 "Unknown" — CLOSED. **5 observability — NEXT: real
+implementation required** (LlmRequestLog table, GET /api/observability
+endpoint, wire the real panel into Dashboard replacing the mock
+data/cycler, resolve the loading state per the design-handoff's
+already-decided rule). 6 screen-reader — plan placed, not executed.
+7 closeout — boxen + got orphaned-state + check-got.ts + BATCH_SIZE
+length-awareness.
 
 ## Open questions
-- **The adoption decision (a/b/c)** — this round's live question.
-- Cloud-embedding scoping — deferred.
 - `scripts/check-got.ts` disposition (item 7).
-- Framework-review conversation — separate track. Item 3's full arc
-  (hypothesis, falsification, reframe) is now a top candidate.
+- Documentation-mitigation study — not scheduled.
+- Cloud-embedding scoping — deferred.
+- Framework-review conversation — separate track.
 
 ## Current blocker
-The adoption decision.
+None.
 
 ## Last completed action
-v1.1.0 comparison complete; reopen's mechanism diagnosis corrected by
-real evidence; three paths presented without a lean — 2026-07-30.
+Item 3 formally closed as HELD, full evidence and reasoning recorded
+in ADR-009 and testing.md — 2026-07-30.
 
 ## Next valid moves
-1. Place ADR-009 append + this file.
-2. Person decides: (a) adopt-with-corrected-exception, (b) hold, or
-   (c) scope a documentation-routing mitigation now.
-3. Path-dependent next task compiled once the person decides.
+1. Place ADR-009 final-decision append + testing.md append + this
+   file.
+2. Open item 5: real observability implementation, per its existing
+   feature spec (`docs/08-features/observability.md`) and design
+   handoff (`docs/06-components/design-handoff.md`) — both already
+   complete from earlier rounds, ready to implement.
 
 ## Files changed last round
 - (pending this round's placement)

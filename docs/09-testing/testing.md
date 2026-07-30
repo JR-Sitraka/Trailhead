@@ -319,3 +319,31 @@ N=2 caveat.
 runtime init currently, not `instrumentation.ts`); a live 409 check
 against a running dev server (traced via code, not observed live —
 Code-reviewed tier, stated as such).
+
+---
+
+# Item 3 — FINAL STATUS (2026-07-30)
+
+All SWAP-01 through SWAP-06 gates **passed** (verified, unchanged from
+prior rounds) — the swap CAN be executed safely, cleanly, and with
+working rollback. That finding stands regardless of the product
+decision below; do not read "held" as "gates failed."
+
+**SWAP-04 (per-criterion PRD comparison) — final: PRODUCT DECISION
+IS HOLD.** 3 of 4 criteria MET decisively (known_code, trap-rate,
+semantic) under both manifest v1.0.0 and the widened v1.1.0. Criterion
+4 (documentation, no regression) NOT MET under both manifests, with a
+widened-run finding (overall Top-1 net negative) that was not visible
+at the original sample size. Full reasoning and the person's decision:
+`docs/10-decisions/adr-009-embedding-model-choice.md`, "FINAL DECISION
+(2026-07-30)." **MiniLM remains production; q8 is preserved as the
+leading code-retrieval candidate, not discarded.**
+
+**Real cost/value note for the retrospective:** this item consumed
+substantially more evidence-gathering than originally scoped (probe,
+throughput ×2, dry run, reopen, widening, v1.1.0 comparison — roughly
+10+ real rounds and real re-embed hours). The alternative — adopting
+on the n=8 dry-run result alone — would have shipped a documentation-
+retrieval regression to production, discovered only via real user
+complaints rather than a controlled benchmark. The rigor cost real
+time; the alternative would have cost real product quality silently.
