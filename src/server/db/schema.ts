@@ -6,6 +6,7 @@ export const analysisJobStatusEnum = pgEnum("analysis_job_status", ["queued", "r
 export const sourceTypeEnum = pgEnum("source_type", ["github", "zip"]);
 export const fileCategoryEnum = pgEnum("file_category", ["entrypoint", "config"]);
 export const symbolKindEnum = pgEnum("symbol_kind", ["function", "class", "interface", "import", "export"]);
+export const llmOutcomeEnum = pgEnum("llm_outcome", ["success", "failure"]);
 
 export const repositories = pgTable("repositories", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -64,6 +65,16 @@ export const symbols = pgTable("symbols", {
   startLine: integer("start_line").notNull(),
   endLine: integer("end_line").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull()
+});
+
+// LLM observability counters (Upgrade item 5) — written by the shared
+// generation abstraction on every generation call. No FK to Repository:
+// metrics are global by design (architecture.md, Upgrade additions).
+export const llmRequestLogs = pgTable("llm_request_logs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  outcome: llmOutcomeEnum("outcome").notNull(),
+  provider: varchar("provider", { length: 64 }).notNull()
 });
 
 export const repositoriesRelations = relations(repositories, ({ many }) => ({
