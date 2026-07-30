@@ -505,6 +505,15 @@ half.
   `git update-index --no-skip-worktree <path>` first** to clear the
   flag properly — don't rely on `-f` a second time. Root cause of why
   the flag was set in the first place is unknown/not investigated.
+- [2026-07-30] `npm run db:push` (drizzle-kit push) hangs indefinitely
+  in this harness — it blocks on an interactive confirmation prompt
+  with no stdin available, producing zero output. **Do not wait it
+  out; kill the process tree.** Workaround used successfully: apply
+  additive DDL directly (raw SQL) instead of the CLI push, which also
+  avoids drizzle-kit's documented HNSW-index-drop risk — index
+  verified intact on both trailhead_dev and trailhead_test after the
+  workaround. Root cause (why the prompt appears now) not
+  investigated.
 
 ## Project hard rules
 

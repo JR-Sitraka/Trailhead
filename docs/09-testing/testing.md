@@ -347,3 +347,29 @@ on the n=8 dry-run result alone — would have shipped a documentation-
 retrieval regression to production, discovered only via real user
 complaints rather than a controlled benchmark. The rigor cost real
 time; the alternative would have cost real product quality silently.
+
+---
+
+# Item 5 — implementation status (2026-07-30)
+
+| Criterion | Evidence | Tier |
+|---|---|---|
+| OBS-01 | Real Groq call, real DB row; also a real end-to-end dev-server Chat turn (0→1, operational) | Real-verified |
+| OBS-02 | Real corrupted credential, real rejection, requests+failures both +1, status erroring | Real-verified |
+| OBS-03 | Real `generateContextSummary` call with `generatedVia: "llm"` (proves it reached the provider) counted identically | Real-verified |
+| OBS-04 | Real zero-state: `{requests:0, failures:0, providerStatus:"unknown"}`; real panel rendered true zeros, not the unavailable state | Real-verified |
+| OBS-05 | Real induced failure (table renamed away, real Postgres 42P01), Chat still succeeded, recovery confirmed after restore | Real-verified |
+| OBS-06 | Success-after-failure → operational, prior failure still counted | Real-verified |
+
+Both call sites (Chat, Export) confirmed routed through the single
+real choke point (`generateJson` in the newly-created
+`generation.ts`) — traced, not assumed. Mock scaffolding
+(`DEMO_STATES`, cycler) confirmed absent from shipped code via grep
+and live DOM inspection (zero focusable elements on the panel).
+
+**Regression check:** 281 passed / 4 failed, identical failure set to
+`main` baseline (3 pre-existing Gemini-key failures, 1 pre-existing
+timing flake, both KNOWN-GOOD-documented) — nothing touched by this
+work broke anything.
+
+**Not yet done — OBS-07 (visual parity), explicitly next.**

@@ -471,3 +471,32 @@ accepted. The testing.md NFR row is updated to match.
 - **Counting local embedding calls.** Rejected — free and local; the
   panel measures exactly the constrained resource (recorded
   2026-07-27).
+
+---
+
+# Item 5 implementation correction (2026-07-30) — spec premise was false
+
+**Both `observability.md` and this file's Upgrade section described a
+"shared generation abstraction — single choke point" as already
+existing.** It did not. Real trace: `chat.ts` and `export.ts` each
+held an independent `new Groq(...)` + `ai.chat.completions.create(...)`
+call — two duplicated sites, no choke point. **Real fix:**
+`src/server/services/generation.ts` created as the actual single
+choke point; both callers now route through it (`generateJson`).
+`groq-sdk` now has exactly one import site in `src/`. Each caller's
+error semantics preserved (Chat→502, Export→deterministic fallback),
+confirmed by existing tests passing unchanged.
+
+This corrects prior documentation, which asserted the abstraction as
+settled fact when it was not (principles.md #3 — spec vs. code
+disagreement is a bug in the docs). Item 3's `embeddings.ts`
+`BATCH_SIZE` finding was a similar case; this is now the second
+instance of "the docs describe production architecture that was
+never actually built" — worth flagging together for the retrospective.
+
+**Second correction:** the Dashboard/ObservabilityPanel work approved
+via Magic Patterns (design-handoff, `component-specs.md`) was never
+actually ported into the real codebase — `Dashboard.tsx` contained no
+panel, no mock, no cycler, prior to this task. It has now been
+ported for real, without the mock scaffolding (which never shipped,
+so nothing needed removing — only excluding).
