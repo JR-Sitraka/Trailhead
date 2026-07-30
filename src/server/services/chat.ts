@@ -2,7 +2,7 @@ import { db } from "@/server/db";
 import { embeddingChunks, files } from "@/server/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { generateEmbeddings } from "./embeddings";
-import Groq from "groq-sdk";
+import { generateJson } from "./generation";
 
 export interface ChatRequest {
   question: string;
@@ -78,8 +78,6 @@ export function setNoEvidenceThresholdOverride(value: number | null) {
 function getNoEvidenceThreshold(): number {
   return noEvidenceThresholdOverride ?? NO_EVIDENCE_THRESHOLD;
 }
-
-const GROQ_MODEL = "llama-3.3-70b-versatile";
 
 export function validateQuestion(question: string): void {
   const trimmed = question.trim();
@@ -197,17 +195,10 @@ export async function generateAnswer(
     `{ "status": "no_evidence", "answer": "<explanation>", "citations": [] }\n\n` +
     `Evidence chunks:\n${labeledEvidence}${historySection}\n\nQuestion: ${question}\n\nRespond now with only a JSON object.`;
 
-  const ai = new Groq({ apiKey });
-
   try {
-    const chatResponse = (await ai.chat.completions.create({
-      model: GROQ_MODEL,
-      messages: [
-        { role: "user", content: prompt },
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.2,
-    })) as any;
+    // Routed through the shared generation abstraction — the single choke
+    // point that records every request for observability (Upgrade item 5).
+    const chatResponse = (await generateJson(prompt)) as any;
     const rawText = chatResponse.choices?.[0]?.message?.content;
     if (typeof rawText !== "string" || !rawText.trim()) {
       const err: any = new Error("Generation returned empty response text");

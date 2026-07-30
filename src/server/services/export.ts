@@ -3,7 +3,7 @@ import { repositories, files, symbols, embeddingChunks } from "@/server/db/schem
 import { eq, and, sql } from "drizzle-orm";
 import { embedQuestion, retrieveChunks } from "@/server/services/chat";
 import { generateEmbeddings } from "./embeddings";
-import Groq from "groq-sdk";
+import { generateJson } from "./generation";
 
 export interface ExportJsonResponse {
   repository: {
@@ -137,8 +137,6 @@ export interface ContextSummaryResponse {
   generatedVia: "llm" | "deterministic-fallback";
   citations: Array<{ label: number; fileId: string; path: string; startLine: number; endLine: number }>;
 }
-
-const GROQ_MODEL = "llama-3.3-70b-versatile";
 
 const CONTEXT_SUMMARY_K = 8;
 
@@ -339,17 +337,10 @@ export async function generateContextSummary(repositoryId: string): Promise<Cont
     `{ "status": "no_evidence", "answer": "<explanation>", "citations": [] }\n\n` +
     `Evidence chunks:\n${labeledEvidence}\n\nRespond now with only a JSON object.`;
 
-  const ai = new Groq({ apiKey });
-
   try {
-    const chatResponse = (await ai.chat.completions.create({
-      model: GROQ_MODEL,
-      messages: [
-        { role: "user", content: prompt },
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.2,
-    })) as any;
+    // Routed through the shared generation abstraction — the single choke
+    // point that records every request for observability (Upgrade item 5).
+    const chatResponse = (await generateJson(prompt)) as any;
 
     const rawText = chatResponse.choices?.[0]?.message?.content;
     if (typeof rawText !== "string" || !rawText.trim()) {
