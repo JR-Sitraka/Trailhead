@@ -9,108 +9,88 @@ released. Current phase: **Trailhead Upgrade** (project 2 on Starter
 Kit V4.2, ADR-007, same codebase).
 
 ## Phase
-**Upgrade — item 3: adoption framework decided by the person,
-CONTINGENT on one read-only review.** Branch
-`upgrade/embedding-swap-bench` at `c76b463`, not yet merged.
+**Upgrade — item 3 REOPENED (path b). Widening the documentation
+category before any adoption decision.** Branch
+`upgrade/embedding-swap-bench` at `c76b463`.
 
-**Hash convention:** as of 2026-07-30, `main` HEAD `e28dfd6`.
+**Hash convention:** as of 2026-07-30, `main` HEAD `e28dfd6` (pending
+this round's placement).
 
-## Item 3 — adoption decision (person, 2026-07-30), pending confirmation
-**Path (a): adopt q8 now, with an explicit accepted-exception for
-criterion 4** — contingent on a real-evidence review of DOC-03/DOC-08
-confirming genuine cutoff-boundary movement (not a systematic
-documentation-retrieval failure, not ambiguous ground truth).
+## Item 3 — REOPENED (2026-07-30), full reasoning in ADR-009
+Read-only review found a SYSTEMATIC CONCERN, not boundary noise:
+DOC-03 shows a real word-sense error (URL authority ≠ certificate
+authority) plus a scoring artifact (true rank is 5, not 4, when
+scored on the answer-bearing chunk); DOC-04 independently confirms
+the same code-over-docs mechanism; category-wide pattern is 4 down /
+2 up-by-one / 2 flat, concentrated specifically in `got` — the
+corpus's one repo with both substantial code and substantial docs.
+DOC-08's ground truth was also genuinely ambiguous (the declining
+reason for the alternative no longer holds) — **rewrite adopted**:
+*"Which file directs contributors to both the new-list guidelines
+and the instructions for creating their own list?"* → `contributing.md`.
 
-**Correction to prior round's framing (person's, adopted):** criterion
-4 is recorded as **NOT MET** — the −25pp is a real, observed result on
-the approved 8-query benchmark, not "statistically inconclusive." What
-is uncertain is generalizability (n=8, Top-1 unchanged), not the
-observed result itself. These are different claims and must not be
-merged.
+**q8's three wins are NOT retracted** — known_code +37.5pp, trap-rate
+−12.5pp, semantic Top-1/Top-3 both +14.3pp remain real. The reopen is
+about measuring the documentation tradeoff with confidence, not about
+doubting the wins.
 
-**Target adoption record, once the review confirms (exact language,
-person's):**
-- q8 adopted because three of four criteria were met.
-- The two principal product failures were materially improved.
-- Criterion 4 was not met on the current benchmark.
-- The result's general significance is uncertain because the
-  documentation category contains only eight queries and Top-1 was
-  unchanged.
-- The product owner explicitly accepts this bounded regression risk.
-- Widening documentation ground truth is a tracked follow-up required
-  before the next embedding-model decision, not a prerequisite for
-  this adoption.
+## Cost clarification — the reopen is cheap, not another 9-hour ordeal
+`trailhead_bench` already holds Jina@768 for all 5 repos — NOT
+touched again. Only MiniLM needs re-embedding (destroyed by the
+dimension migration) — measured rate on this machine extrapolates to
+**~30 minutes for the full corpus**, not hours. Query embedding and
+comparison runs are fast regardless of corpus size.
 
-**If the review finds more than boundary movement, or a common
-systematic failure: STOP, use path (b) instead** (widen the
-documentation category before deciding) — not an automatic fallback,
-an explicit re-open.
-
-## Review in flight (this round's task)
-Read-only inspection of DOC-03 and DOC-08: confirm each correct file
-moved Top-3→rank 4 only (not further); record exact before/after rank
-and distance; inspect what actually occupies the new Top-3; confirm
-no ambiguous ground truth or shared systematic cause. Issued to
-Claude Code (decision-gating).
-
-## Cloud-embedding question — raised, deliberately held separate
-Person asked whether cloud embedding is viable given hardware limits.
-**Answer given: yes, it's a real departure from a standing, recorded
-commitment** (README's "runs locally... zero ongoing cost" claim;
-ADR-002/003/004; embedding-swap.md's own "constraints unchanged").
-Also real: the throughput problem is a UX/wait-time issue, not a
-correctness blocker (background, resumable; a single new import would
-take proportionally less than the 5-repo corpus). **Held as a
-separate, not-yet-scoped, standing-principle-level question** — not
-folded into ADR-009, not decided here. Would need its own scoping
-interview if pursued (acceptable wait time, real free-tier limits,
-whether the README's zero-cost claim changes).
-
-## Settled corrections (retained language, person's exact requirements)
-- q8 valid ONLY at batch=1 (not batch-invariant; MiniLM/fp32 are).
-- Wrong wall-clock extrapolation REMOVED; the 6.3× ratio RETAINED as
-  the durable finding.
-- Rollback described as whole-database, not per-repository.
-- Repository-completeness status gate (metrics.ts) RETAINED as-is —
-  already safe, verified refusing correctly.
-- compare-runs.ts's required --out= protection RETAINED.
+## Widening plan — two-gate discipline (same as original ground truth)
+1. **This round:** Claude Code proposes new documentation-category
+   candidates, concentrated in `got` and Trailhead (the corpus's two
+   genuinely mixed repos — `awesome`/`escape-string-regexp`/`DALL-E`
+   are not mixed in the relevant sense). Also content-verifies the
+   DOC-08 rewrite. Read-only, nothing written to the manifest.
+2. **Next round:** person reviews/approves candidates, same gate
+   discipline as the original 31-query ground truth.
+3. **Then:** manifestVersion bump, MiniLM re-embed (~30 min), both-
+   model comparison re-run under the new manifest.
 
 ## Coding-agent policy — unchanged
-Placement always Claude Code; implementation/research split by
-complexity. This review: Claude Code (decision-gating, becomes
-permanent ADR record).
+Placement always Claude Code; this proposal task is research/
+decision-adjacent → Claude Code.
 
 ## Provisional-items trail (V4.2 — feeds retrospective §8)
-Unchanged; session-recovery.md validation from last round stands as
-recorded.
+Unchanged. Strong new candidate: the person's own gate discipline
+(defining disqualifying conditions in advance, then honoring a
+disconfirming result rather than rationalizing around it) — real
+evidence of the framework's decision-habits section working exactly
+as designed under genuine stakes.
 
 ## Upgrade scope — status
-1 doc-drift — substantially DONE. 2 benchmark — COMPLETE. **3 swap —
-adoption framework set by the person, contingent on this round's
-review.** 4 "Unknown" — CLOSED. 5 observability — handoff frozen. 6
-screen-reader — plan placed. 7 closeout — boxen + got orphaned-state
-+ check-got.ts + BATCH_SIZE length-awareness.
+1 doc-drift — substantially DONE. 2 benchmark — COMPLETE (v1.0.0);
+**widening in progress toward v1.1.0.** **3 swap — REOPENED, path b in
+progress.** 4 "Unknown" — CLOSED. 5 observability — handoff frozen.
+6 screen-reader — plan placed. 7 closeout — boxen + got orphaned-
+state + check-got.ts + BATCH_SIZE length-awareness.
 
 ## Open questions
-- This round's review outcome (gates path a vs. b).
-- Cloud-embedding scoping — deliberately deferred, not scheduled.
+- Widened candidate approval (next round).
+- Cloud-embedding scoping — still deliberately deferred.
+- Future scoping candidate: intent-aware ranking / dual embedding
+  strategies (logged, not decided).
 - `scripts/check-got.ts` disposition (item 7).
 - Framework-review conversation — separate track.
 
 ## Current blocker
-The review, by design.
+None — proposal task in flight.
 
 ## Last completed action
-Adoption framework and correction language recorded from the person's
-explicit decision; review task issued; cloud-embedding question
-answered and deliberately held separate — 2026-07-30.
+Item 3 formally reopened with full reasoning; DOC-08 rewrite adopted;
+cost-bounding clarification recorded; widening plan set — 2026-07-30.
 
 ## Next valid moves
-1. Place this file.
-2. Claude Code runs the DOC-03/DOC-08 review.
-3. On confirm: finalize ADR-009's adoption record in the exact
-   language above; promote from trailhead_bench to trailhead_dev.
-4. On disconfirm: reopen path (b) — widen documentation ground truth.
+1. Place ADR-009 reopen append + this file.
+2. Claude Code proposes widened documentation candidates + verifies
+   DOC-08 rewrite content-match.
+3. Person approves → version bump → MiniLM re-embed → re-run →
+   revised four-criteria verdict.
 
 ## Files changed last round
-- (main HEAD e28dfd6 unchanged by this round; this file pending)
+- (pending this round's placement)

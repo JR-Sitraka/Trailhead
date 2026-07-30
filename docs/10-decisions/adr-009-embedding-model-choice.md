@@ -187,3 +187,48 @@ half-embedded repo as valid; verified its own gate correctly refuses.
 `compare-runs.ts` hardcoded its output filename, silently overwriting
 the committed baseline artifact on any other comparison pair — fixed
 with a required `--out=` flag (default behavior otherwise unchanged).
+
+---
+
+# Criterion 4 REOPENED (2026-07-30) — systematic concern found, not boundary noise
+
+Per the person's gate condition, a read-only review of DOC-03/DOC-08
+found the disqualifying case:
+
+- **DOC-03 (got):** correct file `documentation/5-https.md` moved
+  rank 2→4. Not clean boundary movement — the model conflated
+  `getAuthority()` (URL authority) with certificate authority (real
+  word-sense error), and scored on the actually-answer-bearing chunk
+  (not just the file), the true rank is 5, not 4.
+- **DOC-04 (got):** independently shows code outranking documentation
+  for a documentation-intent question — same mechanism, second
+  instance in the same repo.
+- **Category-wide:** 4 worse, 2 better by one rank, 2 flat — a
+  consistent mild downward drift, not a wash. The mechanism is
+  identifiable: **in the corpus's one repo with substantial code AND
+  substantial documentation (got), documentation-intent questions now
+  retrieve code above documentation.** This is the flip side of the
+  same code-training property that produced the three met criteria —
+  a real tradeoff, not a measurement artifact.
+- **DOC-08 ground truth was ambiguous** — the displacing file
+  (`pull_request_template.md`) is the alternative ground truth the
+  original curation explicitly considered and declined for a reason
+  ("file not verified present in the pinned snapshot") that does not
+  hold — the file is present, confirmed. **DOC-08 rewrite adopted:**
+  *"Which file directs contributors to both the new-list guidelines
+  and the instructions for creating their own list?"* →
+  `contributing.md` — this targets the dual-pointer role specifically,
+  which only `contributing.md` serves, resolving the ambiguity.
+
+**Adoption decision REOPENED — path (b).** q8's three wins (known_code
++37.5pp, trap-rate −12.5pp, semantic Top-1/Top-3 both +14.3pp) remain
+real and are NOT retracted. The documentation category (n=8) cannot
+safely quantify the tradeoff it surfaced; widening it, concentrated
+in the corpus's mixed code/doc repositories, is required before a
+final adoption decision — not because the wins are in doubt, but
+because criterion 4's true shape isn't yet measured with confidence.
+
+**Logged for future scoping, not decided now:** whether q8 can serve
+all retrieval intents, or Trailhead eventually needs intent-aware
+ranking or separate code/documentation embedding strategies. A real
+question; needs its own evidence before its own architecture.
