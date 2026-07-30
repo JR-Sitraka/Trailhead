@@ -9,84 +9,114 @@ released. Current phase: **Trailhead Upgrade** (project 2 on Starter
 Kit V4.2, ADR-007, same codebase).
 
 ## Phase
-**Upgrade — ADR-009 DRAFTED: candidate selected, migration scoped.
-Implementation (schema migration + re-embed + BENCH-04 comparison) is
-next.**
+**Upgrade — item 3 dry run COMPLETE on trailhead_bench. Adoption
+decision pending the person.** Branch `upgrade/embedding-swap-bench`
+holds 10 real commits (4924119 through c76b463) — not yet merged.
 
-**Hash convention:** as of 2026-07-28, `main` HEAD `d2b97a9`.
+**Hash convention:** as of 2026-07-30, `main` HEAD `5626a4b`
+(unchanged — dry run is entirely on the feature branch).
 
-## Item 3 — candidate selected (ADR-009, 2026-07-28)
-**`jinaai/jina-embeddings-v2-base-code`, quantized (q8), dim 768.**
-- Environment: passes, no compatibility errors, real correctness
-  separation (related 0.42-0.56, unrelated 0.06-0.11).
-- Throughput (corrected methodology, v1 discarded as invalid —
-  OOM-driven padding to a 3,918-char outlier mislabeled as compute):
-  **6.3× slower than current, like-for-like on the same machine.**
-  q8 matches fp32 quality at half the cost — q8 selected.
-- Tokenizer/truncation Edge Case CLOSED: 8192 max length vs. observed
-  max 1,098 tokens, zero truncation.
-- **Ratio (6.3×) is the durable decision basis; measured wall-clock
-  hours are machine-dependent** (this dev machine measured ~34×
-  slower than KNOWN-GOOD's historical figure even on the CURRENT
-  model — memory-constrained: 7.4GB RAM, 3.3GB free, 4 CPUs).
-- **BENCH-04's post-swap comparison is still the actual quality
-  gate** — ADR-009 establishes viability to implement, not a
-  retrieval-quality verdict.
+## Item 3 — dry-run results (real evidence, 2026-07-30)
+**3 of 4 PRD criteria MET decisively:** known_code Top-3 50.0%→87.5%;
+trap-outranked-rate 25.0%→12.5%; semantic Top-1/Top-3
+0.0%/28.6%→14.3%/42.9% (the headline defect — semantic Top-1 left
+zero for the first time; TRAP-06's total displacement is now rank 2).
+**Criterion 4 (documentation, no regression) NOT MET, −25.0pp** — but
+entirely two queries (DOC-03, DOC-08) crossing the Top-3 cutoff by
+one rank each in an 8-query category; Top-1 held steady; reproduced
+byte-identical on a second run. n=8 cannot distinguish real
+regression from boundary noise.
 
-## Latent risk found incidentally (item 7)
-`src/server/services/embeddings.ts`'s `BATCH_SIZE=32` has no
-length-awareness; survives today only via per-file batching keeping
-batches small. A file with 30+ long chunks in one batch could
-reproduce the throughput task's v1 OOM on constrained hardware.
-Independent of the swap; folded into item 7, not fixed now.
+**PENDING PERSON DECISION:** adopt now (criterion 4 recorded as
+inconclusive-at-n=8, widening deferred as a tracked follow-up,
+orchestrator's recommendation) vs. widen the documentation category
+and re-run before deciding (costs another multi-hour-to-day re-embed,
+per the corrected timing finding below).
 
-## Coding-agent policy — unchanged (type-based split)
+## Session-recovery validation (2026-07-30)
+The interrupted background process from the prior round was correctly
+diagnosed before resuming (per `playbooks/session-recovery.md`) —
+real DB state verified rather than trusting the log file's own
+claims. The interruption became reinforcing SWAP-05 evidence: three
+independent real failures (deliberate kill, real OOM, session
+interruption) all left the affected repo non-corrupt, others
+unaffected — stronger evidence than the single induced case the
+original packet required. **First real trigger of this playbook in
+the entire implementation phase — worked as designed.**
+
+## Settled corrections (ADR-009 amended, not re-litigated)
+- **Batch=1 is now a REQUIREMENT, not a performance default** — q8
+  is not batch-invariant (Δ up to 3.45e-2; MiniLM and fp32 are both
+  ~1e-7). A batch>1 corpus run would not be comparable to
+  singly-embedded queries. Every future run of this model must use
+  batch=1.
+- **Extrapolated hours were wrong; the 6.3× ratio was not.** Real:
+  got alone took 9h24m (not ~3.1h predicted). One file ran faster
+  unbatched than batched — padding cost can exceed batching benefit
+  for this model.
+- **Rollback is whole-database, not per-repository** — one pgvector
+  column, one dimension, for the whole DB. Rollback itself proven
+  real (3/3 ranks reproduced exactly); the spec's implied granularity
+  was overstated, now corrected.
+- `EMBEDDING_BATCH_SIZE` added as config (default 32 unchanged) after
+  a real OOM (13-chunk batch, 6.5GB request, 1h23m before abort) —
+  ADR-009's flagged latent risk was no longer latent. Length-aware
+  batching fix remains item 7's unchanged scope.
+- Two tooling gaps found: `metrics.ts` has no status filter (verified
+  its own gate correctly refuses a half-embedded repo — safe, no fix
+  needed); `compare-runs.ts` hardcoded its output filename, silently
+  overwriting the committed baseline on rerun — fixed via required
+  `--out=` flag.
+
+## Coding-agent policy — unchanged
 Placement always Claude Code; implementation split by complexity.
-Schema migration + re-embed implementation is complex/hard-gated →
-Claude Code.
+This dry run and its follow-on (promotion to dev, or a widened
+re-run) both stay Claude Code — hard-gated, complex.
 
-## Baseline results — unchanged, still the comparison point (SWAP-04)
-Semantic Top-1 = 0.000 → known_code Top-1 = 0.250 → TRAP-06 total
-displacement, in priority order.
+## Baseline — unchanged, now has a real comparison against it
+`BASELINE-2026-07-28T18-02-00-408Z.json` vs.
+`AFTER-SWAP-2026-07-30T01-57-15-380Z.json`, both on identical
+manifestVersion 1.0.0 and locked parameters.
 
 ## Key decisions
-ADR-010, ADR-008, ADR-007, ADR-005 amended twice, **ADR-009 drafted
-(embedding model choice).**
+ADR-010, ADR-008, ADR-007, ADR-005 amended twice, **ADR-009 amended
+with real dry-run results and three methodology/scope corrections.**
 
 ## Provisional-items trail (V4.2 — feeds retrospective §8)
-Unchanged. New candidate: the throughput task's own self-correction
-(discarding an invalid, scary v1 number rather than reporting it) is
-strong evidence for the verification-tiers discipline actually
-preventing bad decisions, not just documenting them after the fact.
+- 2026-07-30 — **session-recovery.md TRIGGERED for real, first time
+  this phase.** Worked as designed — diagnosis-before-resume turned
+  an interruption into reinforcing evidence rather than lost work or
+  a false completion claim.
+- Prior entries unchanged.
 
 ## Upgrade scope — status
 1 doc-drift — substantially DONE. 2 benchmark — COMPLETE. **3 swap —
-ADR-009 drafted; migration + re-embed + SWAP-04 comparison next.**
+dry run complete, real 3-of-4 result, adoption decision pending.**
 4 "Unknown" — CLOSED. 5 observability — handoff frozen. 6
 screen-reader — plan placed. 7 closeout — boxen + got orphaned-state
-+ check-got.ts + BATCH_SIZE latent risk.
++ check-got.ts + BATCH_SIZE length-awareness fix (now confirmed
+non-latent, not just theoretical).
 
 ## Open questions
-- Migration sequencing: dry-run on `trailhead_bench` first (cheap,
-  4,039 chunks, ~3.1h on this machine) before touching
-  `trailhead_dev`? Recommend yes — orchestrator will propose this
-  explicitly next round.
+- **Criterion 4 adoption decision** (this round's live question).
 - `scripts/check-got.ts` disposition (item 7).
-- Framework-review conversation — separate track.
+- Framework-review conversation — separate track. Strong candidates
+  now: session-recovery validation, the batch-invariance catch, the
+  two tooling-gap finds, the corrected extrapolation.
 
 ## Current blocker
-None.
+The adoption decision.
 
 ## Last completed action
-ADR-009 drafted from two rounds of real, gated evidence (environment
-probe + corrected throughput measurement) — 2026-07-28.
+Dry-run results recorded; three ADR-009 corrections logged; session-
+recovery validated — 2026-07-30.
 
 ## Next valid moves
-1. Place ADR-009 + embedding-swap.md amendment + this file.
-2. Claude Code: pgvector schema migration (384→768) + q8 model
-   integration, dry-run against `trailhead_bench` first, THEN
-   `trailhead_dev` — with real rollback exercised once (SWAP-06).
-3. BENCH-04 post-swap comparison against the committed baseline.
+1. Place ADR-009 amendment + testing.md append + this file.
+2. Person decides: adopt (criterion 4 inconclusive-at-n=8) or widen
+   documentation category first.
+3. On adopt: promote from trailhead_bench to trailhead_dev for real.
 
 ## Files changed last round
-- `PROJECT-STATE.md` (main, `d2b97a9` — probe-flagged version)
+- (branch `upgrade/embedding-swap-bench`, 10 commits — not yet
+  reflected in docs/ until this round's placement)

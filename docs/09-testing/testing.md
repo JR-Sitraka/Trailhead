@@ -300,3 +300,22 @@ baseline `benchmark/reports/BASELINE-2026-07-28T18-02-00-408Z.json`
 on near-tied candidates as possible embedding noise, not signal —
 rest verdicts on category-level movement, per BENCH-05's honest
 N=2 caveat.
+
+---
+
+# Embedding swap dry-run results (2026-07-30) — trailhead_bench only
+
+| Acceptance criterion | Test | Type | Status |
+|---|---|---|---|
+| SWAP-01 (ADR records candidates/fit/decision) | ADR-009 + this amendment | Manual | ✅ Agent-verified, done |
+| SWAP-02 (dimension mismatch fails loudly) | 9/9 real cases | Automated (failure-path) | ✅ Agent-verified |
+| SWAP-03 (all repos re-embedded, no mixed-model state) | Real DB check, 4,039 chunks | Automated | ✅ Agent-verified |
+| SWAP-04 (post-swap vs. baseline, per-criterion verdicts) | 3 MET / 1 NOT MET (see ADR-009 amendment) | Automated + Manual verdict | ✅ Agent-verified; **adoption decision pending person** |
+| SWAP-05 (induced failure: non-corrupt, others unaffected) | 3 real independent failures, identical outcome each time | Automated (failure-path) | ✅ Agent-verified — exceeds original requirement |
+| SWAP-06 (rollback exercised for real) | Real revert + re-embed + verify + restore | Manual | ✅ Agent-verified — scope corrected (whole-DB, not per-repo; see ADR-009 amendment) |
+
+**Not yet done, correctly scoped out of this dry run:** promotion to
+`trailhead_dev`; app-boot-path validation wiring (fires at embedding-
+runtime init currently, not `instrumentation.ts`); a live 409 check
+against a running dev server (traced via code, not observed live —
+Code-reviewed tier, stated as such).
