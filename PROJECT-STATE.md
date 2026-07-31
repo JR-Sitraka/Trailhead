@@ -9,102 +9,71 @@ released. Current phase: **Trailhead Upgrade** (project 2 on Starter
 Kit V4.2, ADR-007, same codebase).
 
 ## Phase
-**Upgrade — ITEM 5 CLOSED. Branch merge in flight this round. Item 6
-(screen-reader pass) opens next.**
+**Upgrade — item 5 fully merged and closed. Item 6 (screen-reader
+pass) opening.**
 
-**Hash convention:** as of 2026-07-30, `main` HEAD `d32d4a2` (pre-
-merge). Branch `upgrade/observability` HEAD `9a9ff95` (corrected —
-`scripts/check-got.ts` restored to unstaged-deletion state, amend
-verified byte-identical to its pre-existing content). Merge base:
-`a66a744`.
+**Hash convention:** as of 2026-07-30, `main` HEAD `b8d796c` (real
+2-parent merge: `d32d4a2` + `9a9ff95`, both correct).
+`upgrade/observability` retained for reference, untouched otherwise.
 
-## Standing rule reaffirmed (2026-07-30) — placement is ALWAYS
-## Claude Code, no exceptions for usage-limit pressure
-Last round the orchestrator deviated from this rule (routed a
-placement task to Kilo Code to conserve Claude Code usage) — the
-person overrode this explicitly: **maintain the rule regardless of
-usage limits.** This round's three-file conflict (KNOWN-GOOD.md,
-PROJECT-STATE.md, testing.md independently diverged on `main` and the
-branch) is itself real evidence for why placement discipline matters
-regardless of file "routineness" — the rule is not relaxed going
-forward.
+## Item 5 — CLOSED (merged, 2026-07-30)
+All OBS-01 through OBS-07 real-verified; human visual confirmation
+given explicitly. Merge verified clean: 12 files, all implementation
+merged without markers, all three docs conflicts resolved by direct
+authored content (not agent conflict-editing), byte-verified against
+the provided reconciled versions. `scripts/check-got.ts` remained an
+untouched unstaged deletion throughout — confirmed mid-merge and
+post-commit.
 
-## Merge reconciliation — three files, both sides real, both kept
-`main`'s `d32d4a2` and the branch's `9a9ff95` each extended
-`KNOWN-GOOD.md`, `PROJECT-STATE.md`, and `testing.md` independently
-from the same base — genuine `CONFLICT (content)`, confirmed via a
-dry-run merge (`--no-commit --no-ff`, then aborted). **Resolved by
-the orchestrator writing the fully-reconciled content directly**
-(both sides authored by the same orchestrator across rounds, so no
-information is lost either way) rather than asking an agent to
-interpret conflict markers on prose documents:
-- `KNOWN-GOOD.md`: both dated entries kept (db:push hang;
-  second-dev-server `.next` corruption).
-- `testing.md`: both blocks kept in sequence (OBS-01–06 implementation
-  status; OBS-07 visual parity + Inter defect + item 5 closed).
-- `PROJECT-STATE.md`: this file — supersedes both prior versions.
+## Standing rule — unchanged, no exceptions
+Placement: always Claude Code, unconditionally (reaffirmed after last
+round's deviation and its real consequences). Implementation:
+complexity-split, Kilo Code for simple/scoped work only.
 
-## Item 5 — CLOSED (2026-07-30)
-All acceptance criteria (OBS-01 through OBS-07) real-verified.
-**Human visual confirmation given explicitly** ("Visual approval,
-it's a yes.") — the playbook's own requirement satisfied, not
-inferred from an artifact existing. One independent defect found
-(Inter font-resolution, project-wide) — routed to item 7, not
-blocking. Full evidence:
-`docs/09-testing/parity-reports/observability-panel-parity-2026-07-30.md`.
-
-## `scripts/check-got.ts` — remediation confirmed, still parked
-Corrected via commit amend on the branch tip (`667bdf1`→`9a9ff95`):
-`git checkout <parent> -- scripts/check-got.ts` to restore tracked
-content, amend to remove the deletion from the tree, then re-delete
-in the working directory — restoring the exact unstaged-deletion
-state that has persisted since `9c21b5f` (2026-07-25). Verified
-byte-identical to pre-`667bdf1` content. **Disposition remains
-item 7's, unchanged.**
-
-## Coding-agent policy — reaffirmed, no exceptions
-Placement: **always Claude Code, unconditionally** — usage-limit
-pressure does not override this. Implementation: complexity-split
-(simple → Kilo Code, research/hard-gated → Claude Code) — unchanged,
-still applies to implementation work specifically, not placement.
+## Item 6 — screen-reader pass, opening now
+Real NVDA or VoiceOver testing across all 7 screens (Dashboard,
+Overview, Explorer, Symbols, Search, Chat, Export) plus the newly
+shipped ObservabilityPanel. Per `testing.md`'s existing plan rows:
+aria-live behavior on Search/Symbols/Chat loading states, heading
+structure (including Overview's six fact sections — flagged in its
+own spec as "not confirmed... worth checking during implementation"),
+dynamic-update announcement timing (Chat turns, job-status polling),
+and the ObservabilityPanel specifically (confirm it announces
+sensibly and is never in tab order — already confirmed zero
+focusable elements via DOM inspection, but real screen-reader output
+is a different claim per `automated-tooling-blindspots.md`).
+Discovered issues get fixed; remaining limitations documented
+honestly in `testing.md` and the public README, per this item's
+original scope decision.
 
 ## Provisional-items trail (V4.2 — feeds retrospective §8)
-- 2026-07-30 — `visual-parity-review.md`: clean result, human
-  confirmed explicitly.
-- New candidate: a policy deviation (Kilo for placement) caused a
-  real, traceable problem within one round of being adopted — strong,
-  fast evidence for the framework's own rule, worth citing plainly.
-- Prior entries unchanged.
+Unchanged from last round.
 
 ## Upgrade scope — status
 1 doc-drift — substantially DONE. 2 benchmark — COMPLETE. 3 swap —
-CLOSED: HELD. 4 "Unknown" — CLOSED. **5 observability — CLOSED.**
-6 screen-reader — NEXT. 7 closeout — boxen, got orphaned-state,
-check-got.ts, embeddings.ts BATCH_SIZE, Inter font-resolution defect.
+CLOSED: HELD. 4 "Unknown" — CLOSED. **5 observability — CLOSED,
+merged.** **6 screen-reader — OPENING.** 7 closeout — boxen, got
+orphaned-state, check-got.ts, embeddings.ts BATCH_SIZE, Inter
+font-resolution defect.
 
 ## Open questions
-- `scripts/check-got.ts`, boxen, got orphaned-state, BATCH_SIZE,
-  Inter defect — all item 7, unscheduled.
+- Item 7's five accumulated items — all unscheduled, none blocking.
 - Documentation-mitigation study, cloud-embedding scoping — deferred.
-- Framework-review conversation — separate track. Strong new
-  candidates this phase: item 3's full falsification arc, the
-  spec-drift findings (generation abstraction, panel never ported),
-  and this round's placement-policy deviation-and-correction.
+- Framework-review conversation — separate track.
 
 ## Current blocker
-None — merge is this round's task.
+None.
 
 ## Last completed action
-Merge conflict reconciled by direct authorship (not agent conflict
-resolution); item 5 formally closed with explicit human approval;
-placement policy reaffirmed without exception — 2026-07-30.
+Merge verified clean; item 5 formally closed on main; item 6 opened
+— 2026-07-30.
 
 ## Next valid moves
-1. Claude Code executes the merge with the reconciled file contents
-   provided (below).
-2. Open item 6: screen-reader pass — real NVDA or VoiceOver testing
-   across all 7 screens plus the new observability panel, per
-   `testing.md`'s existing plan rows.
+1. Place this file.
+2. Run item 6's screen-reader pass (task below) — this needs a
+   human with a real screen reader (NVDA or VoiceOver), not something
+   an agent can perform standalone; the agent's role is preparing the
+   real testing surface and recording findings as you report them.
 
 ## Files changed last round
-- (merge in flight this round — see task below)
+- (pending this round's placement)
