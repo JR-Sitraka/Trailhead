@@ -9,96 +9,102 @@ released. Current phase: **Trailhead Upgrade** (project 2 on Starter
 Kit V4.2, ADR-007, same codebase).
 
 ## Phase
-**Upgrade — item 5: backend + frontend implementation COMPLETE and
-real-verified on trailhead_dev. Visual parity (OBS-07) is the one
-remaining step before item 5 closes.**
+**Upgrade — ITEM 5 CLOSED. Branch merge in flight this round. Item 6
+(screen-reader pass) opens next.**
 
-**Hash convention:** as of 2026-07-30, `main` HEAD `a66a744`. Branch
-`upgrade/observability`: `023171b` (schema), `e56c18e` (generation.ts
-abstraction + counter wiring), `75031c6` (GET /api/observability),
-`c0aa03d` (panel + Dashboard integration), `a25bb2b` (OBS tests).
+**Hash convention:** as of 2026-07-30, `main` HEAD `d32d4a2` (pre-
+merge). Branch `upgrade/observability` HEAD `9a9ff95` (corrected —
+`scripts/check-got.ts` restored to unstaged-deletion state, amend
+verified byte-identical to its pre-existing content). Merge base:
+`a66a744`.
 
-## Item 5 — two spec-vs-reality corrections found and fixed
-1. **"Shared generation abstraction" did not exist** —
-   `observability.md` and `architecture.md` both asserted it as
-   already built; real trace found two duplicated Groq call sites
-   (`chat.ts`, `export.ts`). Real fix: `src/server/services/
-   generation.ts` created as the actual single choke point; both
-   callers now route through it, error semantics preserved. Second
-   instance of "docs described architecture that was never actually
-   built" (first: item 3's `BATCH_SIZE` length-unawareness) —
-   flagged together for the retrospective.
-2. **The approved Magic Patterns panel work was never ported into
-   the real codebase** — `Dashboard.tsx` had no panel, mock, or
-   cycler prior to this task. Now ported for real; nothing needed
-   "removing" since the mock scaffolding never shipped.
+## Standing rule reaffirmed (2026-07-30) — placement is ALWAYS
+## Claude Code, no exceptions for usage-limit pressure
+Last round the orchestrator deviated from this rule (routed a
+placement task to Kilo Code to conserve Claude Code usage) — the
+person overrode this explicitly: **maintain the rule regardless of
+usage limits.** This round's three-file conflict (KNOWN-GOOD.md,
+PROJECT-STATE.md, testing.md independently diverged on `main` and the
+branch) is itself real evidence for why placement discipline matters
+regardless of file "routineness" — the rule is not relaxed going
+forward.
 
-Both corrected in `architecture.md`'s Upgrade section (append) rather
-than silently absorbed, per principles.md #3.
+## Merge reconciliation — three files, both sides real, both kept
+`main`'s `d32d4a2` and the branch's `9a9ff95` each extended
+`KNOWN-GOOD.md`, `PROJECT-STATE.md`, and `testing.md` independently
+from the same base — genuine `CONFLICT (content)`, confirmed via a
+dry-run merge (`--no-commit --no-ff`, then aborted). **Resolved by
+the orchestrator writing the fully-reconciled content directly**
+(both sides authored by the same orchestrator across rounds, so no
+information is lost either way) rather than asking an agent to
+interpret conflict markers on prose documents:
+- `KNOWN-GOOD.md`: both dated entries kept (db:push hang;
+  second-dev-server `.next` corruption).
+- `testing.md`: both blocks kept in sequence (OBS-01–06 implementation
+  status; OBS-07 visual parity + Inter defect + item 5 closed).
+- `PROJECT-STATE.md`: this file — supersedes both prior versions.
 
-## Process note (not a correction needed)
-Agent self-flagged that discovering the missing abstraction should
-have been surfaced before acting, not just in the report (AGENTS.md
-#4). The deviation itself was correct and necessary — duplicating
-counting logic across two sites would have quietly broken the "no
-path can bypass counting" guarantee. Logged as a process observation
-for §8, not a defect.
+## Item 5 — CLOSED (2026-07-30)
+All acceptance criteria (OBS-01 through OBS-07) real-verified.
+**Human visual confirmation given explicitly** ("Visual approval,
+it's a yes.") — the playbook's own requirement satisfied, not
+inferred from an artifact existing. One independent defect found
+(Inter font-resolution, project-wide) — routed to item 7, not
+blocking. Full evidence:
+`docs/09-testing/parity-reports/observability-panel-parity-2026-07-30.md`.
 
-## OBS-01 through OBS-06 — all real-verified (full table: testing.md)
-Real Groq calls, real induced failures (corrupted credential, table
-renamed away), real dev-server Chat turn, real DOM inspection
-confirming zero focusable elements and the mock cycler fully absent
-(grep + live check). Regression: 281/285 passed, identical
-pre-existing failure set to main (KNOWN-GOOD-documented).
+## `scripts/check-got.ts` — remediation confirmed, still parked
+Corrected via commit amend on the branch tip (`667bdf1`→`9a9ff95`):
+`git checkout <parent> -- scripts/check-got.ts` to restore tracked
+content, amend to remove the deletion from the tree, then re-delete
+in the working directory — restoring the exact unstaged-deletion
+state that has persisted since `9c21b5f` (2026-07-25). Verified
+byte-identical to pre-`667bdf1` content. **Disposition remains
+item 7's, unchanged.**
 
-## KNOWN-GOOD entry added
-`npm run db:push` hangs indefinitely in this harness (blocks on an
-interactive confirmation prompt with no stdin). Workaround: apply
-additive DDL directly; also avoids drizzle-kit's documented HNSW-
-index-drop risk. Index verified intact both DBs after workaround.
-
-## Coding-agent policy — unchanged
-Placement always Claude Code. Visual parity (next task): Claude Code
-— it's the artifact-comparison step, decision-adjacent.
+## Coding-agent policy — reaffirmed, no exceptions
+Placement: **always Claude Code, unconditionally** — usage-limit
+pressure does not override this. Implementation: complexity-split
+(simple → Kilo Code, research/hard-gated → Claude Code) — unchanged,
+still applies to implementation work specifically, not placement.
 
 ## Provisional-items trail (V4.2 — feeds retrospective §8)
-Unchanged; `visual-parity-review.md` about to trigger for the first
-time this phase (next task) — will be item 5's closing gate.
+- 2026-07-30 — `visual-parity-review.md`: clean result, human
+  confirmed explicitly.
+- New candidate: a policy deviation (Kilo for placement) caused a
+  real, traceable problem within one round of being adopted — strong,
+  fast evidence for the framework's own rule, worth citing plainly.
+- Prior entries unchanged.
 
 ## Upgrade scope — status
 1 doc-drift — substantially DONE. 2 benchmark — COMPLETE. 3 swap —
-CLOSED: HELD. 4 "Unknown" — CLOSED. **5 observability —
-implementation COMPLETE; OBS-07 visual parity is the last step.**
-6 screen-reader — plan placed, not executed. 7 closeout — boxen +
-got orphaned-state + check-got.ts + BATCH_SIZE length-awareness +
-(now) generation.ts's real single-choke-point should be double-
-checked for embedding calls' own future counting needs, if any.
+CLOSED: HELD. 4 "Unknown" — CLOSED. **5 observability — CLOSED.**
+6 screen-reader — NEXT. 7 closeout — boxen, got orphaned-state,
+check-got.ts, embeddings.ts BATCH_SIZE, Inter font-resolution defect.
 
 ## Open questions
-- OBS-07 visual parity method: the mock cycler is gone, so the four
-  states must be reached on the real app via the same real techniques
-  already proven in OBS-02/04/05 (real call, real zero-state window,
-  real induced credential failure, real induced table-unavailable) —
-  specified in this round's task packet.
-- `scripts/check-got.ts` disposition (item 7).
-- Documentation-mitigation study, cloud-embedding scoping — deferred,
-  unscheduled.
-- Framework-review conversation — separate track.
+- `scripts/check-got.ts`, boxen, got orphaned-state, BATCH_SIZE,
+  Inter defect — all item 7, unscheduled.
+- Documentation-mitigation study, cloud-embedding scoping — deferred.
+- Framework-review conversation — separate track. Strong new
+  candidates this phase: item 3's full falsification arc, the
+  spec-drift findings (generation abstraction, panel never ported),
+  and this round's placement-policy deviation-and-correction.
 
 ## Current blocker
-None.
+None — merge is this round's task.
 
 ## Last completed action
-Item 5 implementation verified real; two spec corrections logged;
-KNOWN-GOOD entry added — 2026-07-30.
+Merge conflict reconciled by direct authorship (not agent conflict
+resolution); item 5 formally closed with explicit human approval;
+placement policy reaffirmed without exception — 2026-07-30.
 
 ## Next valid moves
-1. Place four files (architecture append, KNOWN-GOOD append,
-   testing.md append, this file).
-2. Claude Code: OBS-07 visual parity review against the approved
-   Magic Patterns artifact, four states induced by real means, three
-   canonical viewports (per the design-handoff).
-3. On clean parity: item 5 closes; item 6 (screen-reader) opens next.
+1. Claude Code executes the merge with the reconciled file contents
+   provided (below).
+2. Open item 6: screen-reader pass — real NVDA or VoiceOver testing
+   across all 7 screens plus the new observability panel, per
+   `testing.md`'s existing plan rows.
 
 ## Files changed last round
-- (pending this round's placement)
+- (merge in flight this round — see task below)

@@ -6,7 +6,29 @@ import { PlusIcon, CodeIcon, SearchIcon, RefreshCwIcon, XIcon, AlertTriangleIcon
 import { RepoRow } from './RepoRow';
 import { AddRepositoryModal } from './AddRepositoryModal';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
+import { ObservabilityPanel, type ObservabilityData, type ProviderStatus } from './ObservabilityPanel';
 import type { ApiRepository, RepoStatus } from './types';
+
+const PROVIDER_STATUSES: ProviderStatus[] = ['operational', 'erroring', 'unknown'];
+
+// Malformed payloads render the metrics-unavailable state rather than
+// fake values (observability.md's error states) — so the shape is checked,
+// not trusted.
+function parseObservability(payload: unknown): ObservabilityData | null {
+  if (typeof payload !== 'object' || payload === null) return null;
+  const p = payload as Record<string, unknown>;
+  if (typeof p.requests !== 'number' || !Number.isFinite(p.requests)) return null;
+  if (typeof p.failures !== 'number' || !Number.isFinite(p.failures)) return null;
+  if (typeof p.providerName !== 'string') return null;
+  if (typeof p.providerStatus !== 'string') return null;
+  if (!PROVIDER_STATUSES.includes(p.providerStatus as ProviderStatus)) return null;
+  return {
+    requests: p.requests,
+    failures: p.failures,
+    providerStatus: p.providerStatus as ProviderStatus,
+    providerName: p.providerName,
+  };
+}
 
 const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
 
@@ -90,6 +112,10 @@ export default function Dashboard() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ApiRepository | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  // null until real data arrives — the panel renders its metrics-unavailable
+  // treatment meanwhile (design-handoff.md's decided loading-state
+  // resolution: no spinner, no skeleton, no new visual state).
+  const [observability, setObservability] = useState<ObservabilityData | null>(null);
 
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -118,6 +144,25 @@ export default function Dashboard() {
     })();
     return () => { cancelled = true; };
   }, [loadRepos]);
+
+  // Metrics are fetched on page load only — no live refresh, no rollover
+  // while the Dashboard is open (values are as-of-load, per the spec).
+  // Any failure leaves the panel in its metrics-unavailable state and
+  // never affects the repository list.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/observability');
+        if (!res.ok) return;
+        const payload = await res.json();
+        if (!cancelled) setObservability(parseObservability(payload));
+      } catch {
+        /* panel stays in its metrics-unavailable state */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     const hasActive = repos.some((r) => r.status === 'queued' || r.status === 'analyzing');
@@ -266,6 +311,10 @@ export default function Dashboard() {
             </div>
           )}
         </div>
+
+        {/* LLM observability — Upgrade item 5. Global, passive, secondary
+            to the repository list (brief: "not dominating it"). */}
+        <ObservabilityPanel data={observability} />
 
         {/* Global action error (409 from delete/reanalyze) */}
         <AnimatePresence>

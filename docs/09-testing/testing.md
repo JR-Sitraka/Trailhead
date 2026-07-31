@@ -372,4 +372,33 @@ and live DOM inspection (zero focusable elements on the panel).
 timing flake, both KNOWN-GOOD-documented) — nothing touched by this
 work broke anything.
 
-**Not yet done — OBS-07 (visual parity), explicitly next.**
+---
+
+# OBS-07 — visual parity, real evidence (2026-07-30)
+
+Full evidence report:
+[`docs/09-testing/parity-reports/observability-panel-parity-2026-07-30.md`](./parity-reports/observability-panel-parity-2026-07-30.md)
+
+**Verdict: clean parity on every dimension the panel controls**
+(structure, hierarchy, tokens, spacing, all four states, responsive
+wrap). One Fail found — pre-existing, project-wide Inter font-
+resolution defect, independent of this work, tracked separately
+below rather than blocking this item.
+
+| Check | Status |
+|---|---|
+| OBS-07 (rendered panel matches approved artifact) | ✅ Agent-verified AND Live-verified — person confirmed the running panel visually, 2026-07-30 |
+
+## New coverage gap — Inter font-resolution defect (project-wide)
+`Dashboard.tsx`'s root `font-sans` class resolves `--font-sans`,
+which `globals.css`'s `@theme` never defines — Tailwind v4's system
+font stack silently overrides `next/font`'s Inter, on every screen
+(confirmed: h1, h2, repository-list header, and this panel all
+affected identically). Not caused by any Upgrade-phase work. **Folded
+into item 7's closeout**, alongside boxen, got's orphaned state,
+`scripts/check-got.ts`, and `embeddings.ts`'s `BATCH_SIZE`
+length-unawareness.
+
+## Item 5 — CLOSED (2026-07-30)
+All acceptance criteria (OBS-01 through OBS-07) real-verified; human
+visual confirmation given. Merged into `main`.

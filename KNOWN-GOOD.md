@@ -514,6 +514,12 @@ half.
   verified intact on both trailhead_dev and trailhead_test after the
   workaround. Root cause (why the prompt appears now) not
   investigated.
+- [2026-07-30] Running a second `npm run dev` in the same project
+  corrupts the shared `.next` build and 500s the ENTIRE app, including
+  routes unrelated to whatever change is being tested. Recovery per
+  the [2026-07-25] entry (kill tree + delete `.next`). Always confirm
+  no other dev server is already running before starting one — check
+  for an existing process/port bind, don't assume a clean start.
 
 ## Project hard rules
 
