@@ -504,7 +504,14 @@ half.
   editing either file again, run
   `git update-index --no-skip-worktree <path>` first** to clear the
   flag properly — don't rely on `-f` a second time. Root cause of why
-  the flag was set in the first place is unknown/not investigated.
+   the flag was set in the first place is unknown/not investigated.
+
+- [2026-07-30] Running a second `npm run dev` in the same project
+  corrupts the shared `.next` build and 500s the ENTIRE app, including
+  routes unrelated to whatever change is being tested. Recovery per
+  the [2026-07-25] entry (kill tree + delete `.next`). Always confirm
+  no other dev server is already running before starting one — check
+  for an existing process/port bind, don't assume a clean start.
 
 ## Project hard rules
 
