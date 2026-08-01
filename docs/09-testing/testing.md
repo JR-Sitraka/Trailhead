@@ -789,3 +789,39 @@ is weak evidence regardless of actual gating behavior.
 
 **Regression:** 307/310 passing, same known baseline failure set
 (reanalysis.test.ts's flake didn't even trigger this run).
+
+---
+
+# Item 7, Groups 2 & 3 — CLOSED (2026-07-31)
+
+**Group 2 — embeddings.ts BATCH_SIZE length-awareness (`86f2300`).**
+`buildBatches()` caps each batch by item count (32, unchanged) AND
+total character length (`MAX_BATCH_CHARS = 8000`, a tunable
+heuristic — honestly flagged as not precisely justified, same status
+as the chunker's fixed 30-line window). A single oversized chunk gets
+its own batch rather than being dropped or looping. **Real test
+evidence:** 5 deterministic unit tests confirm the exact ADR-009 OOM
+shape (13 chunks × the real 3918-char outlier) now subdivides
+correctly; 2 real end-to-end model tests confirm the split doesn't
+corrupt output (identical content → identical embeddings regardless
+of sub-batch placement). **Honest tier boundary:** the live 6.5GB OOM
+was NOT reproduced — correctly, since doing so would risk this
+already memory-constrained machine (ADR-009: 3.3GB free). The
+deterministic unit tests are the load-bearing proof. Regression:
+313/317, zero new failures.
+
+**Group 3 — Inter font-resolution defect, project-wide (`878abd0`).**
+`layout.tsx` now exposes Inter via `variable: "--font-inter"`;
+`globals.css` wires `--font-sans` through the actual loaded font
+variable rather than leaving it undefined (Tailwind's system stack
+was silently winning). **Real proof:** confirmed the bug was a
+genuine CSS override before fixing (`.font-sans { font-family:
+var(--font-sans) }` compiled with no value); post-fix,
+`getComputedStyle` on Dashboard's root, h1, and h2 all resolve to
+Inter's real self-hosted family; `document.fonts.check('16px Inter')`
+→ true; JetBrains Mono confirmed unaffected on real commit-SHA
+elements. Regression: 314/317, zero new failures.
+
+Item 7 remaining: Groups 4-5 (IMPORT-04, PREPROC-03's exact boundary,
+remaining planning-era Dashboard/Explorer rows) — the last work in
+the entire Upgrade phase.
