@@ -130,4 +130,56 @@ describe("SearchClient frontend logic", () => {
     });
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
+
+  it("announces result count via an aria-live region once results arrive", async () => {
+    (global.fetch as any).mockResolvedValue({
+      ok: true,
+      json: async () => [
+        { fileId: "1", path: "source/index.ts", line: 1, snippet: "match" },
+        { fileId: "2", path: "source/http.ts", line: 5, snippet: "match" },
+      ],
+    });
+
+    const { container } = render(<SearchClient repoId={REPO_ID} />);
+    const liveRegion = container.querySelector('[aria-live="polite"]');
+    expect(liveRegion).not.toBeNull();
+
+    const input = screen.getByLabelText("Search repository");
+
+    await act(async () => {
+      fireEvent.change(input, { target: { value: "match" } });
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(350);
+    });
+
+    await waitFor(() => {
+      expect(liveRegion!.textContent).toBe("2 results found.");
+    });
+  });
+
+  it("announces zero results via the aria-live region", async () => {
+    (global.fetch as any).mockResolvedValue({
+      ok: true,
+      json: async () => [],
+    });
+
+    const { container } = render(<SearchClient repoId={REPO_ID} />);
+    const liveRegion = container.querySelector('[aria-live="polite"]');
+
+    const input = screen.getByLabelText("Search repository");
+
+    await act(async () => {
+      fireEvent.change(input, { target: { value: "nomatch" } });
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(350);
+    });
+
+    await waitFor(() => {
+      expect(liveRegion!.textContent).toBe("No matches found.");
+    });
+  });
 });

@@ -269,4 +269,40 @@ describe('ChatClient frontend logic', () => {
     expect(thirdRequestBody.history[1].answer).toBe(null);
     expect(thirdRequestBody.history[1].citations).toEqual([]);
   });
+
+  it('announces a successful answer via an aria-live region', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    render(<ChatClient repoId={REPO_ID} />);
+
+    mockFetchSuccess('answered', 'Auth is handled in src/auth/middleware.ts[1].', [1]);
+
+    const input = screen.getByLabelText('Ask a follow-up question');
+    await user.type(input, 'Where is authentication handled?');
+    await user.click(screen.getByLabelText('Ask'));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Auth is handled in/)).toBeDefined();
+    });
+
+    const liveRegion = screen.getByText(/Auth is handled in/).closest('[aria-live="polite"]');
+    expect(liveRegion).not.toBeNull();
+  });
+
+  it('announces the no-evidence response via an aria-live region', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    render(<ChatClient repoId={REPO_ID} />);
+
+    mockFetchSuccess('no_evidence', 'No evidence found for this question.', []);
+
+    const input = screen.getByLabelText('Ask a follow-up question');
+    await user.type(input, 'xyzzy not found');
+    await user.click(screen.getByLabelText('Ask'));
+
+    await waitFor(() => {
+      expect(screen.getByText('No relevant evidence found')).toBeDefined();
+    });
+
+    const liveRegion = screen.getByText('No relevant evidence found').closest('[aria-live="polite"]');
+    expect(liveRegion).not.toBeNull();
+  });
 });
