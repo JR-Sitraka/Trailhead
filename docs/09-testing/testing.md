@@ -599,3 +599,80 @@ between the two rounds.)
 Defects 2, 3 (Group A) — **closed**. Remaining item 6 group (C:
 defects 1 and 4 — Dashboard status announcement, Overview heading
 structure) is separate, not addressed by this change.
+
+---
+
+# Group C — real evidence, real fix for defect 1; defect 4 did not
+# reproduce (2026-08-01)
+
+**Defect 1 (Dashboard status announcement) — real root cause, real
+fix.** `StatusPill`'s label text (`Ready`/`Analyzing`/`Queued`/`Failed`)
+was always plain visible text — never hidden, never wrong — but it sat
+outside any focusable element in the row. Tab navigation only stops at
+focusable elements, so a keyboard/screen-reader user tabbing through a
+row (as the NVDA scenario specifically did) skips straight past static
+text between controls; this is standard AT behavior, not a rendering
+bug, which is exactly why it read as "never announced" in practice.
+Fixed by folding the status into the accessible name of the row's
+`Open` link — the first focusable stop in the row — via
+`aria-label="Open [repo], status: [status]"`, without touching the
+visible pill at all.
+
+**Defect 4 (Overview headings) — investigated, does not reproduce.**
+Before writing any fix, both live-browser and automated evidence were
+gathered: `document.querySelectorAll('h1,h2,...')` against a real
+running repository (`sindresorhus/escape-string-regexp`) showed all
+four always-present sections (Stack, Entry points, Configuration
+files, Testing) are real `<h2>` elements today, and the same held for
+the two conditional sections tested separately (a real `analyzing`-
+status repo for "Status: analyzing"; a real `analyzing` non-ready repo
+confirmed too). Git history shows the `Section` component's `<h2>`
+was introduced 2026-07-25 (`82bb8f4`) — **before** the item 6 audit
+(2026-07-31) — so this specific defect either didn't reproduce
+against the build actually tested, or was a transient/misread finding
+at audit time. Rather than writing a redundant "fix" for code that's
+already correct, real regression tests were added to lock the current
+(correct) state in place, covering all three section variants
+(always-present, conditional Status, conditional Not analyzed) against
+real DB-backed repository data — not just the previously-untested
+"Not analyzed" conditional path, closing a pre-existing gap in
+coverage regardless of the specific audit finding's reproducibility.
+
+**Unrelated latent defect fixed along the way:**
+`overview/page.tsx` used JSX without importing `React` — invisible in
+production because Next's SWC compiler handles the JSX transform
+independently, but it broke immediately under vitest's esbuild
+transform the moment a real test tried to render the page directly.
+Fixed by adding the import, matching every other component file in
+this codebase, which already imports `React` explicitly.
+
+**What a screen-reader user now experiences on Dashboard** (re-runnable
+against NVDA scenario 2): tabbing to a repository row's "Open" link now
+announces the repository name and its current status together — e.g.
+"Open sindresorhus/got, status: Analyzing, link" — with no separate
+action needed to learn what the colored pill shows visually.
+
+**Tests:** 5 new tests in `tests/dashboard-overview-accessibility.test.tsx`
+— 4 covering every `RepoRow` status's accessible name (`ready`,
+`analyzing`, `queued`, `failed`) plus a check that the visible pill text
+is unchanged; 3 covering Overview's always-present headings and both
+conditional sections (`Status: analyzing`, `Not analyzed` with a real
+skip reason) against real DB-backed repository/file rows, not mocked
+data. Real execution: `npx vitest run
+tests/dashboard-overview-accessibility.test.tsx` — 5/5 passed. Live
+browser verification confirmed both the Dashboard accessible-name fix
+and the Overview headings against the running dev server.
+
+**Full regression suite:** `npx vitest run` — 299 passed / 3 failed.
+The 3 failures are the same pre-existing invalid-Gemini-key tests as
+every prior round; the known `reanalysis.test.ts` timing flake (KNOWN-
+GOOD-documented, non-deterministic) did not trigger this run — 297
+(Group A total) + 5 new = 302 total tests, confirming no other
+regression crept in.
+
+**Commit:** `9a1dd05` on branch `upgrade/a11y-live-regions`.
+
+Defect 1 (Group C) — **closed**. Defect 4 (Group C) — **investigated,
+confirmed not currently reproducible, coverage gap closed with real
+regression tests**. Item 6's full defect list (1–7) is now fully
+addressed across Groups A, B, and C.
