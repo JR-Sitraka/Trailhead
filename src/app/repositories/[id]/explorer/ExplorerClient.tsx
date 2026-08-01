@@ -168,6 +168,7 @@ export default function ExplorerClient({ repoId, initialFiles }: ExplorerClientP
   const [error, setError] = useState<string | null>(null);
   const [highlightedLines, setHighlightedLines] = useState<HighlightedLines | null>(null);
   const [highlightError, setHighlightError] = useState(false);
+  const [announcement, setAnnouncement] = useState('');
 
   const handleToggle = useCallback((path: string) => {
     setExpanded(prev => {
@@ -187,6 +188,8 @@ export default function ExplorerClient({ repoId, initialFiles }: ExplorerClientP
     setSkipReason(null);
     setError(null);
 
+    setAnnouncement('');
+
     const file = files.find(f => f.path === path);
     if (!file) {
       setError('File not found');
@@ -194,7 +197,9 @@ export default function ExplorerClient({ repoId, initialFiles }: ExplorerClientP
     }
 
     if (file.skipped) {
-      setSkipReason(file.skipReason ?? 'File was skipped during analysis');
+      const reason = file.skipReason ?? 'File was skipped during analysis';
+      setSkipReason(reason);
+      setAnnouncement(`${path} was not analyzed. ${reason}`);
       return;
     }
 
@@ -212,6 +217,7 @@ export default function ExplorerClient({ repoId, initialFiles }: ExplorerClientP
       }
       const data: FileContentResponse = await res.json();
       setFileContent(data.content);
+      setAnnouncement(`Viewing ${path}`);
       const highlighted = await highlightCode(data.content, data.language);
       if (highlighted) {
         setHighlightedLines({ lines: highlighted.lines, highlighterError: highlighted.highlighterError });
@@ -234,6 +240,10 @@ export default function ExplorerClient({ repoId, initialFiles }: ExplorerClientP
 
   return (
     <div className="flex h-[calc(100vh-8.5rem)] gap-4">
+      <div aria-live="polite" className="sr-only">
+        {announcement}
+      </div>
+
       <div className="w-80 shrink-0 overflow-auto rounded-card border border-border-muted bg-surface">
         <div className="border-b border-border-muted px-3 py-2">
           <h2 className="text-xs font-medium uppercase tracking-wide text-text-muted">Files</h2>

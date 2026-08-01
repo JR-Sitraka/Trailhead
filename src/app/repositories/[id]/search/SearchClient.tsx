@@ -126,8 +126,21 @@ export default function SearchClient({ repoId }: Props) {
   const showZeroResults = showResults && results.length === 0;
   const showResultList = showResults && results.length > 0;
 
+  let statusMessage = '';
+  if (loading && hasQuery) {
+    statusMessage = 'Searching…';
+  } else if (showZeroResults) {
+    statusMessage = 'No matches found.';
+  } else if (showResultList) {
+    statusMessage = `${results.length} result${results.length === 1 ? '' : 's'} found.`;
+  }
+
   return (
     <div className="space-y-4">
+      <div aria-live="polite" className="sr-only">
+        {statusMessage}
+      </div>
+
       <div className="space-y-3">
         <div className="relative">
           <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />

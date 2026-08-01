@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { RefreshCwIcon, Trash2Icon, FileIcon, GitCommitHorizontalIcon } from 'lucide-react';
-import { StatusPill } from './StatusPill';
+import { StatusPill, STATUS_LABELS } from './StatusPill';
 import type { Repository } from './types';
 
 function GithubIcon({ className }: { className?: string }) {
@@ -63,6 +63,7 @@ export function RepoRow({ repo, onReanalyze, onDelete }: RepoRowProps) {
         <a
           href={`/repositories/${repo.id}/overview`}
           aria-disabled={repo.status !== 'ready'}
+          aria-label={`Open ${repo.name}, status: ${STATUS_LABELS[repo.status]}`}
           onClick={(e) => {
             if (repo.status !== 'ready') e.preventDefault();
           }}

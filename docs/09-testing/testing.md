@@ -476,6 +476,209 @@ no-evidence) — flagged separately, not investigated here.
 
 ---
 
+# Group B — aria-live fix, real evidence (2026-08-01)
+
+**Root cause confirmed exactly as synthesized above, not three separate
+causes:** `grep -r "aria-live" src/` returned zero matches anywhere in
+the app before this fix. Search, Chat, and Explorer each had a
+different call site but the identical underlying gap — no live region
+existed at all, so React's DOM mutations on async completion were
+structurally invisible to assistive tech regardless of correct
+`polite` vs `assertive` choice (moot question — there was no region to
+configure).
+
+| # | Screen | Fix | Live-verified in real browser against real repository data (`sindresorhus/escape-string-regexp`) |
+|---|---|---|---|
+| 5 | Search | `aria-live="polite"` region renders "N result(s) found." / "No matches found." once loading completes | ✅ typed `function` → region read `"2 results found."`; typed a non-matching query → region read `"No matches found."` |
+| 6 | Chat | Each turn's response area (covers generating/answered/no_evidence/off_topic/failed) wrapped in one `aria-live="polite"` region | ✅ **both paths independently confirmed**, not just one: a real no-evidence question produced a region reading "No relevant evidence found…"; a real answerable question (`What does the escapeStringRegexp function do?`) produced a region containing the real generated answer text |
+| 7 | Explorer | `aria-live="polite"` region announces `Viewing [path]` once content loads, or the skip reason for skipped files | ✅ clicked `index.js` → region read `"Viewing index.js"` |
+
+**What a screen-reader user now hears, in plain terms** (re-runnable
+against these same three NVDA scenarios):
+- **Search:** typing a query that matches something is followed, once
+  results load, by NVDA speaking the result count aloud with no extra
+  action needed; a non-matching query is followed by "No matches
+  found."
+- **Chat:** after asking a question, NVDA speaks "Thinking…" and then
+  speaks whatever arrives next automatically — either the answer text
+  itself or "No relevant evidence found" plus its explanation — the
+  user is never left wondering if anything happened.
+- **Explorer:** clicking a file in the tree is followed by NVDA saying
+  "Viewing" plus the file's path once its content is loaded; selecting
+  a skipped file announces the specific skip reason instead.
+
+**Tests:** 6 new automated tests added (2 per screen — Search:
+result-count + zero-results; Chat: no-evidence + answered; Explorer:
+content-loaded + skip-reason), each asserting the live region exists
+in the DOM *and* holds the correct text after the async state
+transition, not merely that the text appears somewhere on the page.
+Real execution: `npx vitest run tests/search-page.test.tsx
+tests/chat-client.test.tsx tests/explorer-client.test.tsx` — 22/22
+passed.
+
+**Full regression suite:** `npx vitest run` — 287 passed / 4 failed.
+The 4 failures are the same pre-existing, previously-documented set
+(3 invalid-Gemini-key tests in `gemini-generation.test.ts`, 1 known
+timing flake in `reanalysis.test.ts`) — identical failure set to the
+baseline recorded after item 5, confirming nothing this change touched
+broke anything. The 5 Playwright-authored `*-playwright.test.ts` /
+`qa-walkthrough.test.ts` / `screenshot-test.test.ts` files fail to
+*load* under the vitest runner (pre-existing config mismatch, not a
+new issue — they require `npx playwright test` instead).
+
+**Commit:** `e9f73cc` on branch `upgrade/a11y-live-regions`.
+
+Defects 5, 6, 7 (Group B) — **closed**. Remaining item 6 groups
+(A: modal focus trap; C: defects 1 and 4) are separate, not addressed
+by this change.
+
+---
+
+# Group A — modal focus trap fix, real evidence (2026-08-01)
+
+**Root cause confirmed exactly as synthesized above — shared, not
+two separate bugs.** Both `AddRepositoryModal.tsx` and
+`ConfirmDeleteModal.tsx` were plain styled `motion.div`s with
+`role="dialog"` and `aria-modal="true"` but **zero real focus
+management underneath**: no code intercepted Tab at all, so the
+`aria-modal` attribute was purely advisory — it told assistive tech
+"treat this as modal" while the actual DOM let Tab walk straight past
+the dialog's own boundary into the browser's toolbar/address bar,
+exactly as the NVDA session observed. Neither modal restored focus to
+the element that opened it on close, either.
+
+| # | Screen | Fix | Real evidence |
+|---|---|---|---|
+| 2 | Add Repository modal | New shared `useModalFocusTrap` hook cycles Tab/Shift+Tab within the dialog's real focusable elements; restores focus to the "Add repository" button on close | ✅ automated: 12 real forward Tabs + 12 real Shift+Tabs, focus never left the dialog (`dialog.contains(document.activeElement)` true throughout, both directions). ✅ live browser: same 12/15-Tab check against the running dev server, real focus landed back on the "Add repository" button after Escape. |
+| 3 | Delete confirmation modal | Same hook wired in; restores focus to the row's own "Delete [repo]" button on close | ✅ automated: 10 real forward + 10 real Shift+Tabs, focus never left the dialog. ✅ live browser: same check against a real repository row (`sindresorhus/escape-string-regexp`), focus correctly trapped after 10 real Tabs. |
+
+**Extra defect this surfaced and fixed in the same pass, not scoped
+in the original audit:** `AddRepositoryModal`'s visually-hidden ZIP
+file input (`className="hidden"`, only ever triggered via the visible
+dropzone) would otherwise have been a silent extra stop in the tab
+cycle once the trap made it reachable by keyboard at all — given
+`tabIndex={-1}` so it stays excluded, verified by a dedicated test
+that tabs through the ZIP tab and asserts the focused element is
+never `type="file"`.
+
+**Scenario 4's specific note addressed — real evidence, not assumed:**
+`ConfirmDeleteModal` now sets `aria-describedby="delete-repo-description"`
+on the dialog itself, pointing at the "Are you sure you want to delete
+[repo]…" paragraph, so the target repository name is part of the
+dialog's own accessible description rather than only being spoken via
+whichever row button triggered it. Live-confirmed: `aria-describedby`
+resolved to a real DOM node whose `textContent` contained
+`"sindresorhus/escape-string-regexp"` after opening the dialog from
+that repository's real Delete button.
+
+**What a screen-reader/keyboard-only user now experiences** (re-runnable
+against NVDA scenarios 3 and 4): opening either modal and pressing Tab
+repeatedly stays inside the dialog indefinitely — it never reaches the
+browser's own UI. Closing the dialog (Escape, Cancel, X, or a
+successful action) returns keyboard focus to the exact button that
+opened it, so the user's place in the page is never lost. Opening the
+delete confirmation immediately makes the target repository's name
+part of what's announced, not something the user has to already
+remember from clicking Delete.
+
+**Tests:** 6 new automated tests in `tests/modal-focus-trap.test.tsx`
+(3 per modal: full-cycle Tab+Shift-Tab trap, focus-restore-on-close,
+plus one hidden-file-input exclusion test for Add Repository and one
+aria-describedby content test for Delete). Real execution: `npx vitest
+run tests/modal-focus-trap.test.tsx` — 6/6 passed.
+
+**Full regression suite:** `npx vitest run` — 293 passed / 4 failed.
+Same pre-existing failure set as every prior round this phase (3
+invalid-Gemini-key tests, 1 known `reanalysis.test.ts` timing flake) —
+nothing this change touched broke anything. (287 passed after Group B
++ 6 new tests here = 293, confirming no other regression crept in
+between the two rounds.)
+
+**Commit:** `54f1ae5` on branch `upgrade/a11y-live-regions`.
+
+Defects 2, 3 (Group A) — **closed**. Remaining item 6 group (C:
+defects 1 and 4 — Dashboard status announcement, Overview heading
+structure) is separate, not addressed by this change.
+
+---
+
+# Group C — real evidence, real fix for defect 1; defect 4 did not
+# reproduce (2026-08-01)
+
+**Defect 1 (Dashboard status announcement) — real root cause, real
+fix.** `StatusPill`'s label text (`Ready`/`Analyzing`/`Queued`/`Failed`)
+was always plain visible text — never hidden, never wrong — but it sat
+outside any focusable element in the row. Tab navigation only stops at
+focusable elements, so a keyboard/screen-reader user tabbing through a
+row (as the NVDA scenario specifically did) skips straight past static
+text between controls; this is standard AT behavior, not a rendering
+bug, which is exactly why it read as "never announced" in practice.
+Fixed by folding the status into the accessible name of the row's
+`Open` link — the first focusable stop in the row — via
+`aria-label="Open [repo], status: [status]"`, without touching the
+visible pill at all.
+
+**Defect 4 (Overview headings) — investigated, does not reproduce.**
+Before writing any fix, both live-browser and automated evidence were
+gathered: `document.querySelectorAll('h1,h2,...')` against a real
+running repository (`sindresorhus/escape-string-regexp`) showed all
+four always-present sections (Stack, Entry points, Configuration
+files, Testing) are real `<h2>` elements today, and the same held for
+the two conditional sections tested separately (a real `analyzing`-
+status repo for "Status: analyzing"; a real `analyzing` non-ready repo
+confirmed too). Git history shows the `Section` component's `<h2>`
+was introduced 2026-07-25 (`82bb8f4`) — **before** the item 6 audit
+(2026-07-31) — so this specific defect either didn't reproduce
+against the build actually tested, or was a transient/misread finding
+at audit time. Rather than writing a redundant "fix" for code that's
+already correct, real regression tests were added to lock the current
+(correct) state in place, covering all three section variants
+(always-present, conditional Status, conditional Not analyzed) against
+real DB-backed repository data — not just the previously-untested
+"Not analyzed" conditional path, closing a pre-existing gap in
+coverage regardless of the specific audit finding's reproducibility.
+
+**Unrelated latent defect fixed along the way:**
+`overview/page.tsx` used JSX without importing `React` — invisible in
+production because Next's SWC compiler handles the JSX transform
+independently, but it broke immediately under vitest's esbuild
+transform the moment a real test tried to render the page directly.
+Fixed by adding the import, matching every other component file in
+this codebase, which already imports `React` explicitly.
+
+**What a screen-reader user now experiences on Dashboard** (re-runnable
+against NVDA scenario 2): tabbing to a repository row's "Open" link now
+announces the repository name and its current status together — e.g.
+"Open sindresorhus/got, status: Analyzing, link" — with no separate
+action needed to learn what the colored pill shows visually.
+
+**Tests:** 5 new tests in `tests/dashboard-overview-accessibility.test.tsx`
+— 4 covering every `RepoRow` status's accessible name (`ready`,
+`analyzing`, `queued`, `failed`) plus a check that the visible pill text
+is unchanged; 3 covering Overview's always-present headings and both
+conditional sections (`Status: analyzing`, `Not analyzed` with a real
+skip reason) against real DB-backed repository/file rows, not mocked
+data. Real execution: `npx vitest run
+tests/dashboard-overview-accessibility.test.tsx` — 5/5 passed. Live
+browser verification confirmed both the Dashboard accessible-name fix
+and the Overview headings against the running dev server.
+
+**Full regression suite:** `npx vitest run` — 299 passed / 3 failed.
+The 3 failures are the same pre-existing invalid-Gemini-key tests as
+every prior round; the known `reanalysis.test.ts` timing flake (KNOWN-
+GOOD-documented, non-deterministic) did not trigger this run — 297
+(Group A total) + 5 new = 302 total tests, confirming no other
+regression crept in.
+
+**Commit:** `9a1dd05` on branch `upgrade/a11y-live-regions`.
+
+Defect 1 (Group C) — **closed**. Defect 4 (Group C) — **investigated,
+confirmed not currently reproducible, coverage gap closed with real
+regression tests**. Item 6's full defect list (1–7) is now fully
+addressed across Groups A, B, and C.
+
+---
+
 # Item 6 — fixes applied and LIVE-RECONFIRMED (2026-07-31)
 
 All three fix groups complete, real evidence throughout (root-cause

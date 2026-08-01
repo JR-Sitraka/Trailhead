@@ -154,23 +154,25 @@ export default function ChatClient({ repoId }: Props) {
         {turns.map((turn) => (
           <div key={turn.id} className="space-y-1">
             <UserQuestion question={turn.question} />
-            {turn.status === 'generating' && <GeneratingState />}
-            {turn.status === 'answered' && (
-              <AnswerCard answer={turn.answer || ''} citations={turn.citations} repoId={repoId} />
-            )}
-            {turn.status === 'no_evidence' && (
-              <NoEvidenceState
-                heading="No relevant evidence found"
-                subtext="This repository doesn't appear to contain anything related to that question — try rephrasing, or browse Explorer / Search instead."
-              />
-            )}
-            {turn.status === 'off_topic' && (
-              <NoEvidenceState
-                heading="Not related to this repository"
-                subtext="Try asking something about the codebase itself, or browse Explorer / Search instead."
-              />
-            )}
-            {turn.status === 'failed' && <GenerationFailedState />}
+            <div aria-live="polite" aria-atomic="true">
+              {turn.status === 'generating' && <GeneratingState />}
+              {turn.status === 'answered' && (
+                <AnswerCard answer={turn.answer || ''} citations={turn.citations} repoId={repoId} />
+              )}
+              {turn.status === 'no_evidence' && (
+                <NoEvidenceState
+                  heading="No relevant evidence found"
+                  subtext="This repository doesn't appear to contain anything related to that question — try rephrasing, or browse Explorer / Search instead."
+                />
+              )}
+              {turn.status === 'off_topic' && (
+                <NoEvidenceState
+                  heading="Not related to this repository"
+                  subtext="Try asking something about the codebase itself, or browse Explorer / Search instead."
+                />
+              )}
+              {turn.status === 'failed' && <GenerationFailedState />}
+            </div>
           </div>
         ))}
       </div>

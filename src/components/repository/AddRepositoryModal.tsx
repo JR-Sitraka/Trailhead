@@ -9,6 +9,7 @@ import {
   AlertTriangleIcon,
 } from 'lucide-react';
 import type { RepoSource } from './types';
+import { useModalFocusTrap } from './useModalFocusTrap';
 
 function GithubIcon({ className }: { className?: string }) {
   return (
@@ -34,6 +35,9 @@ export function AddRepositoryModal({ isOpen, onClose, onAdd }: AddRepositoryModa
   const [error, setError] = useState<string | null>(null);
   const urlInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useModalFocusTrap(isOpen, dialogRef);
 
   useEffect(() => {
     if (isOpen && urlInputRef.current) {
@@ -114,6 +118,7 @@ export function AddRepositoryModal({ isOpen, onClose, onAdd }: AddRepositoryModa
           transition={{ duration: 0.2 }}
         >
           <motion.div
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="add-repo-title"
@@ -212,6 +217,7 @@ export function AddRepositoryModal({ isOpen, onClose, onAdd }: AddRepositoryModa
                         accept=".zip,application/zip"
                         onChange={handleFileChange}
                         disabled={submitting}
+                        tabIndex={-1}
                         className="hidden"
                       />
                     </div>

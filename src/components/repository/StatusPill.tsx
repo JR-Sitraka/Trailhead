@@ -7,7 +7,7 @@ interface StatusPillProps {
   status: RepoStatus;
 }
 
-const LABELS: Record<RepoStatus, string> = {
+export const STATUS_LABELS: Record<RepoStatus, string> = {
   queued: 'Queued',
   analyzing: 'Analyzing',
   ready: 'Ready',
@@ -36,7 +36,7 @@ export function StatusPill({ status }: StatusPillProps) {
           }`}
         />
       </span>
-      {LABELS[status]}
+      {STATUS_LABELS[status]}
     </span>
   );
 }

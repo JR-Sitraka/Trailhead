@@ -132,4 +132,57 @@ describe('ExplorerClient rendering — both highlight and plain-text branches', 
       cleanup();
     }
   });
+
+  it('announces the opened file via an aria-live region once content loads', async () => {
+    const repoId = `announce-${PREFIX}`;
+    const filePath = 'page.tsx';
+    const content = 'export default function Page() {}';
+
+    mockFetchFileContent(repoId, filePath, content, 'typescript');
+
+    const { container } = render(<ExplorerClient repoId={repoId} initialFiles={[{
+      path: filePath,
+      name: 'page.tsx',
+      skipped: false,
+      skipReason: null,
+      size: content.length,
+      language: 'typescript',
+      category: null,
+    }]} />);
+
+    const liveRegion = container.querySelector('[aria-live="polite"]');
+    expect(liveRegion).not.toBeNull();
+    expect(liveRegion!.textContent).toBe('');
+
+    const fileButton = screen.getByText('page.tsx');
+    await userEvent.click(fileButton);
+
+    await waitFor(() => {
+      expect(liveRegion!.textContent).toBe(`Viewing ${filePath}`);
+    });
+  });
+
+  it('announces the skip reason via the aria-live region for a skipped file', async () => {
+    const repoId = `announce-skip-${PREFIX}`;
+    const filePath = 'prisma-client.ts';
+
+    const { container } = render(<ExplorerClient repoId={repoId} initialFiles={[{
+      path: filePath,
+      name: filePath,
+      skipped: true,
+      skipReason: 'File exceeds 1MB parse limit',
+      size: 2_000_000,
+      language: null,
+      category: null,
+    }]} />);
+
+    const liveRegion = container.querySelector('[aria-live="polite"]');
+
+    const fileButton = screen.getByText(filePath);
+    await userEvent.click(fileButton);
+
+    await waitFor(() => {
+      expect(liveRegion!.textContent).toContain('File exceeds 1MB parse limit');
+    });
+  });
 });
