@@ -531,3 +531,71 @@ new issue — they require `npx playwright test` instead).
 Defects 5, 6, 7 (Group B) — **closed**. Remaining item 6 groups
 (A: modal focus trap; C: defects 1 and 4) are separate, not addressed
 by this change.
+
+---
+
+# Group A — modal focus trap fix, real evidence (2026-08-01)
+
+**Root cause confirmed exactly as synthesized above — shared, not
+two separate bugs.** Both `AddRepositoryModal.tsx` and
+`ConfirmDeleteModal.tsx` were plain styled `motion.div`s with
+`role="dialog"` and `aria-modal="true"` but **zero real focus
+management underneath**: no code intercepted Tab at all, so the
+`aria-modal` attribute was purely advisory — it told assistive tech
+"treat this as modal" while the actual DOM let Tab walk straight past
+the dialog's own boundary into the browser's toolbar/address bar,
+exactly as the NVDA session observed. Neither modal restored focus to
+the element that opened it on close, either.
+
+| # | Screen | Fix | Real evidence |
+|---|---|---|---|
+| 2 | Add Repository modal | New shared `useModalFocusTrap` hook cycles Tab/Shift+Tab within the dialog's real focusable elements; restores focus to the "Add repository" button on close | ✅ automated: 12 real forward Tabs + 12 real Shift+Tabs, focus never left the dialog (`dialog.contains(document.activeElement)` true throughout, both directions). ✅ live browser: same 12/15-Tab check against the running dev server, real focus landed back on the "Add repository" button after Escape. |
+| 3 | Delete confirmation modal | Same hook wired in; restores focus to the row's own "Delete [repo]" button on close | ✅ automated: 10 real forward + 10 real Shift+Tabs, focus never left the dialog. ✅ live browser: same check against a real repository row (`sindresorhus/escape-string-regexp`), focus correctly trapped after 10 real Tabs. |
+
+**Extra defect this surfaced and fixed in the same pass, not scoped
+in the original audit:** `AddRepositoryModal`'s visually-hidden ZIP
+file input (`className="hidden"`, only ever triggered via the visible
+dropzone) would otherwise have been a silent extra stop in the tab
+cycle once the trap made it reachable by keyboard at all — given
+`tabIndex={-1}` so it stays excluded, verified by a dedicated test
+that tabs through the ZIP tab and asserts the focused element is
+never `type="file"`.
+
+**Scenario 4's specific note addressed — real evidence, not assumed:**
+`ConfirmDeleteModal` now sets `aria-describedby="delete-repo-description"`
+on the dialog itself, pointing at the "Are you sure you want to delete
+[repo]…" paragraph, so the target repository name is part of the
+dialog's own accessible description rather than only being spoken via
+whichever row button triggered it. Live-confirmed: `aria-describedby`
+resolved to a real DOM node whose `textContent` contained
+`"sindresorhus/escape-string-regexp"` after opening the dialog from
+that repository's real Delete button.
+
+**What a screen-reader/keyboard-only user now experiences** (re-runnable
+against NVDA scenarios 3 and 4): opening either modal and pressing Tab
+repeatedly stays inside the dialog indefinitely — it never reaches the
+browser's own UI. Closing the dialog (Escape, Cancel, X, or a
+successful action) returns keyboard focus to the exact button that
+opened it, so the user's place in the page is never lost. Opening the
+delete confirmation immediately makes the target repository's name
+part of what's announced, not something the user has to already
+remember from clicking Delete.
+
+**Tests:** 6 new automated tests in `tests/modal-focus-trap.test.tsx`
+(3 per modal: full-cycle Tab+Shift-Tab trap, focus-restore-on-close,
+plus one hidden-file-input exclusion test for Add Repository and one
+aria-describedby content test for Delete). Real execution: `npx vitest
+run tests/modal-focus-trap.test.tsx` — 6/6 passed.
+
+**Full regression suite:** `npx vitest run` — 293 passed / 4 failed.
+Same pre-existing failure set as every prior round this phase (3
+invalid-Gemini-key tests, 1 known `reanalysis.test.ts` timing flake) —
+nothing this change touched broke anything. (287 passed after Group B
++ 6 new tests here = 293, confirming no other regression crept in
+between the two rounds.)
+
+**Commit:** `54f1ae5` on branch `upgrade/a11y-live-regions`.
+
+Defects 2, 3 (Group A) — **closed**. Remaining item 6 group (C:
+defects 1 and 4 — Dashboard status announcement, Overview heading
+structure) is separate, not addressed by this change.
