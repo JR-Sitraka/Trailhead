@@ -357,25 +357,49 @@ export async function validateZipSafety(zipBuffer: Buffer, sourceId: string): Pr
         continue;
       }
 
+      // Read the entry's real bytes ONCE, up front. The repository-wide
+      // unpacked-size budget is charged and checked here, before any of the
+      // early continuations below — previously the per-file parse-ceiling
+      // branch added to `unpackedSize` and then `continue`d straight past the
+      // check, so a repository of large text files could blow through 500MB
+      // with `truncated` never set (confirmed 2026-08-02: 300 x 2MB = 600MB
+      // unpacked, truncated false). Every entry now contributes to the total
+      // and is checked against it on the same path.
+      //
+      // Actual decompressed bytes are used, never the ZIP header's declared
+      // size, which a hostile archive controls.
+      let entryData: Buffer;
       try {
-        const entryData = entry.getData();
-        if (entryData.length > MAX_FILE_PARSE_SIZE && !hasBinaryExtension(entryName) && !detectBinaryBySignature(entryData.slice(0, 16))) {
-          const language = detectLanguage(entryName);
-          result.files.push({
-            path: entryName,
-            size: entryData.length,
-            language,
-            skipped: true,
-            skipReason: `exceeds_max_parse_size (${Math.round(entryData.length / 1024)}KB > 1MB)`,
-            content: null,
-            category: null
-          });
-          fileCount++;
-          unpackedSize += entryData.length;
-          continue;
+        entryData = entry.getData();
+      } catch (e) {
+        throw new SecurityError(`Failed to extract entry: ${entryName}: ${(e as Error).message}`);
+      }
+
+      unpackedSize += entryData.length;
+      if (unpackedSize > MAX_UNPACKED_SIZE) {
+        result.truncated = true;
+        if (fileCount === 0) {
+          throw new SecurityError("Unpacked size exceeds 500MB limit with zero files indexed");
         }
-      } catch {
-        // skip parse check for this entry
+        break;
+      }
+
+      // 1MB per-file parse ceiling: still listed in the tree and marked
+      // skipped with a reason (safe-preprocessing.md's Business Rules), just
+      // never parsed — and never written to disk, since nothing reads it back.
+      if (entryData.length > MAX_FILE_PARSE_SIZE && !hasBinaryExtension(entryName) && !detectBinaryBySignature(entryData.slice(0, 16))) {
+        const language = detectLanguage(entryName);
+        result.files.push({
+          path: entryName,
+          size: entryData.length,
+          language,
+          skipped: true,
+          skipReason: `exceeds_max_parse_size (${Math.round(entryData.length / 1024)}KB > 1MB)`,
+          content: null,
+          category: null
+        });
+        fileCount++;
+        continue;
       }
 
       const filePath = path.join(tmpDir, entryName);
@@ -383,7 +407,6 @@ export async function validateZipSafety(zipBuffer: Buffer, sourceId: string): Pr
       fs.mkdirSync(fileDir, { recursive: true });
 
       try {
-        const entryData = entry.getData();
         fs.writeFileSync(filePath, entryData);
       } catch (e) {
         throw new SecurityError(`Failed to extract entry: ${entryName}: ${(e as Error).message}`);
@@ -394,15 +417,6 @@ export async function validateZipSafety(zipBuffer: Buffer, sourceId: string): Pr
         fileSize = fs.statSync(filePath).size;
       } catch {
         continue;
-      }
-
-      unpackedSize += fileSize;
-      if (unpackedSize > MAX_UNPACKED_SIZE) {
-        result.truncated = true;
-        if (fileCount === 0) {
-          throw new SecurityError("Unpacked size exceeds 500MB limit with zero files indexed");
-        }
-        break;
       }
 
       const isBinary = hasBinaryExtension(entryName);
