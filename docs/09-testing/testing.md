@@ -473,3 +473,61 @@ single investigation, not three separate fixes.
 **Aside, still out of scope:** the Chat retrieval-quality question
 from the original Scenario 8 (reasonable questions returning
 no-evidence) — flagged separately, not investigated here.
+
+---
+
+# Group B — aria-live fix, real evidence (2026-08-01)
+
+**Root cause confirmed exactly as synthesized above, not three separate
+causes:** `grep -r "aria-live" src/` returned zero matches anywhere in
+the app before this fix. Search, Chat, and Explorer each had a
+different call site but the identical underlying gap — no live region
+existed at all, so React's DOM mutations on async completion were
+structurally invisible to assistive tech regardless of correct
+`polite` vs `assertive` choice (moot question — there was no region to
+configure).
+
+| # | Screen | Fix | Live-verified in real browser against real repository data (`sindresorhus/escape-string-regexp`) |
+|---|---|---|---|
+| 5 | Search | `aria-live="polite"` region renders "N result(s) found." / "No matches found." once loading completes | ✅ typed `function` → region read `"2 results found."`; typed a non-matching query → region read `"No matches found."` |
+| 6 | Chat | Each turn's response area (covers generating/answered/no_evidence/off_topic/failed) wrapped in one `aria-live="polite"` region | ✅ **both paths independently confirmed**, not just one: a real no-evidence question produced a region reading "No relevant evidence found…"; a real answerable question (`What does the escapeStringRegexp function do?`) produced a region containing the real generated answer text |
+| 7 | Explorer | `aria-live="polite"` region announces `Viewing [path]` once content loads, or the skip reason for skipped files | ✅ clicked `index.js` → region read `"Viewing index.js"` |
+
+**What a screen-reader user now hears, in plain terms** (re-runnable
+against these same three NVDA scenarios):
+- **Search:** typing a query that matches something is followed, once
+  results load, by NVDA speaking the result count aloud with no extra
+  action needed; a non-matching query is followed by "No matches
+  found."
+- **Chat:** after asking a question, NVDA speaks "Thinking…" and then
+  speaks whatever arrives next automatically — either the answer text
+  itself or "No relevant evidence found" plus its explanation — the
+  user is never left wondering if anything happened.
+- **Explorer:** clicking a file in the tree is followed by NVDA saying
+  "Viewing" plus the file's path once its content is loaded; selecting
+  a skipped file announces the specific skip reason instead.
+
+**Tests:** 6 new automated tests added (2 per screen — Search:
+result-count + zero-results; Chat: no-evidence + answered; Explorer:
+content-loaded + skip-reason), each asserting the live region exists
+in the DOM *and* holds the correct text after the async state
+transition, not merely that the text appears somewhere on the page.
+Real execution: `npx vitest run tests/search-page.test.tsx
+tests/chat-client.test.tsx tests/explorer-client.test.tsx` — 22/22
+passed.
+
+**Full regression suite:** `npx vitest run` — 287 passed / 4 failed.
+The 4 failures are the same pre-existing, previously-documented set
+(3 invalid-Gemini-key tests in `gemini-generation.test.ts`, 1 known
+timing flake in `reanalysis.test.ts`) — identical failure set to the
+baseline recorded after item 5, confirming nothing this change touched
+broke anything. The 5 Playwright-authored `*-playwright.test.ts` /
+`qa-walkthrough.test.ts` / `screenshot-test.test.ts` files fail to
+*load* under the vitest runner (pre-existing config mismatch, not a
+new issue — they require `npx playwright test` instead).
+
+**Commit:** `e9f73cc` on branch `upgrade/a11y-live-regions`.
+
+Defects 5, 6, 7 (Group B) — **closed**. Remaining item 6 groups
+(A: modal focus trap; C: defects 1 and 4) are separate, not addressed
+by this change.
