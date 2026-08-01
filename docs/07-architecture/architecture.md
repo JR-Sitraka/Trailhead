@@ -76,13 +76,18 @@ on this specific failure); corrected after a direct spec-vs-code
 cross-check found the contradiction with this file's own stated
 business rule. See ADR-006.
 
-**Known gap — AnalysisJob lookup ordering (not yet fixed, tracked in
-ADR-006):** `GET /api/repositories` and `GET /api/repositories/:id`
-both attach a repository's `AnalysisJob` via a lookup with no
-`ORDER BY createdAt` — harmless today since no code path creates more
-than one `AnalysisJob` per repository, but will pick an arbitrary job
-once Reanalyze exists and creates a second row. Must be fixed as part
-of implementing Reanalyze, not assumed correct at that point.
+**~~Known gap~~ — AnalysisJob lookup ordering: RESOLVED (verified
+2026-08-01, item 7 Group 1).** This was tracked in ADR-006 as an
+unfixed gap: `GET /api/repositories` and `GET /api/repositories/:id`
+attached a repository's `AnalysisJob` via a lookup with no
+`ORDER BY createdAt`, which would pick an arbitrary job once Reanalyze
+created a second row. It has since been fixed and is now confirmed by
+direct source check — every job-lookup site orders by
+`desc(analysisJobs.createdAt)`: `GET /api/repositories` (sorts all jobs
+desc, then takes the first per repository), `GET`/`DELETE
+/api/repositories/:id`, `POST /api/repositories/:id/reanalyze`, and the
+Overview page's server-side query. No code change was needed this
+round — this entry records the verification, not a new fix.
 
 ### Symbol (MVP-A base — spec recovered 2026-07-22, implementation not yet started — see Step C in PROJECT-STATE.md)
 
@@ -151,12 +156,30 @@ inverted form silently bypasses the index entirely (see ADR-004 for
 the original reasoning; empirically confirmed via real EXPLAIN
 evidence during implementation, KNOWN-GOOD.md 2026-07-22).
 
-**Reanalysis semantics:** on a fully successful `AnalysisJob` (both
-`parsingCompletedAt` and `embeddingCompletedAt` set), all existing
-`File`/`Symbol`/`EmbeddingChunk` rows for that `Repository` are
-deleted and replaced by the new job's output, and `Repository`'s
-denormalized fields update to match. A job that fails partway does not
-trigger this delete-and-replace.
+**Reanalysis semantics — CORRECTED 2026-08-01 (item 7, Group 1). The
+text below now describes what the poller actually does; the previous
+version described behavior that was never built.**
+
+At the start of every analysis run, `runAnalysisPhases` deletes that
+`Repository`'s existing `Symbol` and `EmbeddingChunk` rows and replaces
+them with the new job's output. **`File` rows are NOT deleted or
+replaced** — they are written once at import time by
+`POST /api/repositories` and are never re-derived by the poller.
+`Repository`'s denormalized stack fields are recomputed on every run.
+
+The delete is unconditional and happens *before* the work, not after a
+success check, so a job that fails partway has already cleared the old
+symbols and chunks — it does not preserve them.
+
+*Previously this section claimed all `File`/`Symbol`/`EmbeddingChunk`
+rows were "deleted and replaced" only "on a fully successful
+`AnalysisJob`". Neither half was true: `File` rows were never in scope,
+and the delete is not conditional on success. `poller.ts`'s own inline
+comment already said reanalysis was not implemented, contradicting this
+file. Corrected per principles.md #3 — code and docs disagreeing is a
+bug in the docs. Real File-row delete-and-replace remains deliberately
+unimplemented and is a separate future decision, not silently added
+here.*
 
 ### Slice 2a — zero new tables
 
