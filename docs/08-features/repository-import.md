@@ -84,7 +84,52 @@ Symbols/Search all eventually depend on.
 - [ ] An invalid URL, private repo, oversized ZIP, or invalid ZIP is
       rejected with the correct error and creates no `Repository` row.
 - [ ] Branch selector appears only when the GitHub repo has more than
-      one branch.
+      one branch. — **NOT IMPLEMENTED. Deferred, see below.**
+
+---
+
+## Branch selection — CURRENT vs. DEFERRED (recorded 2026-08-02, item 7)
+
+Added after real verification found this spec described behavior that
+was never built. Recorded here rather than silently left, per
+`principles.md` #3.
+
+### Current, shipped behavior
+- A GitHub import **always uses the repository's default branch** and
+  records that branch's resolved HEAD commit SHA. The archive is
+  fetched at that same commit.
+- **No branch selector exists in the shipped UI.**
+  `AddRepositoryModal.tsx` contains no branch control of any kind.
+- `POST /api/repositories` does accept an optional `branch` form
+  field, and `fetchGithubRepoInfo` does return the repo's full branch
+  list — but the value is **discarded**: `route.ts` computes
+  `selectedBranch` and never uses it, and `fetchGithubRepoInfo` takes
+  no branch argument, always resolving
+  `/commits/${default_branch}`. Passing `branch` is therefore a
+  silent no-op, not a partial implementation.
+
+**Real evidence (2026-08-02):** importing `octocat/Hello-World` with
+`branch=test` recorded `7fd1a60b…` (the HEAD of `master`, the default
+branch) rather than `b3cbd5bb…` (the real HEAD of `test`), verified
+against GitHub's API directly. Covered by `tests/import-branch.test.ts`.
+
+### Deferred scope — real future work, not a bug fix
+Full multi-branch support is a genuine feature with a UI and a backend
+half, and needs its own deliberate planning pass rather than being
+patched in during a closeout:
+1. Branch discovery surfaced to the client, and a **conditional**
+   selector that appears only when a repo has more than one branch
+   (and is skipped entirely, not shown empty, when it does not).
+2. Threading the selected branch through SHA resolution
+   (`fetchGithubRepoInfo` gaining a branch argument).
+3. Threading it through zipball retrieval so content and SHA come from
+   the same commit.
+4. Deciding the interaction with `commitSha` integrity (ADR-006) —
+   an import must still never succeed with a missing commit identity.
+
+**This is a deferral, not a defect awaiting a fix in this phase.** The
+functional requirement above ("from the selected branch's HEAD")
+describes the deferred target state, not current behavior.
 
 **Out of Scope:** Private repositories, OAuth, organization accounts,
 automatic re-sync on new commits, local-path ingestion — all
