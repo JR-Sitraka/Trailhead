@@ -367,6 +367,46 @@ consistent with the accepted-risk posture already on record — but
 worth measuring directly once real implementation and real
 conversations exist, more urgently than before.
 
+### Index inventory — what actually exists (verified 2026-08-02)
+
+Recorded because `testing.md`'s NFR table carried a row asserting
+foreign-key b-tree indexes "from architecture.md" that this file never
+actually specified and the database does not actually have. Real
+`pg_indexes` query against `trailhead_dev`:
+
+**Present:**
+- `files_pkey`, `symbols_pkey`, `analysis_jobs_pkey`,
+  `embedding_chunks_pkey` — primary keys (btree on `id`).
+- `files_content_search_vector_idx` — **GIN** on
+  `files.content_search_vector`. Search's full-text backing is really
+  indexed.
+- `embedding_chunks_embedding_idx` — **HNSW**, `vector_cosine_ops`.
+
+**NOT present — stated plainly rather than assumed:**
+- `files.repository_id` — no index
+- `symbols.file_id` — no index
+- `analysis_jobs.repository_id` — no index
+- `embedding_chunks.repository_id` / `embedding_chunks.file_id` — no index
+
+Every one of these is a foreign key used as a filter on hot read paths
+(Explorer's file list, Symbols, Overview, the poller's own lookups),
+so they are the obvious index candidates. PostgreSQL does **not**
+create indexes on foreign keys automatically — only on primary keys
+and unique constraints — so their absence is a real gap, not a
+misreading.
+
+**Deferred, low priority — explicitly NOT implemented (2026-08-02):**
+"Add and measure these indexes" is logged as a future
+database-performance task, not done here. No schema migration was made
+in this round. Two honest caveats on the priority call: no performance
+problem has actually been observed or measured, and at this project's
+real data sizes PostgreSQL would reasonably prefer a sequential scan
+regardless, so adding them now would produce no measurable improvement
+and no evidence either way. Whoever picks this up should **measure
+first** — force `enable_seqscan = OFF` around a real `EXPLAIN`, the
+same technique KNOWN-GOOD.md (2026-07-22) records for validating the
+pgvector index — rather than adding indexes on faith.
+
 ## Explicitly rejected alternatives
 
 *(Prior rejections unchanged.)*
