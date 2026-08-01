@@ -473,3 +473,38 @@ single investigation, not three separate fixes.
 **Aside, still out of scope:** the Chat retrieval-quality question
 from the original Scenario 8 (reasonable questions returning
 no-evidence) — flagged separately, not investigated here.
+
+---
+
+# Item 6 — fixes applied and LIVE-RECONFIRMED (2026-07-31)
+
+All three fix groups complete, real evidence throughout (root-cause
+investigation, real tests, real regression checks — full detail in
+prior commits `e9f73cc`/`7c9c4e2` [Group B], `54f1ae5`/`451b4ea`
+[Group A], `9a1dd05`/`e6ed0c8` [Group C]).
+
+| # | Defect | Fix | Person's live re-test |
+|---|---|---|---|
+| 1 | Status not announced | `aria-label` on row's Open link includes status | ✅ Confirmed — "status: Ready" heard |
+| 2 | Add Repository modal Tab-escape | Real focus trap (`useModalFocusTrap` hook) | ✅ Confirmed — focus returns to trigger button |
+| 3 | Delete modal Tab-escape | Same hook | ✅ Confirmed (same fix, same mechanism) |
+| 4 | Overview zero headings | Investigated — did NOT reproduce (headings already real, predate the audit); regression tests added instead of a redundant fix | ⚠️ 4 of 6 spec sections found as headings — Modules & packages and Not-analyzed not heard this session; **needs one more check** (see below) |
+| 5 | Search silent | `aria-live="polite"` region, result count | ✅ Confirmed — "Searching…" then real count per keystroke |
+| 6 | Chat silent (both paths) | `aria-live="polite"` region, both paths | ✅ Confirmed — both no-evidence and successful-answer paths spoken |
+| 7 | Explorer file-open silent | `aria-live="polite"` region, "Viewing [file]" | ✅ Confirmed — real filenames announced on open |
+
+**Root-cause synthesis validated:** defects 5/6/7 were confirmed to
+share exactly one cause (zero `aria-live` usage anywhere in `src/`
+before the fix) — the testing.md synthesis was correct, not a
+coincidental grouping.
+
+**Open item before full closure:** Not-analyzed's absence is likely
+correct (this session's fixture repository has no skipped files, so
+the conditional section wouldn't render) — but Modules & packages'
+absence is unconfirmed. Real check needed: does that section exist on
+Overview at all for this fixture, and if so, does it register as a
+heading. Item 6 stays open pending this.
+
+**Minor, non-blocking:** citation-marker reading style in Chat's
+announced answers (`[3] (index.d.ts:1)`) is mechanical but
+functional — logged as a possible future polish item, not a defect.
