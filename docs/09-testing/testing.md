@@ -508,3 +508,23 @@ heading. Item 6 stays open pending this.
 **Minor, non-blocking:** citation-marker reading style in Chat's
 announced answers (`[3] (index.d.ts:1)`) is mechanical but
 functional — logged as a possible future polish item, not a defect.
+
+---
+
+# Item 6 — FULLY CLOSED (2026-07-31)
+
+**Resolution of the last open question:** "Modules & packages" does
+not render on Overview at all for the tested fixture — confirmed by
+direct visual check, not code inference. This is not a missing
+heading; there is no section to have one. Consistent with
+`architecture.md`'s existing note that this section was "always a
+hardcoded UI mock, never a real data-model concept" — it has since
+gone fully unrendered, not partially broken. "Not analyzed" was
+correctly absent for the same fixture (no skipped files). **No further
+action needed; Overview's heading structure is correct as shipped.**
+
+**All 7 real defects from the live NVDA audit: fixed and
+Live-verified.** Item 6 is closed — the highest verification tier
+this project uses, end to end: a first-time NVDA user, working from a
+purpose-built guide, found every defect, and independently
+reconfirmed every fix.

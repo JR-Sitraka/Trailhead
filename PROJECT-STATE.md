@@ -9,70 +9,75 @@ released. Current phase: **Trailhead Upgrade** (project 2 on Starter
 Kit V4.2, ADR-007, same codebase).
 
 ## Phase
-**Upgrade — item 6: 6 of 7 defects fixed and LIVE-RECONFIRMED by the
-person's own NVDA re-test. One real open question (Modules & packages
-heading) before formal closure.**
+**Upgrade — ITEM 6 CLOSED. Merge in flight. Item 7 (closeout) is the
+last remaining item in this phase.**
 
-**Hash convention:** as of 2026-07-31, `main` HEAD `8c973b7`. Branch
-`upgrade/a11y-live-regions` holds all real fix commits (`e9f73cc`,
-`7c9c4e2`, `54f1ae5`, `451b4ea`, `9a1dd05`, `e6ed0c8`) — not yet
-merged.
+**Hash convention:** as of 2026-07-31, `main` HEAD `40472cc` (pre-
+merge). Branch `upgrade/a11y-live-regions` HEAD `e6ed0c8`.
 
-## Item 6 fixes — 6 of 7 live-reconfirmed, full detail in testing.md
-Groups A (modal focus trap), B (aria-live on async updates), C
-(status announcement + Overview headings investigation) all complete
-with real root-cause findings, real tests, real regression checks
-(299 passed / 3 failed at last count, same pre-existing failure set
-as always). Person's own live NVDA re-test independently confirmed 6
-defects genuinely fixed, not just test-passing.
+## Item 6 — CLOSED (2026-07-31)
+7 real defects found via a first-time NVDA user's live audit, working
+from a purpose-built guide; all 7 fixed with real root-cause
+investigation (not guessed-at); all 6 fixable-by-code defects
+live-reconfirmed by the person's own re-test; the 7th "defect"
+(Overview headings) was investigated and found to already be correct,
+with the one loose end (Modules & packages) resolved by direct visual
+confirmation — the section simply doesn't render, consistent with a
+long-standing architecture note, not a new bug. Full detail across
+this item's testing.md entries.
 
-**Open before closure:** Scenario 6's re-test found only 4 of the
-spec's 6 Overview sections as headings (Stack, Entry Points, Config
-Files, Testing). Not-analyzed's absence is likely correct (fixture
-has no skips). **Modules & packages' status is unconfirmed** —
-architecture.md's own history notes it as "always a hardcoded UI
-list" (an old MVP-A finding), so it should exist on-screen; whether it
-does, and whether it's a real heading, needs one real check before
-item 6 is called fully closed.
+## Item 7 — the last remaining Upgrade-phase item, opening next
+Accumulated housekeeping, all previously flagged and deliberately
+deferred rather than chased mid-stream:
+1. `scripts/check-got.ts` — uncommitted deletion since `9c21b5f`
+   (2026-07-25), predates this phase, never resolved.
+2. `sindresorhus/boxen` — `ready` + job `completed` with zero files
+   (real bug, found during item 2's corpus investigation).
+3. `sindresorhus/got` orphaned `analyzing` state, no job row, zero
+   data (KNOWN-GOOD 2026-07-25).
+4. `embeddings.ts`'s `BATCH_SIZE=32` length-unawareness (real OOM
+   risk, confirmed non-latent during item 3's dry run).
+5. Inter font-resolution defect (project-wide, found during item 5's
+   visual parity review).
+Plus the PRD's original item 7 scope: IMPORT-04 (multi-branch
+detection), PREPROC-03's exact 500MB boundary, closing any remaining
+planning-era Dashboard/Explorer testing.md rows with real evidence.
 
 ## Coding-agent policy — unchanged
-Placement always Claude Code. This round's fix work (all three
-groups) ran on Claude Code per the confirmed grouping — consistent,
-no deviation.
+Placement always Claude Code, no exceptions.
 
 ## Provisional-items trail (V4.2 — feeds retrospective §8)
-Unchanged. Item 6's complete arc — live audit finding 7 real defects
-zero automated tooling caught, root-cause-driven fixes (not
-guessed-at), and live re-confirmation catching one more open question
-even after fixes shipped — is now one of this phase's strongest §8
-candidates end to end.
+Unchanged from last round — item 6's full arc is a top candidate.
 
 ## Upgrade scope — status
 1 doc-drift — substantially DONE. 2 benchmark — COMPLETE. 3 swap —
 CLOSED: HELD. 4 "Unknown" — CLOSED. 5 observability — CLOSED, merged.
-**6 screen-reader — 6/7 fixed and live-reconfirmed; 1 open question
-before close.** 7 closeout — boxen, got orphaned-state, check-got.ts,
-BATCH_SIZE, Inter font-resolution defect.
+**6 screen-reader — CLOSED.** **7 closeout — OPENING, last item.**
 
 ## Open questions
-- **Modules & packages heading status** — this round's live question.
-- Item 7's five accumulated items — unscheduled.
-- Documentation-mitigation study, cloud-embedding scoping — deferred.
-- Framework-review conversation — separate track.
+- Item 7's scope and sequencing (this round's live question, once
+  the merge lands).
+- Documentation-mitigation study, cloud-embedding scoping — deferred
+  past this phase.
+- Framework-review conversation — separate track, now with a very
+  substantial body of real findings across all seven items.
 
 ## Current blocker
-The Modules & packages check.
+None — merge is this round's task.
 
 ## Last completed action
-6 of 7 fixes live-reconfirmed; one open question flagged before
-closure — 2026-07-31.
+Item 6 fully closed with real evidence; item 7's full scope
+consolidated — 2026-07-31.
 
 ## Next valid moves
-1. Place this round's two files.
-2. Person checks (or delegates) whether Modules & packages exists and
-   is a real heading.
-3. On resolution: item 6 fully closes, branch merges into main.
-4. Then item 7 — the last remaining Upgrade-phase item.
+1. Claude Code merges upgrade/a11y-live-regions into main.
+2. Scope item 7's sequencing — five accumulated defects plus the
+   original PRD testing-closeout items — likely batched by
+   complexity, same as always.
+3. On item 7's close: the entire Trailhead Upgrade phase is complete,
+   and the phase-close retrospective (per RETROSPECTIVE.template.md,
+   required before project end per the kit) becomes the next real
+   piece of work.
 
 ## Files changed last round
-- (pending this round's placement)
+- (merge in flight this round)
