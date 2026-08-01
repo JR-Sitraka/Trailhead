@@ -2,7 +2,12 @@ import { test, expect, type Page, type Route } from '@playwright/test';
 
 const BASE_URL = 'http://localhost:3000';
 const READY_REPO = '188ab357-e47e-43ba-9e08-f1668e772372';
-const ANALYZING_REPO = '1daf6a6b-c233-4e6f-85d1-b283c3f9827e';
+// Retained QA fixture — see KNOWN-GOOD.md [2026-07-31]. The contract under
+// test is "Chat must reject any repository that is not ready", so ANY
+// non-ready status satisfies it. This row is expected to sit at 'failed'
+// (orphan reconciliation, 2026-08-01), not 'analyzing'; the test does not
+// depend on which non-ready status it holds. Do not delete this row.
+const NON_READY_REPO = '1daf6a6b-c233-4e6f-85d1-b283c3f9827e';
 const FAILED_REPO = 'bb7c0910-191a-4602-b019-fea22d8244f8';
 
 async function waitForAnswer(page: Page, timeout = 60000): Promise<void> {
@@ -21,7 +26,7 @@ async function waitForAnswer(page: Page, timeout = 60000): Promise<void> {
 
 test.describe('Chat Acceptance Criteria', () => {
   test('CHAT-01: Chat is gated for a non-ready repo', async ({ page }) => {
-    await page.goto(`${BASE_URL}/repositories/${ANALYZING_REPO}/chat`);
+    await page.goto(`${BASE_URL}/repositories/${NON_READY_REPO}/chat`);
     await page.waitForTimeout(3000);
     const bodyText = await page.locator('body').textContent();
     const has404 = bodyText?.includes('404') ?? false;

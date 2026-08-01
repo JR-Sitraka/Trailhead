@@ -36,7 +36,11 @@ const BINARY_EXTENSIONS = new Set([
   ".zip", ".tar", ".gz", ".bz2", ".xz", ".7z", ".rar",
   ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
   ".sqlite", ".db", ".mdb",
-  ".wasm", ".DS_Store", ".map"
+  ".wasm", ".DS_Store", ".map",
+  // AVA snapshot files: an ASCII header ("AVA Snapshot v3\n") in front of a
+  // zlib-compressed body, so the 16-byte signature check reads them as text.
+  // Belt-and-braces only — the real fix is the full-content NUL scan below.
+  ".snap"
 ]);
 
 const CONFIG_FILENAMES = new Set([
@@ -207,6 +211,16 @@ function detectBinaryBySignature(buffer: Buffer): boolean {
   return nullByteCount > buffer.length * 0.3;
 }
 
+// A NUL byte anywhere in the content makes it unstorable: PostgreSQL `text`
+// cannot hold U+0000, and the file rows are inserted as one multi-row
+// statement, so a single poisoned value fails the whole batch (this is the
+// real, confirmed cause of sindresorhus/boxen importing with zero files).
+// detectBinaryBySignature only ever sees the first 16 bytes, which is why
+// header-then-binary formats slip past it — this scans everything.
+function containsNullByte(content: string): boolean {
+  return content.includes("\u0000");
+}
+
 function detectLanguage(filePath: string): string | null {
   const ext = path.extname(filePath).slice(1).toLowerCase();
   const map: Record<string, string> = {
@@ -343,25 +357,49 @@ export async function validateZipSafety(zipBuffer: Buffer, sourceId: string): Pr
         continue;
       }
 
+      // Read the entry's real bytes ONCE, up front. The repository-wide
+      // unpacked-size budget is charged and checked here, before any of the
+      // early continuations below — previously the per-file parse-ceiling
+      // branch added to `unpackedSize` and then `continue`d straight past the
+      // check, so a repository of large text files could blow through 500MB
+      // with `truncated` never set (confirmed 2026-08-02: 300 x 2MB = 600MB
+      // unpacked, truncated false). Every entry now contributes to the total
+      // and is checked against it on the same path.
+      //
+      // Actual decompressed bytes are used, never the ZIP header's declared
+      // size, which a hostile archive controls.
+      let entryData: Buffer;
       try {
-        const entryData = entry.getData();
-        if (entryData.length > MAX_FILE_PARSE_SIZE && !hasBinaryExtension(entryName) && !detectBinaryBySignature(entryData.slice(0, 16))) {
-          const language = detectLanguage(entryName);
-          result.files.push({
-            path: entryName,
-            size: entryData.length,
-            language,
-            skipped: true,
-            skipReason: `exceeds_max_parse_size (${Math.round(entryData.length / 1024)}KB > 1MB)`,
-            content: null,
-            category: null
-          });
-          fileCount++;
-          unpackedSize += entryData.length;
-          continue;
+        entryData = entry.getData();
+      } catch (e) {
+        throw new SecurityError(`Failed to extract entry: ${entryName}: ${(e as Error).message}`);
+      }
+
+      unpackedSize += entryData.length;
+      if (unpackedSize > MAX_UNPACKED_SIZE) {
+        result.truncated = true;
+        if (fileCount === 0) {
+          throw new SecurityError("Unpacked size exceeds 500MB limit with zero files indexed");
         }
-      } catch {
-        // skip parse check for this entry
+        break;
+      }
+
+      // 1MB per-file parse ceiling: still listed in the tree and marked
+      // skipped with a reason (safe-preprocessing.md's Business Rules), just
+      // never parsed — and never written to disk, since nothing reads it back.
+      if (entryData.length > MAX_FILE_PARSE_SIZE && !hasBinaryExtension(entryName) && !detectBinaryBySignature(entryData.slice(0, 16))) {
+        const language = detectLanguage(entryName);
+        result.files.push({
+          path: entryName,
+          size: entryData.length,
+          language,
+          skipped: true,
+          skipReason: `exceeds_max_parse_size (${Math.round(entryData.length / 1024)}KB > 1MB)`,
+          content: null,
+          category: null
+        });
+        fileCount++;
+        continue;
       }
 
       const filePath = path.join(tmpDir, entryName);
@@ -369,7 +407,6 @@ export async function validateZipSafety(zipBuffer: Buffer, sourceId: string): Pr
       fs.mkdirSync(fileDir, { recursive: true });
 
       try {
-        const entryData = entry.getData();
         fs.writeFileSync(filePath, entryData);
       } catch (e) {
         throw new SecurityError(`Failed to extract entry: ${entryName}: ${(e as Error).message}`);
@@ -380,15 +417,6 @@ export async function validateZipSafety(zipBuffer: Buffer, sourceId: string): Pr
         fileSize = fs.statSync(filePath).size;
       } catch {
         continue;
-      }
-
-      unpackedSize += fileSize;
-      if (unpackedSize > MAX_UNPACKED_SIZE) {
-        result.truncated = true;
-        if (fileCount === 0) {
-          throw new SecurityError("Unpacked size exceeds 500MB limit with zero files indexed");
-        }
-        break;
       }
 
       const isBinary = hasBinaryExtension(entryName);
@@ -407,14 +435,14 @@ export async function validateZipSafety(zipBuffer: Buffer, sourceId: string): Pr
         }
       }
 
-      const shouldSkip = stripped || isBinary || isBinaryByContent;
-      const skipReason = shouldSkip
+      let shouldSkip = stripped || isBinary || isBinaryByContent;
+      let skipReason = shouldSkip
         ? stripped
           ? "in_strip_directory"
           : "binary_file"
         : null;
 
-      const language = !shouldSkip ? detectLanguage(entryName) : null;
+      let language = !shouldSkip ? detectLanguage(entryName) : null;
 
       let content: string | null = null;
       let category: "entrypoint" | "config" | null = null;
@@ -425,6 +453,18 @@ export async function validateZipSafety(zipBuffer: Buffer, sourceId: string): Pr
         } catch {
           // leave content/category null on read error
         }
+      }
+
+      // Full-content NUL scan — the durable fix for header-then-binary formats
+      // (AVA .snap, and anything else whose first 16 bytes look like text).
+      // These are reclassified as binary rather than dropped, so the file is
+      // still indexed and visible in Explorer, just without unstorable content.
+      if (!shouldSkip && content !== null && containsNullByte(content)) {
+        shouldSkip = true;
+        skipReason = "binary_file";
+        language = null;
+        content = null;
+        category = null;
       }
 
       result.files.push({

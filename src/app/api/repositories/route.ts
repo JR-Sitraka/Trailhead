@@ -84,31 +84,41 @@ export async function POST(request: NextRequest) {
             throw e;
           }
 
-          const [repo] = await db.insert(repositories).values({
-            name: `${repoInfo.owner}/${repoInfo.repo}`,
-            status: "queued",
-            source: "github",
-            sourceUrl: formData.url,
-            commitSha: repoInfo.commitSha
-          }).returning();
+          // Atomic: repository, job, and file rows commit together or not at
+          // all. Previously these were three independent statements, so a
+          // failing file insert left an orphaned repo+job behind that the
+          // poller would then "complete" with zero files.
+          const repo = await db.transaction(async (tx) => {
+            const [created] = await tx.insert(repositories).values({
+              name: `${repoInfo.owner}/${repoInfo.repo}`,
+              status: "queued",
+              source: "github",
+              sourceUrl: formData.url,
+              commitSha: repoInfo.commitSha
+            }).returning();
 
-          await db.insert(analysisJobs).values({
-            repositoryId: repo.id,
-            status: "queued",
-            truncated: preprocessing.truncated
+            await tx.insert(analysisJobs).values({
+              repositoryId: created.id,
+              status: "queued",
+              truncated: preprocessing.truncated
+            });
+
+            const fileInserts = preprocessing.files.map((f) => ({
+              repositoryId: created.id,
+              path: f.path,
+              size: f.size,
+              language: f.language,
+              content: f.content,
+              category: f.category,
+              skipped: f.skipped,
+              skipReason: f.skipReason
+            }));
+            if (fileInserts.length > 0) {
+              await tx.insert(files).values(fileInserts);
+            }
+
+            return created;
           });
-
-          const fileInserts = preprocessing.files.map((f) => ({
-            repositoryId: repo.id,
-            path: f.path,
-            size: f.size,
-            language: f.language,
-            content: f.content,
-            category: f.category,
-            skipped: f.skipped,
-            skipReason: f.skipReason
-          }));
-          await db.insert(files).values(fileInserts);
 
           const updated = await db.select().from(repositories).where(eq(repositories.id, repo.id)).then((r) => r[0]);
           return NextResponse.json(updated, { status: 201 });
@@ -139,33 +149,40 @@ export async function POST(request: NextRequest) {
         try {
           const preprocessing = await validateZipSafety(buffer, randomUUID());
 
-          const [repo] = await db.insert(repositories).values({
-            name: file.name.replace(/\.zip$/i, ""),
-            status: "queued",
-            source: "zip",
-            sourceUrl: null,
-            commitSha: null
-          }).returning();
+          // Atomic — same reasoning as the github branch above.
+          const repo = await db.transaction(async (tx) => {
+            const [created] = await tx.insert(repositories).values({
+              name: file.name.replace(/\.zip$/i, ""),
+              status: "queued",
+              source: "zip",
+              sourceUrl: null,
+              commitSha: null
+            }).returning();
 
-          await db.insert(analysisJobs).values({
-            repositoryId: repo.id,
-            status: "queued",
-            truncated: preprocessing.truncated,
-            parsingCompletedAt: null,
-            embeddingCompletedAt: null
+            await tx.insert(analysisJobs).values({
+              repositoryId: created.id,
+              status: "queued",
+              truncated: preprocessing.truncated,
+              parsingCompletedAt: null,
+              embeddingCompletedAt: null
+            });
+
+            const fileInserts = preprocessing.files.map((f) => ({
+              repositoryId: created.id,
+              path: f.path,
+              size: f.size,
+              language: f.language,
+              content: f.content,
+              category: f.category,
+              skipped: f.skipped,
+              skipReason: f.skipReason
+            }));
+            if (fileInserts.length > 0) {
+              await tx.insert(files).values(fileInserts);
+            }
+
+            return created;
           });
-
-          const fileInserts = preprocessing.files.map((f) => ({
-            repositoryId: repo.id,
-            path: f.path,
-            size: f.size,
-            language: f.language,
-            content: f.content,
-            category: f.category,
-            skipped: f.skipped,
-            skipReason: f.skipReason
-          }));
-          await db.insert(files).values(fileInserts);
 
           const updated = await db.select().from(repositories).where(eq(repositories.id, repo.id)).then((r) => r[0]);
           return NextResponse.json(updated, { status: 201 });

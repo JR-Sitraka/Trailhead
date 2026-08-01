@@ -5,75 +5,94 @@
 
 ## Product
 **Trailhead** — Repository Intelligence Platform. MVP-A/B shipped and
-released. Current phase: **Trailhead Upgrade** (project 2 on Starter
-Kit V4.2, ADR-007, same codebase).
+released. **THE TRAILHEAD UPGRADE PHASE IS COMPLETE**, pending this
+round's final merge.
 
 ## Phase
-**Upgrade — ITEM 7 (closeout) OPEN — the last item in the phase.**
-Grouping confirmed; check-got.ts disposition decided.
+**Upgrade phase COMPLETE — merge in flight. Next real work: the
+kit-required phase-close retrospective.**
 
-**Hash convention:** as of 2026-07-31, `main` HEAD `b0dab84`
-(item 6's merge). `upgrade/a11y-live-regions` retained at `e6ed0c8`
-for reference.
+**Hash convention:** as of 2026-08-02, `main` HEAD `b0dab84`
+(pre-merge). Branch `upgrade/item7-closeout` holds the final
+commits: `1f5b19f`, `6b86504`, `fb88852`, `241241f`, `86f2300`,
+`878abd0`, `aceb608`, `996a8ff`, `b55d811`.
 
-## Item 7 — grouping CONFIRMED (2026-07-31)
-| Group | Scope | Status |
-|---|---|---|
-| 0 | `scripts/check-got.ts` disposition | **DECIDED: option (b) — commit the deletion as intentional cleanup.** In flight this round. |
-| 1 | `boxen` (zero files, completed) + `got` (orphaned analyzing, no job row) | Investigate first, don't assume shared cause — in flight this round |
-| 2 | `embeddings.ts` BATCH_SIZE length-unawareness | Already diagnosed, scoped fix — next |
-| 3 | Inter font-resolution defect | Already diagnosed, scoped fix — next |
-| 4 | IMPORT-04 + PREPROC-03 boundary | Original PRD verification scope — next |
-| 5 | Remaining planning-era Dashboard/Explorer testing.md rows | Original PRD closeout scope — next |
+## Upgrade phase — final status, all 7 items
+| Item | Outcome |
+|---|---|
+| 1. Doc-drift fix | DONE — Gemini→Groq corrected everywhere real |
+| 2. Golden benchmark suite | COMPLETE — real corpus, real ground truth, committed baseline |
+| 3. Embedding model swap | **CLOSED: HELD** — q8 evaluated rigorously, 3/4 criteria decisively met, held on a real documentation-retrieval regression; preserved as leading candidate, not rejected |
+| 4. Framework misdetection | CLOSED — premise didn't reproduce (re-scoped via ADR-010 to verify+guard); "Unknown" display shipped |
+| 5. LLM observability | CLOSED, merged — real implementation, real visual parity, human-confirmed |
+| 6. Screen-reader accessibility | CLOSED, merged — 7 real defects found via live NVDA audit, all fixed and live-reconfirmed |
+| 7. Testing closeout | CLOSED — this round. One scoped deferral (IMPORT-04), documented honestly, not rounded up |
 
-## Group 0 — check-got.ts, in flight
-Person's decision: commit the deletion (`chore: remove
-scripts/check-got.ts`) as intentional cleanup, ending the six-day-old
-uncommitted state dating to `9c21b5f` (2026-07-25). Routed to Claude
-Code despite being mechanical — this specific file's long tracking
-history warrants care over speed.
+## Real, durable artifacts this phase produced
+- **10 ADRs** added or amended (005 amended twice, 006-011 new/amended)
+- A real, committed golden benchmark (31→40 queries across two
+  manifest versions, real ground truth, locked comparison parameters)
+- **5 confirmed instances** of "documentation described architecture
+  never built" — a structural finding for the framework-review track
+- A complete NVDA accessibility audit-to-fix cycle, live-verified
+  end to end by a first-time screen-reader user
+- Real bugs found and fixed in production code that predated this
+  phase entirely (boxen's NUL-byte import poisoning, got's orphaned
+  state, the 500MB budget bypass)
+- One deliberate, honestly-documented deferral (IMPORT-04) rather
+  than a false "complete"
 
-## Group 1 — boxen + got, investigation in flight
-Real bugs, both analysis-lifecycle-adjacent. **Do not assume shared
-root cause** — same discipline as item 6's async-updates
-investigation (which found a real shared cause) and item 5's
-generation-abstraction discovery (which found the spec's claim was
-simply false). Investigate each independently, report findings before
-any fix.
+## Coding-agent policy — final state
+Placement: always Claude Code, throughout, no exceptions except one
+explicit person-authorized one-time deviation (later reversed).
+Implementation: complexity-split, Kilo Code for scoped/simple work,
+Claude Code for investigation/research/hard-gated work. Both agents
+performed well under this split; real evidence collected across the
+whole phase for the eventual retrospective.
 
-## Coding-agent policy — unchanged
-Placement always Claude Code, no exceptions.
+## Provisional-items trail (V4.2) — FULL, ready for §8 verdicts
+- `session-recovery.md` — triggered once for real (item 3's
+  background-process interruption); diagnosis-before-resume worked as
+  designed, turned an interruption into reinforcing evidence.
+- `design-handoff.md` + `visual-parity-review.md` — used once, item
+  5's panel; clean result; the timing/early-freeze finding logged.
+- `roles/security-reviewer.md` + `security-review.md` — never
+  triggered (auth explicitly deferred to V2/V3 throughout).
+- `visualization-prompting.md`'s credit-exhaustion section — used by
+  choice, not forced exhaustion; nuanced, not a clean confirmation.
+- `orchestrator.md`'s "Decision habits" section — used dozens of
+  times across every major fork this phase; zero regretted defaults.
+- ADR-005's mixed coding-agent policy — adopted, refined, reaffirmed
+  after one real deviation and its real (self-corrected) consequences.
 
-## Provisional-items trail (V4.2 — feeds retrospective §8)
-Unchanged.
-
-## Upgrade scope — status
-1 doc-drift — substantially DONE. 2 benchmark — COMPLETE. 3 swap —
-CLOSED: HELD. 4 "Unknown" — CLOSED. 5 observability — CLOSED, merged.
-6 screen-reader — CLOSED, merged. **7 closeout — OPEN, Groups 0 and 1
-in flight.**
-
-## Open questions
-- Group 1's investigation findings (this round's live question).
-- Groups 2-5, queued behind Group 1.
-- Documentation-mitigation study, cloud-embedding scoping — deferred
-  past this phase.
-- Framework-review conversation — separate track.
+## Open items, real and deliberately deferred (not part of this phase)
+- Documentation-retrieval mitigation study (item 3's held decision)
+- Cloud-embedding scoping (raised, explicitly held separate)
+- IMPORT-04 branch selection (item 7's scoped deferral)
+- FK indexes (add-and-measure, low priority)
+- V1 blueprint items (structural graphs, impact analysis) — non-binding
 
 ## Current blocker
-None — two tasks in flight.
+None — merge is this round's task.
 
 ## Last completed action
-Item 7 grouping confirmed; check-got.ts disposition decided; Groups 0
-and 1 tasks issued — 2026-07-31.
+Item 7 fully closed; entire Upgrade phase complete — 2026-08-02.
 
 ## Next valid moves
-1. Run Group 0 (check-got.ts commit) and Group 1 (boxen/got
-   investigation) tasks.
-2. On Group 1's findings: scope and apply real fixes.
-3. Then Groups 2-5 in sequence.
-4. On item 7's close: entire Upgrade phase complete → phase-close
-   retrospective becomes the next real work.
+1. Claude Code places testing.md's final content and merges
+   `upgrade/item7-closeout` into `main` — this is the phase's closing
+   merge.
+2. **Compile `RETROSPECTIVE.md`** per `RETROSPECTIVE.template.md` —
+   this project has an unusually rich record to draw from: the
+   complete item-3 falsification arc, the complete item-6 audit-to-
+   fix cycle, five structural documentation-drift findings, multiple
+   real orchestrator/agent mutual error-catches, and a fully evolved
+   mixed-agent policy. This is the next real piece of work, not a
+   formality.
+3. After the retrospective: a separate framework-review conversation
+   updates the shared kit (principles.md, orchestrator.md, roles/,
+   playbooks/) based on what this project actually found — per the
+   kit's own two-project promotion rule.
 
 ## Files changed last round
 - (pending this round's placement)

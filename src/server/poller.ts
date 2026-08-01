@@ -118,6 +118,20 @@ async function runEmbeddingPhase(jobId: string, repositoryId: string): Promise<v
   // pipeline must first delete all existing EmbeddingChunk (and File/Symbol)
   // rows for this repository before inserting new ones, otherwise stale
   // chunks from a prior successful job will coexist with new ones.
+  // Zero-file guard: a repository with no analyzable File rows has nothing to
+  // report on, and marking it 'ready' is a false success (sindresorhus/boxen
+  // reached 'ready' with zero files this way after a failed import). Fail the
+  // job instead — 'ready' must mean real, queryable content exists.
+  const analyzableFiles = await db.select().from(files).where(
+    sql`${files.repositoryId} = ${repositoryId} AND ${files.skipped} = false AND ${files.content} IS NOT NULL`
+  );
+  if (analyzableFiles.length === 0) {
+    console.error(`[poller] job ${jobId}: zero analyzable files for repo ${repositoryId} — marking failed instead of ready`);
+    await db.update(analysisJobs).set({ status: "failed" }).where(eq(analysisJobs.id, jobId));
+    await db.update(repositories).set({ status: "failed" }).where(eq(repositories.id, repositoryId));
+    return;
+  }
+
   const [updatedJob] = await db.select().from(analysisJobs).where(eq(analysisJobs.id, jobId));
   if (updatedJob && updatedJob.parsingCompletedAt && updatedJob.embeddingCompletedAt) {
     await db.update(analysisJobs).set({ status: "completed" }).where(eq(analysisJobs.id, jobId));
@@ -129,8 +143,41 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// Reconcile orphaned repositories: a repository sitting in 'queued' or
+// 'analyzing' with no live ('queued'/'running') job can never make progress —
+// nothing will ever pick it up — so it polls forever in the UI. This is
+// sindresorhus/got's state (repo row surviving with its analysis job gone).
+// Runs at the start of each tick, before any job pickup, so it can never race
+// an analysis this poller is itself in the middle of running.
+// Takes the same optional scope as pollOnce: unscoped in production (the real
+// poller sweeps everything), scoped in tests so a run can't disturb unrelated
+// fixture rows.
+export async function reconcileOrphanedRepositories(scopeRepositoryId?: string): Promise<string[]> {
+  const rows = await db.execute(
+    sql`
+      UPDATE ${repositories}
+         SET status = 'failed', updated_at = now()
+       WHERE status IN ('queued', 'analyzing')
+         ${scopeRepositoryId ? sql`AND ${repositories.id} = ${scopeRepositoryId}` : sql``}
+         AND NOT EXISTS (
+           SELECT 1 FROM ${analysisJobs}
+            WHERE ${analysisJobs.repositoryId} = ${repositories.id}
+              AND ${analysisJobs.status} IN ('queued', 'running')
+         )
+      RETURNING id
+    `
+  );
+
+  const ids = (rows as unknown as Array<{ id: string }>).map((r) => r.id);
+  for (const id of ids) {
+    console.error(`[poller] reconciled orphaned repository ${id}: no live analysis job — marking failed`);
+  }
+  return ids;
+}
+
   export async function pollOnce(scopeRepositoryId?: string): Promise<void> {
     try {
+      await reconcileOrphanedRepositories(scopeRepositoryId);
       const [job] = await db.execute(
         sql`
           UPDATE ${analysisJobs}

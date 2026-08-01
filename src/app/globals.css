@@ -17,4 +17,13 @@
   --radius-control: 4px;
   --radius-card: 8px;
   --font-mono: "JetBrains Mono", monospace;
+  /* Real bug (item 5's visual parity review, item 7 Group 3): Tailwind v4
+     ships a built-in --font-sans default (the system font stack) that wins
+     over next/font's Inter whenever the `font-sans` utility is used,
+     because this @theme block never overrode it. --font-inter is set on
+     <body> by next/font (layout.tsx's `variable` option) and inherits down
+     to every descendant, so this resolves to Inter's real, self-hosted
+     family — not a hardcoded "Inter" string that could drift from what
+     next/font actually loads. */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }

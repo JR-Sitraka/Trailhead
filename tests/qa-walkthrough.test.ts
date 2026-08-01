@@ -2,6 +2,9 @@ import { test, expect, type Page } from '@playwright/test';
 
 const BASE_URL = 'http://localhost:3000';
 const OVERVIEW_REPO = '7cf3a196-d7ce-4f79-85b7-e2541930554a';
+// c08b0a4d is a hand-seeded, retained QA fixture backing all three of
+// SYMBOLS_REPO / SEARCH_REPO / EXPLORER_REPO — see KNOWN-GOOD.md
+// [2026-07-31]. Do not delete this row.
 const SYMBOLS_REPO = 'c08b0a4d-b85e-4359-a991-efb79f77c66f';
 const SEARCH_REPO = 'c08b0a4d-b85e-4359-a991-efb79f77c66f';
 const CHAT_REPO = '188ab357-e47e-43ba-9e08-f1668e772372';

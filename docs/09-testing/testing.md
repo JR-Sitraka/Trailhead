@@ -731,3 +731,155 @@ Live-verified.** Item 6 is closed — the highest verification tier
 this project uses, end to end: a first-time NVDA user, working from a
 purpose-built guide, found every defect, and independently
 reconfirmed every fix.
+
+---
+
+# Item 7, Group 1 — CLOSED (2026-07-31)
+
+Real fixes, real live verification, real gated deletions — full
+detail below. Commits on `upgrade/item7-closeout`: `1f5b19f` (import
+integrity, zero-file guard, orphan reconciliation), `6b86504`
+(architecture.md correction + ADR-006 ordering gap closed + ADR-011),
+`fb88852` (fixture rename + retained-fixture documentation).
+
+**boxen — root cause: two independent, real defects, both fixed.**
+NUL-byte AVA snapshot content bypassed binary detection (only the
+first 16 bytes were scanned) and poisoned an entire non-transactional
+multi-row insert; the poller then reported `ready` over zero files
+with no zero-file guard. Fixed: full-content NUL scan → correct
+binary skip; atomic transaction on import; zero-file guard fails the
+job instead of reporting false success. **Live-verified**: real
+re-import of `boxen` produced the exact 47 files predicted offline,
+11 `.snap` files correctly skipped as binary, real `ready` state with
+real content (`6da9a23c`).
+
+**got — root cause: out-of-band data deletion, not a pipeline bug.**
+Real forensic limit stated honestly: who ran the deletion could not
+be recovered. Fixed the *exposure*, not the cause: poller-level
+reconciliation now flips any orphaned analyzing/queued repo with no
+live job to `failed` instead of polling forever — this also closes
+the latent risk that `got`'s sibling fixture would have become a
+second `boxen` the moment someone clicked Reanalyze. **Live-verified**
+on the real dev server: `1daf6a6b` genuinely transitioned
+`analyzing`→`failed` via a real poller tick, confirmed by real SQL
+before/after.
+
+**Third confirmed instance of "docs described architecture never
+built"** (after item 3's `BATCH_SIZE`, item 5's generation
+abstraction): `architecture.md`'s reanalysis semantics were wrong in
+both halves. Corrected; real file delete-and-replace explicitly left
+unimplemented as a separate future decision (ADR-011).
+
+**Deletion gate caught a real error before it happened.** The
+original investigation recommended deleting three "pollutant"
+fixtures; the reference-check gate found all three are active QA
+dependencies (`chat-playwright.test.ts`, `export-playwright.test.ts`,
+`qa-walkthrough.test.ts`). Only the genuinely unsalvageable `boxen`
+row was deleted (`4dd70528`, cascade-verified: 0 files/symbols/chunks
+lost). The three retained fixtures are now documented in KNOWN-GOOD.md
+with their exact test dependencies, so they can't be mis-proposed for
+cleanup again. Generalizable lesson recorded: an empty/synthetic
+`trailhead_dev` row is not evidence of being unused — browser-driven
+suites keep fixtures there invisibly to `vitest`.
+
+**Test-quality gaps found, logged, not chased (out of scope):**
+`EXPORT-01` has real cold-compile timing fragility, same class as the
+2026-07-24 known flake; `CHAT-01` has no real assertion, so its pass
+is weak evidence regardless of actual gating behavior.
+
+**Regression:** 307/310 passing, same known baseline failure set
+(reanalysis.test.ts's flake didn't even trigger this run).
+
+---
+
+# Item 7, Groups 2 & 3 — CLOSED (2026-07-31)
+
+**Group 2 — embeddings.ts BATCH_SIZE length-awareness (`86f2300`).**
+`buildBatches()` caps each batch by item count (32, unchanged) AND
+total character length (`MAX_BATCH_CHARS = 8000`, a tunable
+heuristic — honestly flagged as not precisely justified, same status
+as the chunker's fixed 30-line window). A single oversized chunk gets
+its own batch rather than being dropped or looping. **Real test
+evidence:** 5 deterministic unit tests confirm the exact ADR-009 OOM
+shape (13 chunks × the real 3918-char outlier) now subdivides
+correctly; 2 real end-to-end model tests confirm the split doesn't
+corrupt output (identical content → identical embeddings regardless
+of sub-batch placement). **Honest tier boundary:** the live 6.5GB OOM
+was NOT reproduced — correctly, since doing so would risk this
+already memory-constrained machine (ADR-009: 3.3GB free). The
+deterministic unit tests are the load-bearing proof. Regression:
+313/317, zero new failures.
+
+**Group 3 — Inter font-resolution defect, project-wide (`878abd0`).**
+`layout.tsx` now exposes Inter via `variable: "--font-inter"`;
+`globals.css` wires `--font-sans` through the actual loaded font
+variable rather than leaving it undefined (Tailwind's system stack
+was silently winning). **Real proof:** confirmed the bug was a
+genuine CSS override before fixing (`.font-sans { font-family:
+var(--font-sans) }` compiled with no value); post-fix,
+`getComputedStyle` on Dashboard's root, h1, and h2 all resolve to
+Inter's real self-hosted family; `document.fonts.check('16px Inter')`
+→ true; JetBrains Mono confirmed unaffected on real commit-SHA
+elements. Regression: 314/317, zero new failures.
+
+Item 7 remaining: Groups 4-5 (IMPORT-04, PREPROC-03's exact boundary,
+remaining planning-era Dashboard/Explorer rows) — the last work in
+the entire Upgrade phase.
+
+---
+
+# Item 7, Groups 4 & 5 — CLOSED (2026-08-02)
+
+Final verification pass of the entire Upgrade phase. Three real gaps
+were found; one was fixed, two were deliberately deferred with the
+reasoning recorded. Commits: `aceb608` (PREPROC-03 fix), `996a8ff`
+(IMPORT-04 deferral), `b55d811` (index inventory + Dashboard/Explorer
+tests).
+
+## Status changes
+
+| Criterion | Test | Type | Status |
+|---|---|---|---|
+| Branch selector appears only when GitHub repo has >1 branch | IMPORT-04 | Automated | **Verified — UNIMPLEMENTED, DEFERRED (2026-08-02).** NOT passed, NOT complete. Real evidence: importing `octocat/Hello-World` with `branch=test` recorded `7fd1a60b…` (master's HEAD, the default branch) instead of `b3cbd5bb…` (test's real HEAD), checked against GitHub's API directly. Root cause traced: `route.ts` computes `selectedBranch` and never uses it; `fetchGithubRepoInfo()` takes no branch argument and always resolves `/commits/${default_branch}`; the zipball uses that same SHA. `AddRepositoryModal.tsx` has no branch control at all — the selector does not exist in shipped UI. Passing `branch` is a silent no-op, not a partial implementation. **Decision: deferred as real future scope**, documented in `repository-import.md`'s "Branch selection — CURRENT vs. DEFERRED" section. `tests/import-branch.test.ts` keeps an `it.fails` case locking the spec's target state into the suite; it will start failing (correctly alerting) if branch selection is ever built. |
+| Repository at exact size/file-count limits imports successfully; one file over any limit triggers correct behavior | PREPROC-03 | Automated | **Agent-verified (2026-08-02) — CLOSED.** All four boundary cases exercised with real archives and real 500MB disk writes: 499MB → `truncated: false`, 499 indexed; **exactly 524,288,000 bytes → imports successfully, `truncated: false`**, 500 indexed (boundary is inclusive); 501MB → `truncated: true`, 500 indexed, crossing file not indexed; and the bypass case below. The long-standing "500MB unpacked boundary never exercised" gap is genuinely closed. |
+| — (new, found during this pass) | PREPROC-03b | Automated | **Real defect found AND fixed (`aceb608`).** The per-file parse-ceiling branch added to `unpackedSize` and then `continue`d past the budget check, so files over the 1MB ceiling could never trigger truncation. Measured before the fix: **300 × 2MB = 600MB unpacked with `truncated` still false**, contradicting `safe-preprocessing.md`'s edge case. Fixed by charging and checking the budget for every entry before any early continuation. Regression test confirms `truncated: true` and indexing stopping at 250 files. All three original boundary cases re-verified unchanged; Group 1's NUL/binary, traversal, symlink and postinstall tests re-run green (39/39). |
+
+## NFR verification — corrected
+
+| Budget (from architecture.md) | Measured value | Status |
+|---|---|---|
+| `files.repositoryId`/`symbols.fileId`/`analysis_jobs.repositoryId` b-tree indexes present | **Absent** | **Documentation corrected — the requirement was never in architecture.md.** This row asserted a budget "from architecture.md" that architecture.md never actually stated, and a real `pg_indexes` query confirms the indexes do not exist. `architecture.md` now records the real inventory. **Real implementation deferred as a separate low-priority database-performance item** — no migration made. Honest caveat: no performance problem has been observed or measured; measure with `enable_seqscan = OFF` before adding. |
+| `files.contentSearchVector` GIN index present | `files_content_search_vector_idx` — GIN on `content_search_vector` | ✅ **Agent-verified (2026-08-02)** — real `pg_indexes` query. |
+| Repository size/count limits enforced (150MB/500MB/5,000 files/1MB) | All four exercised | ✅ **Agent-verified (2026-08-02)** — the 500MB unpacked boundary was the last outstanding limit, now closed with real data including the bypass defect found and fixed. |
+
+## Dashboard / Explorer rows — confirmed still accurate
+All eight closed with real evidence, re-confirmed with no change
+needed: DASH-01, DASH-02, DASH-05, EXPLORER-01, EXPLORER-04 by new
+tests (`dashboard-explorer-closeout.test.tsx`, EXPLORER-01/04 driven
+by real pipeline output, not seeded rows); DASH-03, DASH-04,
+EXPLORER-02, EXPLORER-03 by pre-existing real coverage. Planning-era
+"mock with fixed fake data" notes on those rows are now stale and
+superseded.
+
+## Item 7 — verification status
+
+**Item 7 verification is COMPLETE with one scoped, deliberate deferral
+(IMPORT-04). This does NOT mean every original acceptance criterion in
+this project is implemented.** IMPORT-04 is explicitly unimplemented
+and deferred, not passed. The `it.fails` test in the suite is the
+durable reminder.
+
+## Structural retrospective candidate — FOUR confirmed instances, one adjacent
+"Docs describe architecture/behavior that was never built" is a
+confirmed structural pattern, found independently across four
+separate items by four different kinds of verification: item 3's
+`BATCH_SIZE`, item 5's generation abstraction, item 7 Group 1's
+reanalysis semantics, item 7 Group 4's branch selector. A fifth,
+adjacent instance: testing.md's FK-index NFR row cited a budget "from
+architecture.md" that architecture.md never actually stated — a claim
+about a claim. **Every instance was caught only by executing
+something real** (a dry run, a code trace, a live import, a real API
+cross-check), never by reading documentation. Real candidate for a
+process-level fix in the framework-review track: require an
+executable check before any acceptance criterion may be written as
+satisfied.

@@ -514,6 +514,48 @@ half.
   verified intact on both trailhead_dev and trailhead_test after the
   workaround. Root cause (why the prompt appears now) not
   investigated.
+- [2026-07-31] **RETAINED QA FIXTURES in `trailhead_dev` — DO NOT
+  DELETE. These three repository rows look like junk and are not.**
+  They are intentional, load-bearing fixtures for the Playwright and
+  QA-walkthrough acceptance suites, which run against a real dev
+  server and therefore against `trailhead_dev` (not `trailhead_test`).
+  Deleting any of them silently breaks acceptance tests that only run
+  under a real browser runner, so the breakage would not show up in
+  `npx vitest run`.
+  - `1daf6a6b-c233-4e6f-85d1-b283c3f9827e` — `sindresorhus/got`.
+    The non-ready gate fixture: `NON_READY_REPO` in
+    `tests/chat-playwright.test.ts` (CHAT-01) and
+    `tests/export-playwright.test.ts` (EXPORT-01). The contract is
+    "Chat/Export must reject any repository that is not ready" — ANY
+    non-ready status satisfies it. Formerly named `ANALYZING_REPO`;
+    renamed 2026-07-31 because orphan reconciliation now moves this
+    row to `failed`, and the old name wrongly implied the test needed
+    it to be actively analyzing. It has zero files/symbols/chunks and
+    no job row — that emptiness IS the fixture, not damage to repair.
+  - `c08b0a4d-b85e-4359-a991-efb79f77c66f` — `sindresorhus/got`,
+    hand-seeded (note the deliberately fake `commit_sha` `abc1234`
+    and its single `source/index.ts` file with 6 real symbols).
+    Backs `SYMBOLS_REPO`, `SEARCH_REPO`, AND `EXPLORER_REPO` — all
+    three constants in `tests/qa-walkthrough.test.ts` point at this
+    one row.
+  - `8ab4ce3e-d7a9-4c15-9bfe-2405568db705` —
+    `python-only-empty-state-verification`. `FALLBACK_REPO` in
+    `tests/export-playwright.test.ts`.
+
+  **Why this entry exists:** the item 7 Group 1 cleanup investigation
+  (2026-08-01) examined these rows, read their emptiness and fake SHA
+  as leftover pollution, and explicitly proposed deleting all three as
+  fixture-set cleanup. That recommendation was wrong. The task's
+  mandatory pre-deletion reference check — grep the codebase and test
+  suite for the exact ID before deleting anything — caught all three
+  and stopped the deletions; they were then permanently cancelled.
+  Lesson, and the reason this is recorded rather than just fixed: a
+  `trailhead_dev` row being empty, synthetic, or odd-looking is NOT
+  evidence that it is unused. Fixtures for the browser-driven suites
+  live in the dev database and look exactly like junk. Always run the
+  ID reference check before proposing or performing any dev-database
+  row deletion.
+
 - [2026-07-30] Running a second `npm run dev` in the same project
   corrupts the shared `.next` build and 500s the ENTIRE app, including
   routes unrelated to whatever change is being tested. Recovery per
