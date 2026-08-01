@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { db } from "../src/server/db";
-import { repositories, analysisJobs } from "../src/server/db/schema";
+import { repositories, analysisJobs, files } from "../src/server/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { pollOnce } from "../src/server/poller";
 
@@ -35,6 +35,20 @@ describe("AnalysisJob poller", () => {
       parsingCompletedAt: null,
       embeddingCompletedAt: null
     }).returning();
+
+    // Real analyzable content: this test is about atomic job pickup, but the
+    // poller's zero-file guard (added 2026-08-01) correctly fails a repository
+    // with nothing to analyze, so the fixture needs a real file to reach
+    // 'completed' for the reason this test actually cares about.
+    await db.insert(files).values({
+      repositoryId: repo.id,
+      path: "index.js",
+      size: 20,
+      language: "javascript",
+      content: "export const x = 1;\n",
+      skipped: false,
+      skipReason: null
+    });
 
     await pollOnce(repo.id);
 

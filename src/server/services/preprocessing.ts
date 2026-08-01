@@ -36,7 +36,11 @@ const BINARY_EXTENSIONS = new Set([
   ".zip", ".tar", ".gz", ".bz2", ".xz", ".7z", ".rar",
   ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
   ".sqlite", ".db", ".mdb",
-  ".wasm", ".DS_Store", ".map"
+  ".wasm", ".DS_Store", ".map",
+  // AVA snapshot files: an ASCII header ("AVA Snapshot v3\n") in front of a
+  // zlib-compressed body, so the 16-byte signature check reads them as text.
+  // Belt-and-braces only — the real fix is the full-content NUL scan below.
+  ".snap"
 ]);
 
 const CONFIG_FILENAMES = new Set([
@@ -205,6 +209,16 @@ function detectBinaryBySignature(buffer: Buffer): boolean {
   }
   const nullByteCount = buffer.filter((b) => b === 0).length;
   return nullByteCount > buffer.length * 0.3;
+}
+
+// A NUL byte anywhere in the content makes it unstorable: PostgreSQL `text`
+// cannot hold U+0000, and the file rows are inserted as one multi-row
+// statement, so a single poisoned value fails the whole batch (this is the
+// real, confirmed cause of sindresorhus/boxen importing with zero files).
+// detectBinaryBySignature only ever sees the first 16 bytes, which is why
+// header-then-binary formats slip past it — this scans everything.
+function containsNullByte(content: string): boolean {
+  return content.includes("\u0000");
 }
 
 function detectLanguage(filePath: string): string | null {
@@ -407,14 +421,14 @@ export async function validateZipSafety(zipBuffer: Buffer, sourceId: string): Pr
         }
       }
 
-      const shouldSkip = stripped || isBinary || isBinaryByContent;
-      const skipReason = shouldSkip
+      let shouldSkip = stripped || isBinary || isBinaryByContent;
+      let skipReason = shouldSkip
         ? stripped
           ? "in_strip_directory"
           : "binary_file"
         : null;
 
-      const language = !shouldSkip ? detectLanguage(entryName) : null;
+      let language = !shouldSkip ? detectLanguage(entryName) : null;
 
       let content: string | null = null;
       let category: "entrypoint" | "config" | null = null;
@@ -425,6 +439,18 @@ export async function validateZipSafety(zipBuffer: Buffer, sourceId: string): Pr
         } catch {
           // leave content/category null on read error
         }
+      }
+
+      // Full-content NUL scan — the durable fix for header-then-binary formats
+      // (AVA .snap, and anything else whose first 16 bytes look like text).
+      // These are reclassified as binary rather than dropped, so the file is
+      // still indexed and visible in Explorer, just without unstorable content.
+      if (!shouldSkip && content !== null && containsNullByte(content)) {
+        shouldSkip = true;
+        skipReason = "binary_file";
+        language = null;
+        content = null;
+        category = null;
       }
 
       result.files.push({
