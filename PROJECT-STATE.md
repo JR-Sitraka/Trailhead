@@ -9,87 +9,71 @@ released. Current phase: **Trailhead Upgrade** (project 2 on Starter
 Kit V4.2, ADR-007, same codebase).
 
 ## Phase
-**Upgrade — item 6 (screen-reader pass) IN PROGRESS. Five real
-defects confirmed via live NVDA testing; audit continuing across
-Explorer/Symbols/Export before fixes are batched.**
+**Upgrade — item 6 audit COMPLETE: 7 real defects confirmed via live
+NVDA testing. Fix-grouping proposed, awaiting person confirmation
+before compiling task packets.**
 
-**Hash convention:** as of 2026-07-31, `main` HEAD `d4de985`
-(unchanged this round — this is an in-progress manual audit, no code
-touched yet).
+**Hash convention:** as of 2026-07-31, `main` HEAD `07a3d02`.
 
-## Item 6 — LIVE findings so far (person's own NVDA session,
-2026-07-31), full detail in testing.md
-1. **Repository status not announced** (Dashboard row)
-2. **Add Repository modal: Tab escapes into browser chrome** — no
-   real focus trap
-3. **Delete modal: identical Tab-escape** — likely same root cause as #2
-4. **Overview's six fact sections: zero real headings**
-5. **Search: no automatic loading/result-count announcement**
-6. **Chat no-evidence path: announces nothing at all** — most severe
+## Item 6 — audit complete, full detail in testing.md
+**7 confirmed defects:** Dashboard status not announced; Add
+Repository + Delete modals both leak Tab focus into browser chrome
+(likely shared cause); Overview has zero real headings; Search, Chat,
+and Explorer's file-open are all silent on async content updates
+(**likely ONE shared root cause — missing/broken aria-live pattern**,
+not three separate bugs). **Chat's finding is now confirmed as the
+most severe:** silent on BOTH the no-evidence path and a genuine
+successful answer.
 
-Clean, no defect: Dashboard landmarks/headings; the observability
-panel (non-interactive confirmed, announced correctly via landmarks).
+**Clean, no defect:** Dashboard landmarks; observability panel;
+Symbols filter-chip toggle announcements; Export's three sections as
+real headings.
 
-**Retry in flight:** Chat's successful-answer announcement behavior —
-both original test questions hit the no-evidence path, so this
-remains genuinely untested. Retry question given (known-answerable,
-drawn from real benchmark ground truth against
-`escape-string-regexp`).
-
-**Aside, out of scope:** two Chat no-evidence responses against
-reasonable-sounding questions — possible retrieval-quality gap,
-flagged separately, not an accessibility finding.
-
-**Remaining audit:** Explorer (Scenario 9), Symbols (Scenario 10),
-Export (Scenario 11) — scenarios prepared, not yet run.
-
-**Decision:** person chose to continue the full audit before batching
-any fixes, rather than fixing the two most severe defects immediately.
+**Proposed fix grouping (awaiting confirm):**
+- Group A: modal focus trap (2 defects, 1 likely fix)
+- Group B: missing aria-live on async updates (3 defects, 1 likely
+  fix — the highest-value single fix in this batch)
+- Group C: two small, separate, scoped fixes (status pill; Overview
+  headings)
 
 ## Coding-agent policy — unchanged
-Placement always Claude Code, no exceptions. Fixes, once scoped, will
-likely split: the two modal focus-trap defects share a probable root
-cause (worth investigating as one task, likely complex enough for
-Claude Code); status-pill announcement and Overview headings are
-probably simpler, scoped fixes (Kilo Code candidates once confirmed).
-Chat's silent-failure defect needs its own scoped investigation
-(likely Claude Code — touches aria-live timing, not purely cosmetic).
+Placement always Claude Code. Groups A and B likely need Claude Code
+(shared-root-cause investigation, same category as item 5's
+abstraction discovery). Group C are good Kilo Code candidates once
+scoped.
 
 ## Provisional-items trail (V4.2 — feeds retrospective §8)
-Unchanged. Strong new candidate: a first-time NVDA user, working from
-a beginner-oriented guide, produced five real, confirmed defects that
-no automated tooling in this project had caught — direct validation
-of `automated-tooling-blindspots.md`'s core claim.
+Unchanged. The full item-6 audit — 7 real defects from a first-time
+NVDA user working from a beginner guide, zero caught by any prior
+automated tooling — is now a strong, complete §8 candidate on its
+own.
 
 ## Upgrade scope — status
 1 doc-drift — substantially DONE. 2 benchmark — COMPLETE. 3 swap —
 CLOSED: HELD. 4 "Unknown" — CLOSED. 5 observability — CLOSED, merged.
-**6 screen-reader — IN PROGRESS, 5 real defects confirmed, audit
-continuing.** 7 closeout — boxen, got orphaned-state, check-got.ts,
-BATCH_SIZE, Inter font-resolution defect.
+**6 screen-reader — audit COMPLETE; fixes pending grouping confirm.**
+7 closeout — boxen, got orphaned-state, check-got.ts, BATCH_SIZE,
+Inter font-resolution defect.
 
 ## Open questions
-- Chat successful-answer retry result.
-- Explorer/Symbols/Export audit results.
-- Fix batching/sequencing — decided after the full audit completes.
+- Fix-grouping confirmation (this round's live question).
 - Chat retrieval-quality aside — separate future look.
 - Item 7's five accumulated items — unscheduled.
 - Documentation-mitigation study, cloud-embedding scoping — deferred.
 - Framework-review conversation — separate track.
 
 ## Current blocker
-None — audit continuing at the person's own pace.
+The fix-grouping confirmation.
 
 ## Last completed action
-Five real defects logged as Live-verified; Chat retry and three new
-scenarios (Explorer/Symbols/Export) issued — 2026-07-31.
+Item 6 audit completed; 7 defects logged Live-verified; fix grouping
+proposed — 2026-07-31.
 
 ## Next valid moves
 1. Place this round's two files.
-2. Person continues the audit (Chat retry + Scenarios 9-11) whenever
-   ready.
-3. Once complete: batch and scope real fixes, route by complexity
-   per the coding-agent policy above.
+2. Person confirms/adjusts the fix grouping.
+3. Compile Group A/B/C task packets, routed per the coding-agent
+   policy.
 
 ## Files changed last round
 - (pending this round's placement)

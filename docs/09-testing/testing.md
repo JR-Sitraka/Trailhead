@@ -433,3 +433,43 @@ here.
 
 **Fixes not yet scoped or applied** — audit continuing per the
 person's choice before batching fixes.
+
+---
+
+# Item 6 — audit COMPLETE, 7 real defects confirmed (2026-07-31)
+
+**Tier: Live-verified** throughout — real NVDA session, Speech Viewer
+transcripts.
+
+| # | Scenario | Screen | Finding |
+|---|---|---|---|
+| 1 | 2 | Dashboard | Status (Ready/Analyzing/Failed) never announced |
+| 2 | 3 | Add Repository modal | Tab escapes into browser chrome — no real focus trap |
+| 3 | 4 | Delete confirmation modal | Same escape as #2 — likely shared root cause |
+| 4 | 6 | Overview | Zero of six fact sections register as real headings |
+| 5 | 7 | Search | No automatic announcement of loading/result count |
+| 6 | 8 (both original + retry) | Chat | **Silent on response regardless of outcome** — confirmed on both the no-evidence path and a real successful answer. Most severe finding: a screen-reader user gets zero indication Chat ever responded. |
+| 7 | 9 | Explorer | Opening a file announces nothing — no content-loaded confirmation |
+
+**Clean, no defect:**
+- Scenario 1: Dashboard landmarks/headings
+- Scenario 5: observability panel (non-interactive, announced correctly)
+- Scenario 10: Symbols filter chips correctly announce toggle state
+  (`pressed`/`not pressed`)
+- Scenario 11: Export's three format sections are real headings
+
+**Synthesis — defects 5, 6, 7 are likely ONE root cause, not three.**
+Search results, Chat responses, and Explorer file-open are all async
+content updates with zero announcement — the signature of a missing
+or broken `aria-live` pattern applied inconsistently across the app's
+dynamic-update points, not three isolated oversights. Proposed as a
+single investigation, not three separate fixes.
+
+**Proposed fix grouping (pending person confirmation):**
+- Group A: modal focus trap (defects 2, 3)
+- Group B: missing aria-live on async content updates (defects 5, 6, 7)
+- Group C: two scoped, unrelated fixes (defects 1, 4)
+
+**Aside, still out of scope:** the Chat retrieval-quality question
+from the original Scenario 8 (reasonable questions returning
+no-evidence) — flagged separately, not investigated here.
