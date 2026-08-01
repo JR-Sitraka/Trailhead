@@ -5,74 +5,94 @@
 
 ## Product
 **Trailhead** — Repository Intelligence Platform. MVP-A/B shipped and
-released. Current phase: **Trailhead Upgrade** (project 2 on Starter
-Kit V4.2, ADR-007, same codebase).
+released. **THE TRAILHEAD UPGRADE PHASE IS COMPLETE**, pending this
+round's final merge.
 
 ## Phase
-**Upgrade — item 7, Groups 0-3 CLOSED. Groups 4-5 are the last
-remaining work in the ENTIRE Upgrade phase.**
+**Upgrade phase COMPLETE — merge in flight. Next real work: the
+kit-required phase-close retrospective.**
 
-**Hash convention:** as of 2026-07-31, `main` HEAD `b0dab84`
-(unchanged — item 7's work is on `upgrade/item7-closeout`, not yet
-merged). Branch commits through this round: `1f5b19f`, `6b86504`,
-`fb88852`, `241241f`, `86f2300`, `878abd0`.
+**Hash convention:** as of 2026-08-02, `main` HEAD `b0dab84`
+(pre-merge). Branch `upgrade/item7-closeout` holds the final
+commits: `1f5b19f`, `6b86504`, `fb88852`, `241241f`, `86f2300`,
+`878abd0`, `aceb608`, `996a8ff`, `b55d811`.
 
-## Item 7 — status
-| Group | Scope | Status |
-|---|---|---|
-| 0 | check-got.ts | ✅ CLOSED |
-| 1 | boxen + got | ✅ CLOSED |
-| 2 | BATCH_SIZE length-awareness | ✅ CLOSED |
-| 3 | Inter font-resolution | ✅ CLOSED |
-| 4 | IMPORT-04 + PREPROC-03 | **NEXT — last real verification work** |
-| 5 | Remaining Dashboard/Explorer testing.md rows | **NEXT — same task** |
+## Upgrade phase — final status, all 7 items
+| Item | Outcome |
+|---|---|
+| 1. Doc-drift fix | DONE — Gemini→Groq corrected everywhere real |
+| 2. Golden benchmark suite | COMPLETE — real corpus, real ground truth, committed baseline |
+| 3. Embedding model swap | **CLOSED: HELD** — q8 evaluated rigorously, 3/4 criteria decisively met, held on a real documentation-retrieval regression; preserved as leading candidate, not rejected |
+| 4. Framework misdetection | CLOSED — premise didn't reproduce (re-scoped via ADR-010 to verify+guard); "Unknown" display shipped |
+| 5. LLM observability | CLOSED, merged — real implementation, real visual parity, human-confirmed |
+| 6. Screen-reader accessibility | CLOSED, merged — 7 real defects found via live NVDA audit, all fixed and live-reconfirmed |
+| 7. Testing closeout | CLOSED — this round. One scoped deferral (IMPORT-04), documented honestly, not rounded up |
 
-## Coding-agent policy — reverts to standard complexity-split
-Placement always Claude Code (permanent). Last round's Groups 2-3 on
-Claude Code was an explicit one-time exception for consistency, not a
-standing change. **Groups 4-5 default to Kilo Code** (routine
-verification against already-specified acceptance criteria, no
-investigation needed) — pending the person's confirm or override,
-same choice offered every round this pattern applies.
+## Real, durable artifacts this phase produced
+- **10 ADRs** added or amended (005 amended twice, 006-011 new/amended)
+- A real, committed golden benchmark (31→40 queries across two
+  manifest versions, real ground truth, locked comparison parameters)
+- **5 confirmed instances** of "documentation described architecture
+  never built" — a structural finding for the framework-review track
+- A complete NVDA accessibility audit-to-fix cycle, live-verified
+  end to end by a first-time screen-reader user
+- Real bugs found and fixed in production code that predated this
+  phase entirely (boxen's NUL-byte import poisoning, got's orphaned
+  state, the 500MB budget bypass)
+- One deliberate, honestly-documented deferral (IMPORT-04) rather
+  than a false "complete"
 
-## Provisional-items trail (V4.2 — feeds retrospective §8)
-Unchanged.
+## Coding-agent policy — final state
+Placement: always Claude Code, throughout, no exceptions except one
+explicit person-authorized one-time deviation (later reversed).
+Implementation: complexity-split, Kilo Code for scoped/simple work,
+Claude Code for investigation/research/hard-gated work. Both agents
+performed well under this split; real evidence collected across the
+whole phase for the eventual retrospective.
 
-## Upgrade scope — status
-1 doc-drift — substantially DONE. 2 benchmark — COMPLETE. 3 swap —
-CLOSED: HELD. 4 "Unknown" — CLOSED. 5 observability — CLOSED, merged.
-6 screen-reader — CLOSED, merged. **7 closeout — Groups 0-3 closed;
-Groups 4-5 are the last item in the whole Upgrade phase.**
+## Provisional-items trail (V4.2) — FULL, ready for §8 verdicts
+- `session-recovery.md` — triggered once for real (item 3's
+  background-process interruption); diagnosis-before-resume worked as
+  designed, turned an interruption into reinforcing evidence.
+- `design-handoff.md` + `visual-parity-review.md` — used once, item
+  5's panel; clean result; the timing/early-freeze finding logged.
+- `roles/security-reviewer.md` + `security-review.md` — never
+  triggered (auth explicitly deferred to V2/V3 throughout).
+- `visualization-prompting.md`'s credit-exhaustion section — used by
+  choice, not forced exhaustion; nuanced, not a clean confirmation.
+- `orchestrator.md`'s "Decision habits" section — used dozens of
+  times across every major fork this phase; zero regretted defaults.
+- ADR-005's mixed coding-agent policy — adopted, refined, reaffirmed
+  after one real deviation and its real (self-corrected) consequences.
 
-## Open questions
-- Groups 4-5's agent routing (this round's live question).
-- Item 7's eventual branch merge — likely the final merge of the
-  entire phase.
-- Documentation-mitigation study, cloud-embedding scoping — deferred
-  past this phase, real future work.
-- **Framework-review conversation** — separate track, now genuinely
-  substantial: three confirmed instances of docs-describing-unbuilt-
-  architecture, multiple deletion-gate/orchestrator-error catches in
-  both directions, a complete falsified-hypothesis arc (item 3), and
-  a full live-audit-to-fix cycle (item 6) — real material for
-  updating the shared kit.
+## Open items, real and deliberately deferred (not part of this phase)
+- Documentation-retrieval mitigation study (item 3's held decision)
+- Cloud-embedding scoping (raised, explicitly held separate)
+- IMPORT-04 branch selection (item 7's scoped deferral)
+- FK indexes (add-and-measure, low priority)
+- V1 blueprint items (structural graphs, impact analysis) — non-binding
 
 ## Current blocker
-None.
+None — merge is this round's task.
 
 ## Last completed action
-Groups 2-3 closed with real evidence; Groups 4-5 identified as the
-final work of the phase — 2026-07-31.
+Item 7 fully closed; entire Upgrade phase complete — 2026-08-02.
 
 ## Next valid moves
-1. Place this round's two files.
-2. Confirm Groups 4-5 routing (Kilo Code proposed).
-3. Run Groups 4-5.
-4. Merge upgrade/item7-closeout into main — closes item 7 and the
-   entire Trailhead Upgrade phase.
-5. Compile the phase-close retrospective (kit-required, per
-   RETROSPECTIVE.template.md) — the real next piece of work after
-   this phase ends.
+1. Claude Code places testing.md's final content and merges
+   `upgrade/item7-closeout` into `main` — this is the phase's closing
+   merge.
+2. **Compile `RETROSPECTIVE.md`** per `RETROSPECTIVE.template.md` —
+   this project has an unusually rich record to draw from: the
+   complete item-3 falsification arc, the complete item-6 audit-to-
+   fix cycle, five structural documentation-drift findings, multiple
+   real orchestrator/agent mutual error-catches, and a fully evolved
+   mixed-agent policy. This is the next real piece of work, not a
+   formality.
+3. After the retrospective: a separate framework-review conversation
+   updates the shared kit (principles.md, orchestrator.md, roles/,
+   playbooks/) based on what this project actually found — per the
+   kit's own two-project promotion rule.
 
 ## Files changed last round
 - (pending this round's placement)
