@@ -402,3 +402,34 @@ length-unawareness.
 ## Item 5 — CLOSED (2026-07-30)
 All acceptance criteria (OBS-01 through OBS-07) real-verified; human
 visual confirmation given. Merged into `main`.
+
+---
+
+# Item 6 — screen-reader pass, IN PROGRESS (2026-07-31)
+
+**Tier: Live-verified** — real NVDA session, person's own hands and
+ears, Speech Viewer transcripts captured. This is the highest
+verification tier this project uses.
+
+| Scenario | Screen | Finding | Status |
+|---|---|---|---|
+| 1 | Dashboard orientation | Landmarks/headings present and sensible; observability panel announced as one coherent region, never focusable — clean | ✅ Live-verified, no defect |
+| 2 | Dashboard | **Status (Ready/Analyzing/Failed) never announced** when tabbing through a repository row | ❌ Real defect |
+| 3 | Add Repository modal | **Tab escapes the modal into the browser's own toolbar/address bar** — no real focus trap | ❌ Real defect (WCAG AA) |
+| 4 | Delete confirmation modal | **Same Tab-escape as Scenario 3** — likely shared root cause | ❌ Real defect (WCAG AA) |
+| 5 | Observability panel | Confirmed non-interactive (Tab never lands on it); announced correctly via landmark navigation | ✅ Live-verified, no defect |
+| 6 | Overview | **Zero of the six fact sections register as real headings** via H navigation | ❌ Real defect |
+| 7 | Search | **No automatic announcement of loading or result count** — confirmed via retry, not just first-attempt silence | ❌ Real defect |
+| 8 | Chat (no-evidence path) | **No-evidence response announces nothing at all** — most severe finding; a screen-reader user gets zero indication anything happened | ❌ Real defect |
+| 8 (retry) | Chat (successful-answer path) | Pending — retry with a known-answerable question in flight | ⏳ Not yet tested |
+| 9-11 | Explorer, Symbols, Export | Not yet audited | ⏳ Scenarios prepared, pending |
+
+**Aside, logged but out of item 6's scope:** two Chat questions
+against a real repository ("which files are in this project," "what's
+inside index.js") both returned no-evidence despite reading as
+reasonable questions — possible real retrieval-quality gap, not an
+accessibility finding. Flagged for a separate look, not investigated
+here.
+
+**Fixes not yet scoped or applied** — audit continuing per the
+person's choice before batching fixes.
