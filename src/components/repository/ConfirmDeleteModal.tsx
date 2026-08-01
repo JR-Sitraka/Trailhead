@@ -3,6 +3,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangleIcon, XIcon } from 'lucide-react';
+import { useModalFocusTrap } from './useModalFocusTrap';
 
 interface ConfirmDeleteModalProps {
   isOpen: boolean;
@@ -15,6 +16,9 @@ export function ConfirmDeleteModal({ isOpen, repoName, onConfirm, onCancel }: Co
   const [confirming, setConfirming] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const cancelButtonRef = React.useRef<HTMLButtonElement>(null);
+  const dialogRef = React.useRef<HTMLDivElement>(null);
+
+  useModalFocusTrap(isOpen, dialogRef);
 
   React.useEffect(() => {
     if (isOpen) {
@@ -60,9 +64,11 @@ export function ConfirmDeleteModal({ isOpen, repoName, onConfirm, onCancel }: Co
           transition={{ duration: 0.2 }}
         >
           <motion.div
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="delete-repo-title"
+            aria-describedby="delete-repo-description"
             className="w-full max-w-md rounded-card border border-border-muted bg-surface p-6 shadow-xl"
             initial={{ opacity: 0, scale: 0.96, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -83,7 +89,7 @@ export function ConfirmDeleteModal({ isOpen, repoName, onConfirm, onCancel }: Co
               </button>
             </div>
 
-            <p className="text-sm text-text-primary">
+            <p id="delete-repo-description" className="text-sm text-text-primary">
               Are you sure you want to delete{' '}
               <span className="font-medium">{repoName}</span>? This action cannot be undone.
             </p>
