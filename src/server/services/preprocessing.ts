@@ -9,6 +9,14 @@ const MAX_UNPACKED_SIZE = 500 * 1024 * 1024;
 const MAX_FILE_COUNT = 5000;
 const MAX_FILE_PARSE_SIZE = 1 * 1024 * 1024;
 
+// Symlink targets are filesystem paths — a few KB is already generous. A
+// symlink entry declaring a larger body is malformed or hostile. Security
+// findings 4c/4d (2026-08-02): `entry.getData()` performs
+// `Buffer.alloc(entry.header.size)` using the archive's own DECLARED size
+// before any of our accounting can run, so oversized entries have to be
+// rejected from central-directory metadata alone.
+const MAX_SYMLINK_TARGET_SIZE = 4096;
+
 export const STRIP_DIRS = new Set([
   ".git",
   "node_modules",
@@ -347,6 +355,17 @@ export async function validateZipSafety(zipBuffer: Buffer, sourceId: string): Pr
 
       const attr = entry.header.attr;
       if (attr && ((attr >>> 16) & 0xF000) === 0xA000) {
+        // Early header-size guard (security finding 4c). This branch calls
+        // getData() to read the link target, and previously did so with NO
+        // size bound of any kind — the repository-wide budget below is never
+        // reached on this path because of the `continue`. A hostile archive
+        // could therefore declare a huge symlink body and force a large
+        // allocation. Rejected here from declared metadata, before allocating.
+        if (entry.header.size > MAX_SYMLINK_TARGET_SIZE) {
+          throw new SecurityError(
+            `Unsafe symlink: ${entryName} declares a ${entry.header.size}-byte target (max ${MAX_SYMLINK_TARGET_SIZE} bytes)`
+          );
+        }
         const rawData = entry.getData();
         const linkTarget = rawData.toString("utf8");
         try {
@@ -368,6 +387,32 @@ export async function validateZipSafety(zipBuffer: Buffer, sourceId: string): Pr
       //
       // Actual decompressed bytes are used, never the ZIP header's declared
       // size, which a hostile archive controls.
+      // Early header-size guard (security finding 4d). `entry.getData()`
+      // allocates `Buffer.alloc(entry.header.size)` from the archive's own
+      // DECLARED size, so the real accounting below — which charges actual
+      // decompressed bytes — only runs AFTER the allocation it is meant to
+      // bound. Check the declared size against the remaining budget first.
+      //
+      // Sound because adm-zip bounds real decompressed output by that same
+      // declared value, proven in tests/preprocessing-size-header-guard.test.ts:
+      // DEFLATED entries pass it to zlib as `maxOutputLength` (an
+      // under-reported entry throws ERR_BUFFER_TOO_LARGE rather than
+      // over-allocating), and STORED entries are bounded by the same
+      // Buffer.alloc plus a truncating copy. A hostile archive therefore
+      // cannot under-report its way past this check.
+      //
+      // This is an EARLY REJECTION, not a replacement: the actual-byte
+      // accounting below is retained unchanged and remains the real
+      // enforcement, since a declared size can be smaller than reality.
+      const declaredSize = entry.header.size;
+      if (unpackedSize + declaredSize > MAX_UNPACKED_SIZE) {
+        result.truncated = true;
+        if (fileCount === 0) {
+          throw new SecurityError("Unpacked size exceeds 500MB limit with zero files indexed");
+        }
+        break;
+      }
+
       let entryData: Buffer;
       try {
         entryData = entry.getData();
