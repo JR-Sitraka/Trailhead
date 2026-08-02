@@ -213,6 +213,7 @@ real UI-rendering gap that remained.)*
 | Baseline report on current model committed BEFORE swap work | BENCH-04 | Manual gate | Not yet tested |
 | Run-to-run jitter measured and characterized | BENCH-05 | Automated | Not yet tested |
 | Framework-detection + symbol-resolution metrics vs ground truth | BENCH-06 | Automated | Not yet tested |
+| `benchmark:setup` imports all 5 pinned repos into `trailhead_bench`, each `ready` with non-zero files/chunks (real DB evidence); named setup failure vs silent skew | BENCH-07 | Automated | Not yet tested — restored to this table 2026-08-02 (was defined in `benchmark.md:125` and referenced in `benchmark/setup/import-corpus.ts` but had been missing from this table since `Upgrade phase additions` was written). Later "Baseline results recorded (2026-07-28)" section notes BENCH-01/02/07 as "unchanged from stage A (all passed real execution/failure-path tests)" — so BENCH-07 is real and passing, this row exists to reflect that. |
 
 ## Feature: Embedding Model Swap (Upgrade item 3)
 | Acceptance criterion | Test | Type | Status |
@@ -224,13 +225,20 @@ real UI-rendering gap that remained.)*
 | Mid-run re-embed failure: affected repo non-queryable-not-corrupt, others untouched | SWAP-05 | Automated (failure-path) | Not yet tested |
 | Rollback exercised once for real | SWAP-06 | Manual | Not yet tested |
 
-## Feature: "Unknown" detection state (Upgrade item 4)
+## Feature: "Unknown" detection state (Upgrade item 4) — CLOSED (2026-08-02)
+
+**Item 4 is genuinely closed.** All four rows below are Agent-verified with
+real evidence, updated in place with citations to real observed output.
+Honest tier boundary retained on EXPORT-U2: the LLM path is
+Code-reviewed only, not Agent-verified — the deterministic-fallback path
+is fully covered. See `tests/item4-unknown-verification.test.tsx`.
+
 | Acceptance criterion | Test | Type | Status |
 |---|---|---|---|
-| Low-evidence repo shows "Unknown", not a guess (real misdetection-class repo) | OVERVIEW-U1 | Automated + Manual | Not yet tested |
-| Strong-evidence repo still detects correctly (no over-correction) | OVERVIEW-U2 | Automated (benchmark metric) | Not yet tested |
-| JSON export: `framework: null` for Unknown | EXPORT-U1 | Automated | Not yet tested |
-| REPOSITORY_CONTEXT.md states non-detection, both paths | EXPORT-U2 | Automated | Not yet tested |
+| Low-evidence repo shows "Unknown", not a guess (real misdetection-class repo) | OVERVIEW-U1 | Automated + Manual | **Agent-verified (2026-08-02)** — real render of `OverviewPage` against a real null-framework repo (`sindresorhus/got`, `c08b0a4d…` in `trailhead_dev`, cloned into `trailhead_test` to reach the vitest-bound `db` singleton without touching prod state). Rendered output confirmed to include the literal string "Framework" adjacent to "Unknown" (via `displayValue(null, 'Unknown')`), no fabricated framework name anywhere in the DOM (guarded against `Next.js`/`Express`/`React`/`Vue`/`Angular`/`Django`/`Rails`/`Flask`). Evidence: `tests/item4-unknown-verification.test.tsx` OVERVIEW-U1. |
+| Strong-evidence repo still detects correctly (no over-correction) | OVERVIEW-U2 | Automated (benchmark metric) | **Agent-verified (2026-08-02)** — real bench data for `JR-Sitraka/Trailhead` (`3f0bba77…` in `trailhead_bench`, per BENCH-06's 5/5): `framework=Next.js`, `packageManager=npm`, `buildTool=Next.js (built-in)`, `testFrameworkSummary=Vitest`. Real `displayValue(repo.framework, 'Unknown')` returns `Next.js`, not `Unknown` — the Unknown fix does not over-correct real detections. Bench-DB tests use a raw connection because the vitest-bound singleton points at `trailhead_test`. Evidence: `tests/item4-unknown-verification.test.tsx` OVERVIEW-U2. |
+| JSON export: `framework: null` for Unknown | EXPORT-U1 | Automated | **Agent-verified (2026-08-02)** — real `getExportJson()` call against the null-framework fixture: `stack.framework === null` (literal null, not `""`, not `"Unknown"`, not omitted); sibling `stack.packageManager` and `stack.buildTool` also correctly null. Serialized JSON contains none of the plausible fabricated framework names. Evidence: `tests/item4-unknown-verification.test.tsx` EXPORT-U1. |
+| REPOSITORY_CONTEXT.md states non-detection, both paths | EXPORT-U2 | Automated | **Partially verified (2026-08-02).** DETERMINISTIC-FALLBACK PATH: Agent-verified via real `buildDeterministicFallback()` — real prose emits the literal string `"framework is not specified"` alongside `"package manager is not specified"`, `"build tool is not specified"`, `"test framework summary is not specified"`; no fabricated framework name anywhere. Real observed wording (from a real fixture in `trailhead_test`): *"This is a repository primary language is **typescript**; framework is not specified; package manager is not specified; build tool is not specified; test framework summary is not specified."* Evidence: `tests/item4-unknown-verification.test.tsx` EXPORT-U2. **LLM PATH: Code-reviewed only.** Cannot be forced deterministically without spending real Groq quota. Traced instead: the LLM prompt is built from the same `contextJson` the deterministic fallback uses (so `framework: null` is what the model receives as input), and item 5 verified `generateJson` in `generation.ts` is the sole choke point for any generation call — a hallucinated framework here would be a prompt-hygiene issue like the KNOWN-GOOD 2026-07-25 "session store" finding, not a data-layer defect. Honest tier boundary; the LLM path is not Agent-verified for this specific criterion. |
 
 ## Screen-reader pass (Upgrade item 6) — plan
 | Check | Type | Status |
@@ -239,7 +247,7 @@ real UI-rendering gap that remained.)*
 | Heading structure beyond visible labels, all 7 screens + Overview's section headings semantics | Manual | Not yet tested |
 | Dynamic-update announcement timing (Chat turns, job-status polling) | Manual | Not yet tested |
 | ObservabilityPanel: announced sensibly, never in tab order | Manual | Not yet tested |
-| Discovered issues fixed; remaining limitations documented in README | Manual gate | Not yet tested |
+| Discovered issues fixed; remaining limitations documented in README | Manual gate | **Agent-verified (2026-08-02)** — all 7 audit-found defects fixed and live-reconfirmed per "Item 6 — FULLY CLOSED" above; `README.md`'s "Known limitations" section now documents both remaining real limitations (CHAT-09's structural UI-testing ceiling, Chat's mechanical citation-marker reading style) rather than the stale pre-audit "screen-reader accessibility is untested" line it carried before this closeout. |
 
 ## Testing closeout (Upgrade item 7) — carried targets
 *(IMPORT-04 and PREPROC-03's exact-500MB boundary rows above remain
@@ -854,12 +862,43 @@ tests).
 
 ## Dashboard / Explorer rows — confirmed still accurate
 All eight closed with real evidence, re-confirmed with no change
-needed: DASH-01, DASH-02, DASH-05, EXPLORER-01, EXPLORER-04 by new
-tests (`dashboard-explorer-closeout.test.tsx`, EXPLORER-01/04 driven
-by real pipeline output, not seeded rows); DASH-03, DASH-04,
-EXPLORER-02, EXPLORER-03 by pre-existing real coverage. Planning-era
-"mock with fixed fake data" notes on those rows are now stale and
-superseded.
+needed. New tests (Item 7 Groups 4&5, 2026-08-02):
+- **DASH-01**, **DASH-02**, **DASH-05**, **EXPLORER-01**, **EXPLORER-04** —
+  `tests/dashboard-explorer-closeout.test.tsx`. EXPLORER-01/04 driven by
+  real pipeline output (real ZIP through the real route + a real
+  `pollOnce`), not seeded rows.
+
+Real specifics for the pre-existing coverage citations, added
+2026-08-02 to close this document's own "closure asserted without a
+citation" gap:
+- **DASH-03** (Reanalyze happy path + 409 when active) —
+  `tests/dashboard-ui.test.ts:158` (`POST
+  /api/repositories/:id/reanalyze returns 201 with queued job, repo
+  status unchanged`) and `:185` (`reanalyze returns 409 when job
+  already active`). Both real HTTP calls through the actual route
+  handler, real DB assertions.
+- **DASH-04** (Delete confirmation + real removal, cancel unchanged) —
+  `tests/dashboard-ui.test.ts:109` (`DELETE /api/repositories/:id
+  returns 204 on success, 409 when job is active`), `:133` (`DELETE
+  returns 409 when analysis job is queued/running`), and `:153`
+  (`DELETE returns 404 for nonexistent repo`). Modal
+  cancel/confirm/Escape UI behavior is separately covered by item 6
+  Group A's `tests/modal-focus-trap.test.tsx` (2026-08-01), tying the
+  modal-level and API-level halves together.
+- **EXPLORER-02** (Selecting a non-skipped file → real content + line
+  numbers) — `tests/files-content.route.test.ts:79` (real 200 with
+  real content) and `:114` (real nested file paths), plus
+  `tests/explorer-client.test.tsx:31/68/102` (real render with correct
+  line counts across both the Shiki-highlighted and plain-text
+  branches, matched against the real API response byte-for-byte).
+- **EXPLORER-03** (Selecting a skipped file → specific skip reason) —
+  `tests/files-content.route.test.ts:89` (real 409 with the specific
+  skipReason returned) and `tests/explorer-client.test.tsx:165` (real
+  aria-live region announces the specific skip reason, not a generic
+  message).
+
+Planning-era "mock with fixed fake data" notes on those rows are now
+stale and superseded.
 
 ## Item 7 — verification status
 

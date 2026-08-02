@@ -155,9 +155,23 @@ Stated plainly, not buried:
   but it does mean some genuinely answerable questions won't get
   answered. A code-aware embedding model would fix this; swapping one
   in is real, scoped future work — see `PROJECT-STATE.md`.
-- **Screen-reader accessibility is untested.** Keyboard-only navigation
-  has been verified; actual screen-reader output (NVDA/VoiceOver) has
-  not.
+- **Screen-reader accessibility has been audited and the seven defects
+  found were fixed and live-reconfirmed** (real NVDA session, real
+  transcripts, all seven independently re-tested — see
+  `docs/09-testing/testing.md` "Item 6 — FULLY CLOSED"). Two real,
+  documented limitations remain:
+  - **Chat's malformed-history rejection (CHAT-09) can only be tested
+    at the API level, never through real UI interaction** — the client
+    never constructs a malformed history object, so server-side
+    protection is real but the UI can't exercise it. Accepted as a
+    permanent limitation of black-box UI testing, not a gap awaiting
+    coverage.
+  - **Chat's announced answers read inline citation markers
+    mechanically** — e.g. `[3] (index.d.ts:1)` is spoken as those
+    literal tokens rather than as a natural pause. Functional (the
+    marker's information is fully conveyed), but rougher than
+    prose-integrated citations would be. Logged as a future polish
+    item, not a defect.
 
 ## How this was built
 
