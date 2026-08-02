@@ -215,10 +215,26 @@ ZIP uploads.
   - **The 4c/4d fix rests on an adm-zip/Node behavior, not on our own
     code.** `adm-zip`'s `inflater.js` only passes `maxOutputLength` to
     zlib when the Node major version is **≥ 15**. This project runs
-    **Node 20.13.0**, so the bound is active — but on an older Node the
-    under-report protection would silently disappear and the guard would
-    become far weaker. A dependency upgrade or runtime change should
-    re-verify this. Recorded as a real environmental dependency.
+    **Node 20.13.0**, so the bound is active. Runtime-floor status,
+    established by reading real files (2026-08-02):
+    - **Real enforcement, but borrowed:** `next/dist/bin/next` hard-exits
+      (`process.exit(1)`) on Node < 18.17.0, so `dev`/`build`/`start`/
+      `lint` are genuinely gated well above the ≥ 15 the invariant needs.
+      That guarantee comes from a third-party binary's internal check —
+      a Next upgrade or a change of runner could alter it without
+      anything in this repo noticing.
+    - **`package.json`'s `engines` field (`>=18.17.0`, added 2026-08-03)
+      is a repository-owned compatibility declaration, NOT hard
+      enforcement.** Under the current `engine-strict=false` npm
+      behavior it produces a warning on an unsupported version, nothing
+      more. It is documentation with a machine-readable shape.
+    - **The non-Next scripts bypass the gate entirely** (`test`,
+      `typecheck`, `db:*`, `benchmark:*` run under `vitest`/`tsc`/`tsx`).
+      The bounded invariant test in
+      `tests/preprocessing-size-header-guard.test.ts` is therefore the
+      actual regression signal for this protection, not the runtime floor.
+    - No startup version check exists in application code, and none was
+      added — a deliberate scope decision, not an oversight.
   - Secret non-leakage has no negative test.
   - Everything outside the four reviewed areas is simply unexamined.
 
@@ -228,19 +244,48 @@ ZIP uploads.
   (review) and `roles/backend-engineer.md` (remediation), 2026-08-02.
   **Agent-verified tier throughout — not independently confirmed by a
   person.**
-- **Human decision:** **PENDING.** Nothing in this document has been
-  accepted by the operator yet. The items specifically needing a human
-  decision:
-  1. Accept the residual disk-exhaustion risk from **2b**, or schedule
-     the cleanup pass.
-  2. Accept **1c**'s data-integrity ambiguity, or schedule the fix.
-  3. Accept the post-fix residual on **4c/4d**: a single entry declaring
-     just under the remaining budget can still legitimately allocate up
-     to ~500MB in one buffer. That is the designed budget, not a new
-     flaw — but it is the real memory ceiling of one import and should
-     be accepted knowingly.
-  4. Accept the no-authentication posture for continued local-only use.
-- **Date:** 2026-08-02 (document created; decisions outstanding).
+- **Human decision:** **RECORDED 2026-08-03.** The operator has reviewed
+  the four outstanding items and decided each one. These are the
+  operator's decisions; they are distinct from — and rest on — the
+  Agent-verified evidence above, which no person has independently
+  reproduced. Accepting a risk is not the same as verifying the evidence
+  for it.
+
+  1. **2b — temporary-directory disk-exhaustion residual: ACCEPTED AND
+     DEFERRED.** Accepted for this local, single-operator release. OS
+     temp cleanup is neither guaranteed nor relied upon as a mitigation.
+     A defensive cleanup pass remains future work, to be reconsidered if
+     repeated residue is observed, if disk exhaustion actually occurs, or
+     if imports become concurrent or long-running.
+
+  2. **1c — indexed-but-empty data-integrity ambiguity: ACCEPTED AND
+     DEFERRED.** Accepted as an S4, non-security limitation. The intended
+     future behavior is retained as specified: `skipped: true`,
+     `skipReason: "read_failed"`. Reopen if the failure path becomes
+     reproducible, or if a real user encounters an unexplained empty
+     indexed file.
+
+  3. **4c/4d post-fix single-buffer residual: ACCEPTED.** Accepted as the
+     designed local import budget. Recorded explicitly, so the shape of
+     what was accepted is not lost:
+     - One decompression buffer may approach the remaining budget.
+     - **Total Node/process memory can exceed that amount**, because other
+       allocations are live at the same time. The ~500MB figure is a
+       **buffer ceiling, not a process ceiling** — it does not bound
+       overall process memory.
+     - Lowering the overall budget, or adding a separate per-entry budget,
+       is a future product/performance decision. Revisit on real
+       memory-pressure evidence rather than pre-emptively.
+
+  4. **No authentication: ACCEPTED CONDITIONALLY**, for continued local,
+     single-operator use only. **This acceptance does NOT authorize
+     public, shared, hosted, or untrusted-network deployment.** Any move
+     toward remote access, multi-user use, or public/LAN exposure
+     triggers a new security review and an explicit authentication and
+     authorization decision *before* deployment — not after.
+
+- **Date:** 2026-08-03 (operator decisions recorded). Document originally
+  created 2026-08-02.
 
 **Per `roles/security-reviewer.md`'s invariant, this document does not
 declare the system secure.** It records evidence, tiers, and residual

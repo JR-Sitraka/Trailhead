@@ -563,6 +563,45 @@ half.
   no other dev server is already running before starting one — check
   for an existing process/port bind, don't assume a clean start.
 
+- [2026-08-02] **Node runtime floor — what is actually enforced, and
+  what only looks like it.** Established by reading real files, not
+  assumed. Current confirmed runtime: **Node 20.13.0**.
+  - **Real enforcement (application commands only):** `dev`, `build`,
+    `start` and `lint` all invoke the `next` binary, and
+    `next/dist/bin/next` runs a genuine runtime check —
+    `semver.lt(process.versions.node, "18.17.0")` → `console.error` +
+    `process.exit(1)`. That is a hard gate that actually fails the
+    command, not merely a declared `engines` field. Confirmed by
+    reading the installed file (Next 14.2.35).
+  - **Why it matters for security:** the `adm-zip` `maxOutputLength`
+    invariant behind the 4c/4d fix (`inflater.js` only passes it to
+    zlib when the Node major is **≥ 15**) is what stops a hostile
+    archive under-reporting its declared size. Next's ≥ 18.17.0 gate
+    sits comfortably above that, so for the running app the invariant
+    is transitively guaranteed. **But that guarantee is borrowed from a
+    third-party binary's internal check** — a Next upgrade or a change
+    of runner could remove it without anything in this repo noticing.
+    Re-verify on any Next major upgrade.
+  - **`package.json`'s `engines: { "node": ">=18.17.0" }` (added
+    2026-08-03) is a repository-owned compatibility declaration, NOT
+    hard enforcement.** With npm's current `engine-strict=false`
+    default (confirmed: no `.npmrc` exists in this repo) it produces a
+    warning on an unsupported version and nothing else. Do not read it
+    as a gate.
+  - **The non-Next scripts bypass Next's gate entirely** — `test`,
+    `typecheck`, `db:generate`/`db:migrate`/`db:push`, and
+    `benchmark:setup`/`benchmark` run under `vitest`, `tsc` and `tsx`,
+    none of which check the Node version, and `tests/setup.ts` has no
+    version gate either. Consequence worth remembering: the bounded
+    invariant test in `tests/preprocessing-size-header-guard.test.ts`
+    is the **actual** regression signal for this protection — the
+    runtime floor is not, because the suite proving the invariant can
+    itself run on an ungated Node.
+  - No startup version check exists anywhere in application code
+    (`src/instrumentation.ts` is 6 lines and does not check), and none
+    was added — deliberate scope decision. No CI configuration exists
+    in this repo at all, so there is no build-time gate either.
+
 ## Project hard rules
 
 (none yet — entries above are environment facts, not incident-derived
