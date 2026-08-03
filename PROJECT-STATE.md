@@ -4,95 +4,101 @@
 `orchestrator.md`'s mid-project session handoff procedure.**
 
 ## Product
-**Trailhead** — Repository Intelligence Platform. MVP-A/B shipped and
-released. **THE TRAILHEAD UPGRADE PHASE IS COMPLETE**, pending this
-round's final merge.
+**Trailhead** — Repository Intelligence Platform. MVP-A and MVP-B
+shipped and publicly released. **The Trailhead Upgrade phase
+(project 2 on the Starter Kit, V4.2, ADR-007) is COMPLETE.**
 
 ## Phase
-**Upgrade phase COMPLETE — merge in flight. Next real work: the
-kit-required phase-close retrospective.**
+**COMPLETE — no phase currently in progress.** All seven Upgrade
+items closed, the bounded security review run and its residual risks
+formally accepted, and the phase retrospective compiled and committed.
 
-**Hash convention:** as of 2026-08-02, `main` HEAD `b0dab84`
-(pre-merge). Branch `upgrade/item7-closeout` holds the final
-commits: `1f5b19f`, `6b86504`, `fb88852`, `241241f`, `86f2300`,
-`878abd0`, `aceb608`, `996a8ff`, `b55d811`.
+**Hash convention:** as of 2026-08-03, `main` HEAD `6ec1cb8`
+(retrospective placement). Prior milestones: `e1e273e` (security
+acceptances recorded), `74cf228` (security remediation), `78afe5f`
+(security.md created).
 
-## Upgrade phase — final status, all 7 items
+## The seven Upgrade items — final outcomes
 | Item | Outcome |
 |---|---|
-| 1. Doc-drift fix | DONE — Gemini→Groq corrected everywhere real |
-| 2. Golden benchmark suite | COMPLETE — real corpus, real ground truth, committed baseline |
-| 3. Embedding model swap | **CLOSED: HELD** — q8 evaluated rigorously, 3/4 criteria decisively met, held on a real documentation-retrieval regression; preserved as leading candidate, not rejected |
-| 4. Framework misdetection | CLOSED — premise didn't reproduce (re-scoped via ADR-010 to verify+guard); "Unknown" display shipped |
-| 5. LLM observability | CLOSED, merged — real implementation, real visual parity, human-confirmed |
-| 6. Screen-reader accessibility | CLOSED, merged — 7 real defects found via live NVDA audit, all fixed and live-reconfirmed |
-| 7. Testing closeout | CLOSED — this round. One scoped deferral (IMPORT-04), documented honestly, not rounded up |
+| 1. Doc-drift fix | DONE — Gemini→Groq corrected across all active docs |
+| 2. Golden benchmark suite | COMPLETE — real corpus, versioned manifests, committed baseline; the phase's most load-bearing new infrastructure |
+| 3. Embedding model swap | **CLOSED: HELD** — evaluated rigorously across ~10 rounds, 3/4 criteria decisively met, held on a real documentation-retrieval regression. Candidate preserved, not rejected; a five-point acceptance bar recorded for any future reconsideration |
+| 4. Framework misdetection | CLOSED — premise didn't reproduce; re-scoped via ADR-010 to verify + regression-guard; "Unknown" display shipped |
+| 5. LLM observability | CLOSED, merged — real implementation, visual parity, human-confirmed |
+| 6. Screen-reader accessibility | CLOSED, merged — 7 real audit findings from a live NVDA pass, all addressed and live-reconfirmed |
+| 7. Testing closeout | CLOSED — plus three real pre-existing product bugs found and fixed, and one honest deferral (IMPORT-04) |
 
-## Real, durable artifacts this phase produced
-- **10 ADRs** added or amended (005 amended twice, 006-011 new/amended)
-- A real, committed golden benchmark (31→40 queries across two
-  manifest versions, real ground truth, locked comparison parameters)
-- **5 confirmed instances** of "documentation described architecture
-  never built" — a structural finding for the framework-review track
-- A complete NVDA accessibility audit-to-fix cycle, live-verified
-  end to end by a first-time screen-reader user
-- Real bugs found and fixed in production code that predated this
-  phase entirely (boxen's NUL-byte import poisoning, got's orphaned
-  state, the 500MB budget bypass)
-- One deliberate, honestly-documented deferral (IMPORT-04) rather
-  than a false "complete"
+## Security posture — reviewed and formally accepted (2026-08-03)
+A bounded security review of item 7's preprocessing/import changes
+was run, found two real bypass paths (symlink entries and general
+zip-bomb allocation) that no prior verification had looked for, and
+both were fixed after the critical invariant behind the fix was
+**proven rather than assumed**. Severity re-assessed S3→S2 with
+recorded reasoning. `docs/07-architecture/security.md` now exists
+with the threat model and posture.
 
-## Coding-agent policy — final state
-Placement: always Claude Code, throughout, no exceptions except one
-explicit person-authorized one-time deviation (later reversed).
-Implementation: complexity-split, Kilo Code for scoped/simple work,
-Claude Code for investigation/research/hard-gated work. Both agents
-performed well under this split; real evidence collected across the
-whole phase for the eventual retrospective.
+**Four residual risks explicitly accepted by the operator** — see
+`security.md` for full wording: temp-directory disk exhaustion
+(deferred); indexed-but-empty data-integrity ambiguity (deferred,
+S4); the post-fix ~500MB single-buffer residual (**a buffer ceiling,
+not a process ceiling**); and the no-authentication posture, accepted
+**conditionally for local single-operator use only** — explicitly not
+authorizing public, shared, hosted, or untrusted-network deployment.
+**Any move toward remote access, multi-user use, or public/LAN
+exposure triggers a new security review and an authentication
+decision before deployment.**
 
-## Provisional-items trail (V4.2) — FULL, ready for §8 verdicts
-- `session-recovery.md` — triggered once for real (item 3's
-  background-process interruption); diagnosis-before-resume worked as
-  designed, turned an interruption into reinforcing evidence.
-- `design-handoff.md` + `visual-parity-review.md` — used once, item
-  5's panel; clean result; the timing/early-freeze finding logged.
-- `roles/security-reviewer.md` + `security-review.md` — never
-  triggered (auth explicitly deferred to V2/V3 throughout).
-- `visualization-prompting.md`'s credit-exhaustion section — used by
-  choice, not forced exhaustion; nuanced, not a clean confirmation.
-- `orchestrator.md`'s "Decision habits" section — used dozens of
-  times across every major fork this phase; zero regretted defaults.
-- ADR-005's mixed coding-agent policy — adopted, refined, reaffirmed
-  after one real deviation and its real (self-corrected) consequences.
+## Retrospective — committed
+`RETROSPECTIVE.md`'s fourth section (`6ec1cb8`): 9 sections, 43
+numbered findings, each carrying its own evidence tier. Its headline
+finding: **project records repeatedly described the system more
+confidently or completely than the implementation and evidence
+justified** — six real cases, caught through fresh primary-source
+verification of several kinds, never by reading documentation alone.
 
-## Open items, real and deliberately deferred (not part of this phase)
+## Next work — the framework-review conversation
+A **separate** conversation, per the kit's own process. Its inputs
+are ready and honestly calibrated:
+- **Nine reusable kit-guidance candidates, ALL held at first
+  observation** (deletion-gate protocol; benchmark-design
+  methodology; manual/live-testing protocol; mixed coding-agent
+  routing; staged-diff verification; hash-freshness convention;
+  merge-not-rebase for hash-bearing records; past-tense file-claim
+  clarification; documentation-citation verification). None are
+  promotion-eligible on this project's evidence alone — this is a
+  same-codebase continuation, one evidence stream.
+- **Five maintenance corrections** ready to apply (missing V4.2
+  CHANGELOG entry; security-role cross-reference; responsive-CSS
+  anecdote pruning; a confirmed-fine duplication needing no action;
+  defining "independent project" in the retrospective template).
+- **Eight provisional-item verdicts**, none skipped, distinguishing
+  not-triggered / triggered-but-not-invoked / partially-evaluated /
+  successfully-used-once.
+- **One structural question** worth the conversation's most serious
+  attention: whether every satisfied acceptance criterion must cite
+  evidence appropriate to the claim, with any lower-tier boundary
+  stated explicitly.
+
+## Real, deliberately deferred work (not part of any current phase)
+- IMPORT-04 branch selection — real, unimplemented, honestly deferred
 - Documentation-retrieval mitigation study (item 3's held decision)
-- Cloud-embedding scoping (raised, explicitly held separate)
-- IMPORT-04 branch selection (item 7's scoped deferral)
-- FK indexes (add-and-measure, low priority)
-- V1 blueprint items (structural graphs, impact analysis) — non-binding
+- Cloud-embedding scoping — raised, never scoped
+- FK indexes — absent, unmeasured, low priority
+- Temp-directory cleanup; the `read_failed` skip-reason fix
+- V1 blueprint items (structural graphs, impact analysis)
+- Pre-existing MVP-A/B test gaps carried forward untouched (see
+  `testing.md`)
 
 ## Current blocker
-None — merge is this round's task.
+None.
 
 ## Last completed action
-Item 7 fully closed; entire Upgrade phase complete — 2026-08-02.
+Trailhead Upgrade phase retrospective committed (`6ec1cb8`) —
+2026-08-03.
 
 ## Next valid moves
-1. Claude Code places testing.md's final content and merges
-   `upgrade/item7-closeout` into `main` — this is the phase's closing
-   merge.
-2. **Compile `RETROSPECTIVE.md`** per `RETROSPECTIVE.template.md` —
-   this project has an unusually rich record to draw from: the
-   complete item-3 falsification arc, the complete item-6 audit-to-
-   fix cycle, five structural documentation-drift findings, multiple
-   real orchestrator/agent mutual error-catches, and a fully evolved
-   mixed-agent policy. This is the next real piece of work, not a
-   formality.
-3. After the retrospective: a separate framework-review conversation
-   updates the shared kit (principles.md, orchestrator.md, roles/,
-   playbooks/) based on what this project actually found — per the
-   kit's own two-project promotion rule.
-
-## Files changed last round
-- (pending this round's placement)
+1. Open the framework-review conversation (separate session) using
+   `RETROSPECTIVE.md`'s Upgrade section, especially Sections 7 and 9.
+2. Or: scope a new product phase from the deferred-work list above.
+3. Either way — read this file and the retrospective first.
