@@ -80,7 +80,7 @@ dependency, no ongoing cost beyond those two free tiers.
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 18.17+
 - PostgreSQL 17 with the **pgvector** extension
 
 **Installing pgvector on Windows** is the one genuinely non-trivial
@@ -153,13 +153,16 @@ Stated plainly, not buried:
   validation prevents this from producing *wrong* answers (it will
   correctly say "no relevant evidence found" rather than hallucinate),
   but it does mean some genuinely answerable questions won't get
-  answered. A code-aware embedding model would fix this; swapping one
-  in is real, scoped future work — see `PROJECT-STATE.md`.
-- **Screen-reader accessibility has been audited and the seven defects
-  found were fixed and live-reconfirmed** (real NVDA session, real
-  transcripts, all seven independently re-tested — see
-  `docs/09-testing/testing.md` "Item 6 — FULLY CLOSED"). Two real,
-  documented limitations remain:
+  answered. A code-aware candidate was evaluated against a real
+  benchmark suite: it improved code-oriented retrieval but regressed
+  documentation retrieval, and was held rather than adopted (ADR-009).
+  Any future candidate must satisfy ADR-009's complete acceptance bar
+  before it ships — see `PROJECT-STATE.md` and `RETROSPECTIVE.md`.
+- **Screen-reader accessibility — audited, largely addressed.** A live,
+  first-time-user NVDA audit produced seven findings: six confirmed
+  defects, all fixed and independently live-reconfirmed, plus one
+  reported Overview-heading defect that did not reproduce on
+  investigation. VoiceOver remains untested.
   - **Chat's malformed-history rejection (CHAT-09) can only be tested
     at the API level, never through real UI interaction** — the client
     never constructs a malformed history object, so server-side
