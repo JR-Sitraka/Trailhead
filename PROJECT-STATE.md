@@ -13,8 +13,10 @@ shipped and publicly released. **The Trailhead Upgrade phase
 items closed, the bounded security review run and its residual risks
 formally accepted, and the phase retrospective compiled and committed.
 
-**Hash convention:** as of 2026-08-03, `main` HEAD `6ec1cb8`
-(retrospective placement). Prior milestones: `e1e273e` (security
+**Hash convention:** `6ec1cb8` is the
+retrospective-placement milestone, not a current-HEAD claim — a
+recorded HEAD self-invalidates on the next push; check `git log` for
+actual HEAD. Prior milestones: `e1e273e` (security
 acceptances recorded), `74cf228` (security remediation), `78afe5f`
 (security.md created).
 
@@ -55,7 +57,8 @@ numbered findings, each carrying its own evidence tier. Its headline
 finding: **project records repeatedly described the system more
 confidently or completely than the implementation and evidence
 justified** — six real cases, caught through fresh primary-source
-verification of several kinds, never by reading documentation alone.
+verification — execution, database inspection, code tracing, and
+cross-document comparison.
 
 ## Next work — the framework-review conversation
 A **separate** conversation, per the kit's own process. Its inputs
