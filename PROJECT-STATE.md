@@ -60,28 +60,34 @@ justified** — six real cases, caught through fresh primary-source
 verification — execution, database inspection, code tracing, and
 cross-document comparison.
 
-## Next work — the framework-review conversation
-A **separate** conversation, per the kit's own process. Its inputs
-are ready and honestly calibrated:
-- **Nine reusable kit-guidance candidates, ALL held at first
-  observation** (deletion-gate protocol; benchmark-design
-  methodology; manual/live-testing protocol; mixed coding-agent
-  routing; staged-diff verification; hash-freshness convention;
-  merge-not-rebase for hash-bearing records; past-tense file-claim
-  clarification; documentation-citation verification). None are
-  promotion-eligible on this project's evidence alone — this is a
-  same-codebase continuation, one evidence stream.
-- **Five maintenance corrections** ready to apply (missing V4.2
-  CHANGELOG entry; security-role cross-reference; responsive-CSS
-  anecdote pruning; a confirmed-fine duplication needing no action;
-  defining "independent project" in the retrospective template).
-- **Eight provisional-item verdicts**, none skipped, distinguishing
-  not-triggered / triggered-but-not-invoked / partially-evaluated /
-  successfully-used-once.
-- **One structural question** worth the conversation's most serious
-  attention: whether every satisfied acceptance criterion must cite
-  evidence appropriate to the claim, with any lower-tier boundary
-  stated explicitly.
+## Framework review — COMPLETE (2026-08-04)
+Run as a separate conversation, per the kit's own process. Four
+changes landed on the starter kit; roughly twenty findings were
+declined or held, each with a recorded reason.
+
+**Starter-kit remote `main`: `2e4ecdf8cfcc5033bce0461bdebed6a13dbdfc1a`.**
+**Unreleased maintenance only** — no version label, no tag, no GitHub
+release. The V4.2 structure itself is unchanged; these sit above it.
+
+| Landed change | File |
+|---|---|
+| "Second project" defined in the two-project promotion rule | `RETROSPECTIVE.template.md` §7 |
+| Version label corrected V4 → V4.2 | `README.md` line 1 |
+| Stale V3-comparison framing replaced | `README.md` lines 3-5 |
+| `Unreleased` maintenance accounting | `CHANGELOG.md` |
+
+All eight V4.2 provisional and provisional-speculative markers were
+reviewed and **retained unchanged**: the Upgrade is a second phase of
+the same codebase, which the newly-defined second-project gate does
+not satisfy.
+
+**Durable records — read these rather than re-deriving anything:**
+- Kit-review decisions, every decline with its reason, and the held
+  maintenance findings → starter-kit `CHANGELOG.md`, `Unreleased`
+  entry.
+- Project findings, first-observation candidates, and the provisional
+  verdicts they rest on → this repo's `RETROSPECTIVE.md`, Upgrade
+  section (§7-§9).
 
 ## Real, deliberately deferred work (not part of any current phase)
 - IMPORT-04 branch selection — real, unimplemented, honestly deferred
@@ -97,11 +103,15 @@ are ready and honestly calibrated:
 None.
 
 ## Last completed action
-Trailhead Upgrade phase retrospective committed (`6ec1cb8`) —
-2026-08-03.
+Framework review completed; the approved change set merged
+fast-forward and pushed to starter-kit `main` at `2e4ecdf` —
+2026-08-04. Trailhead itself was at
+`7869d757bcbd7311e22e90aab4e09914796e36c0` immediately before this
+state update, unchanged throughout the review.
 
 ## Next valid moves
-1. Open the framework-review conversation (separate session) using
-   `RETROSPECTIVE.md`'s Upgrade section, especially Sections 7 and 9.
-2. Or: scope a new product phase from the deferred-work list above.
-3. Either way — read this file and the retrospective first.
+1. Scope a new Trailhead product phase from the deferred-work list
+   above.
+2. Or: leave the project in its current completed, stable state until
+   new product evidence justifies reopening a deferred item.
+3. Either way — read this file and `RETROSPECTIVE.md` first.
